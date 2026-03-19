@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Request, Query
+﻿from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Request, Query
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -20,6 +20,8 @@ from telegram import Bot
 import httpx  # For Firebase verification
 
 
+
+
 def parse_utc_datetime(dt_val) -> datetime:
     """Parse a datetime value (str or datetime) and ensure it's UTC-aware.
     Handles naive datetimes from the DB by assuming they are UTC."""
@@ -35,25 +37,32 @@ def parse_utc_datetime(dt_val) -> datetime:
     return parsed
 
 
+
+
 async def find_player_by_address(address: str):
     """Find player by address, handling Telegram TG_/tg_ case mismatch."""
     if not address:
         return None
 
+
     player = await db.players.find_one({"address": address}, {"_id": 0})
     if player:
         return player
 
+
     if address.lower().startswith("tg_"):
         tg_id = address[3:]
+
 
         player = await db.players.find_one({"address": f"TG_{tg_id}"}, {"_id": 0})
         if player:
             return player
 
+
         player = await db.players.find_one({"address": f"tg_{tg_id}"}, {"_id": 0})
         if player:
             return player
+
 
         try:
             player = await db.players.find_one({"telegram_id": int(tg_id)}, {"_id": 0})
@@ -62,7 +71,10 @@ async def find_player_by_address(address: str):
         except (ValueError, TypeError):
             pass
 
+
     return None
+
+
 
 
 # Security: Input sanitization functions
@@ -75,6 +87,7 @@ def sanitize_string(value: str, max_length: int = 100) -> str:
     # Limit length
     return sanitized[:max_length].strip()
 
+
 def sanitize_address(address: str) -> str:
     """Sanitize wallet addresses"""
     if not address:
@@ -82,6 +95,7 @@ def sanitize_address(address: str) -> str:
     # Only allow alphanumeric and common address characters
     sanitized = re.sub(r'[^a-zA-Z0-9_\-]', '', str(address))
     return sanitized[:100]
+
 
 def validate_nickname(nickname: str) -> str:
     """Validate and sanitize nicknames"""
@@ -92,6 +106,7 @@ def validate_nickname(nickname: str) -> str:
         raise ValueError("Nickname must be at least 2 characters")
     return sanitized
 
+
 # Try to import blockcypher, with fallback to None
 try:
     import blockcypher
@@ -99,25 +114,31 @@ except ImportError:
     blockcypher = None
     logging.warning("BlockCypher module not available - DOGE payment verification will use direct API calls")
 
+
 # Import Phase 2 services
 from services.anti_cheat import AntiCheatSystem
 from services.points_system import PointsCollectionSystem
 from services.merkle_tree import MerkleTreeGenerator
+
 
 # Import Enhanced Game Mechanics (Phase 3)
 from services.treat_game_engine import TreatGameEngine, TreatRarity
 from services.ingredient_system import IngredientSystem
 from services.season_manager import SeasonManager
 
+
 # Firebase Configuration - MUST be set via environment variables in production
 FIREBASE_API_KEY = os.environ.get("FIREBASE_API_KEY")
 FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "dogefood-lab")
 
+
 if not FIREBASE_API_KEY:
     logging.warning("⚠️ FIREBASE_API_KEY not set - Firebase authentication will not work")
 
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
 
 # Database connection with Atlas MongoDB
 # SECURITY: MONGO_URL MUST be set via environment variable
@@ -126,7 +147,9 @@ if not MONGO_URL:
     logging.error("❌ CRITICAL: MONGO_URL environment variable not set!")
     raise ValueError("MONGO_URL environment variable is required")
 
+
 DB_NAME = os.getenv("DB_NAME", "dogefood_lab_production")
+
 
 try:
     # Log connection attempt (without sensitive data)
@@ -149,10 +172,12 @@ except Exception as e:
     logging.error(f"Database initialization error: {str(e)}")
     raise
 
+
 # Initialize Phase 2 services
 anti_cheat_system = AntiCheatSystem(db)
 points_system = PointsCollectionSystem(db)
 merkle_generator = MerkleTreeGenerator()
+
 
 # Initialize Enhanced Game Mechanics (Phase 3)
 # SECURITY: GAME_SECRET_KEY should be set via environment variable in production
@@ -161,9 +186,11 @@ if not GAME_SECRET_KEY:
     logging.warning("⚠️ GAME_SECRET_KEY not set - using development key (NOT SAFE FOR PRODUCTION)")
     GAME_SECRET_KEY = 'development_key_' + os.urandom(16).hex()
 
+
 game_engine = TreatGameEngine(GAME_SECRET_KEY)
 ingredient_system = IngredientSystem()
 season_manager = SeasonManager(db)
+
 
 # Background task functions
 async def award_treat_creation_points(player_address: str, treat_metadata: dict):
@@ -178,21 +205,26 @@ async def award_treat_creation_points(player_address: str, treat_metadata: dict)
     except Exception as e:
         logger.error(f"Error awarding treat creation points: {e}")
 
+
 # Create the main app without a prefix
 app = FastAPI()
 
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
 
 # Happy Hour Configuration
 HAPPY_HOUR_START_UTC = 15  # 15:00 UTC
 HAPPY_HOUR_DURATION_MINUTES = 60  # 1 hour
 HAPPY_HOUR_BONUS_PERCENT = 0.25  # +25% bonus points
 
+
 def is_happy_hour() -> bool:
     """Check if current UTC time is during Happy Hour (15:00-16:00 UTC daily)"""
     now = datetime.now(timezone.utc)
     return now.hour == HAPPY_HOUR_START_UTC and now.minute < HAPPY_HOUR_DURATION_MINUTES
+
 
 def get_happy_hour_status() -> dict:
     """Get detailed Happy Hour status with timing info"""
@@ -230,8 +262,11 @@ def get_happy_hour_status() -> dict:
         }
 
 
+
+
 # Background task flag
 background_task_started = False
+
 
 # Kernel of Wow automatic selection job
 async def auto_select_kernel_holder():
@@ -340,6 +375,7 @@ async def auto_select_kernel_holder():
         logger.error(f"Error in auto_select_kernel_holder: {e}")
         return False
 
+
 async def kernel_scheduler_loop():
     """Background loop that checks every hour if a new holder needs to be selected"""
     global background_task_started
@@ -355,6 +391,7 @@ async def kernel_scheduler_loop():
         
         # Sleep for 1 hour before checking again
         await asyncio.sleep(3600)
+
 
 # Game Models
 class Player(BaseModel):
@@ -389,16 +426,19 @@ class Player(BaseModel):
     created_treats: List[str] = []
     last_active: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
 class PlayerCreate(BaseModel):
     address: str
     nickname: Optional[str] = None  # Enhanced: Add nickname support
     is_nft_holder: bool = False
+
 
 class PlayerProgress(BaseModel):
     address: str
     experience: int
     points: int
     level: int
+
 
 class DogeTreat(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -417,6 +457,7 @@ class DogeTreat(BaseModel):
     xp_reward: Optional[int] = 0  # XP earned from this treat
     season_id: Optional[int] = None  # Season when treat was created
 
+
 class TreatCreate(BaseModel):
     name: str
     creator_address: str
@@ -427,6 +468,7 @@ class TreatCreate(BaseModel):
     image: str
     timer_duration: Optional[int] = None  # Enhanced: Timer support
     brewing_status: str = "ready"  # Enhanced: Default to ready
+
 
 class LeaderboardEntry(BaseModel):
     address: str
@@ -441,17 +483,21 @@ class LeaderboardEntry(BaseModel):
     character_name: Optional[str] = None  # Display name of character
     character_image: Optional[str] = None  # Character image URL
 
+
 class EnhancedTreatCreate(BaseModel):
     creator_address: str
     ingredients: List[str]
     player_level: int
 
+
 class PointsConversionRequest(BaseModel):
     player_address: str
     points_to_convert: int
 
+
 class IngredientAnalysisRequest(BaseModel):
     ingredient_ids: List[str]
+
 
 class TreatSimulationRequest(BaseModel):
     ingredients: List[str]
@@ -462,6 +508,7 @@ class TreatSimulationRequest(BaseModel):
     level: int
     is_nft_holder: bool
     rank: int
+
 
 # Chat Models
 class ChatMessage(BaseModel):
@@ -476,18 +523,22 @@ class ChatMessage(BaseModel):
     upvote_count: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
 class ChatMessageCreate(BaseModel):
     sender_address: str
     content: str
     reply_to: Optional[str] = None
 
+
 class ChatUpvoteRequest(BaseModel):
     message_id: str
     voter_address: str
 
+
 # =====================================================
 # MARKETPLACE MODELS
 # =====================================================
+
 
 class MarketplaceListing(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -508,6 +559,7 @@ class MarketplaceListing(BaseModel):
     sold_at: Optional[datetime] = None
     buyer_address: Optional[str] = None
 
+
 class CreateListingRequest(BaseModel):
     treat_id: str
     seller_address: str
@@ -515,17 +567,21 @@ class CreateListingRequest(BaseModel):
     price_lab: Optional[float] = None
     payment_options: str = "both"  # "doge", "lab", or "both"
 
+
 class BuyListingRequest(BaseModel):
     listing_id: str
     buyer_address: str
     payment_currency: str  # "doge" or "lab"
 
+
 # Marketplace fee constant
 MARKETPLACE_FEE = 0.420  # Fee for successful sales
+
 
 # =====================================================
 # AUTO-MIXER SUBSCRIPTION SYSTEM
 # =====================================================
+
 
 # Auto-Mixer Configuration
 AUTO_MIXER_CONFIG = {
@@ -540,6 +596,7 @@ AUTO_MIXER_CONFIG = {
     "tatum_api_key": os.environ.get("TATUM_API_KEY", ""),
     "required_confirmations": 1  # Only 1 confirmation needed now with Tatum
 }
+
 
 # Extra Life Packages Configuration
 EXTRA_LIFE_PACKAGES = {
@@ -566,6 +623,7 @@ EXTRA_LIFE_PACKAGES = {
     }
 }
 
+
 class AutoMixerSubscription(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     player_address: str
@@ -588,20 +646,24 @@ class AutoMixerSubscription(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
 class AutoMixerCreateRequest(BaseModel):
     player_address: str
     window_start_hour: int  # 0-23
     window_end_hour: int    # 0-23
 
+
 class AutoMixerPaymentVerifyRequest(BaseModel):
     subscription_id: str
     tx_hash: str
+
 
 class AutoMixerWindowUpdateRequest(BaseModel):
     subscription_id: str
     player_address: str
     window_start_hour: int
     window_end_hour: int
+
 
 class AutoMixerFundsStats(BaseModel):
     total_received_doge: float = 0.0
@@ -611,18 +673,22 @@ class AutoMixerFundsStats(BaseModel):
     active_subscribers: int = 0
     total_auto_mixes: int = 0
 
+
 # Extra Life Purchase Models
 class ExtraLifeCreateRequest(BaseModel):
     player_address: str
     package_id: str  # "basic", "standard", or "premium"
 
+
 class ExtraLifeVerifyRequest(BaseModel):
     purchase_id: str
     tx_hash: str
 
+
 # =====================================================
 # KERNEL OF WOW - SPECIAL INGREDIENT SYSTEM
 # =====================================================
+
 
 # Special Ingredient Configuration
 KERNEL_OF_WOW = {
@@ -635,6 +701,7 @@ KERNEL_OF_WOW = {
     "rarity": "Legendary",
     "category": "Special"
 }
+
 
 # Combo configurations for bonus tiers
 # Each combo is a set of ingredient IDs that, when combined with Kernel of Wow, gives bonus
@@ -676,6 +743,7 @@ KERNEL_BONUS_COMBOS = {
     }
 }
 
+
 class SpecialIngredientHolder(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     player_address: str
@@ -687,6 +755,7 @@ class SpecialIngredientHolder(BaseModel):
     total_bonus_earned: int = 0
     is_active: bool = True
 
+
 class SpecialIngredientHistory(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     player_address: str
@@ -695,6 +764,175 @@ class SpecialIngredientHistory(BaseModel):
     expired_at: datetime
     treats_created: int = 0
     total_bonus_earned: int = 0
+
+
+# ============================================================
+# REFERRAL SYSTEM
+# ============================================================
+
+REFERRAL_POINTS_REFERRER = 500
+REFERRAL_POINTS_NEW_PLAYER = 250
+REFERRAL_MAX_PER_PLAYER = 50
+
+
+class ApplyReferralRequest(BaseModel):
+    new_player_address: str
+    referral_code: str
+
+
+def generate_referral_code(address: str) -> str:
+    """Generate a deterministic short referral code from a player address."""
+    hash_hex = hashlib.sha256(address.encode()).hexdigest()
+    return hash_hex[:8].upper()
+
+
+@api_router.get("/referral/code/{address}")
+async def get_referral_code(address: str):
+    """Get a player's referral code and stats."""
+    address = sanitize_address(address)
+    if not address:
+        raise HTTPException(status_code=400, detail="Invalid address")
+
+    player = await find_player_by_address(address)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    code = generate_referral_code(player.get("address", address))
+
+    referral_count = await db.referrals.count_documents({
+        "referrer_address": player.get("address", address),
+        "status": "completed"
+    })
+
+    app_url = os.environ.get("FRONTEND_URL", "https://dogefoodlab-frontend.onrender.com")
+    referral_link = f"{app_url}?ref={code}"
+
+    return {
+        "referral_code": code,
+        "referral_link": referral_link,
+        "referral_count": referral_count,
+        "max_referrals": REFERRAL_MAX_PER_PLAYER,
+        "points_per_referral": REFERRAL_POINTS_REFERRER,
+        "remaining_slots": max(0, REFERRAL_MAX_PER_PLAYER - referral_count)
+    }
+
+
+@api_router.post("/referral/apply")
+async def apply_referral(data: ApplyReferralRequest):
+    """Apply a referral code when a new player joins."""
+    new_address = sanitize_address(data.new_player_address)
+    referral_code = sanitize_string(data.referral_code, 20).upper()
+
+    if not new_address or not referral_code:
+        raise HTTPException(status_code=400, detail="Invalid request data")
+
+    new_player = await find_player_by_address(new_address)
+    if not new_player:
+        raise HTTPException(status_code=404, detail="New player not found")
+
+    if new_player.get("referral_used"):
+        raise HTTPException(status_code=400, detail="Referral code already applied to this account")
+
+    referrer = await db.players.find_one({"referral_code": referral_code}, {"_id": 0})
+
+    if not referrer:
+        all_players = await db.players.find(
+            {"address": {"$exists": True, "$nin": [None, ""]}},
+            {"address": 1}
+        ).to_list(10000)
+        for p in all_players:
+            if generate_referral_code(p["address"]) == referral_code:
+                referrer = await db.players.find_one({"address": p["address"]}, {"_id": 0})
+                break
+
+    if not referrer:
+        raise HTTPException(status_code=404, detail="Invalid referral code")
+
+    referrer_address = referrer.get("address")
+
+    if referrer_address == new_address:
+        raise HTTPException(status_code=400, detail="Cannot use your own referral code")
+
+    referral_count = await db.referrals.count_documents({
+        "referrer_address": referrer_address,
+        "status": "completed"
+    })
+    if referral_count >= REFERRAL_MAX_PER_PLAYER:
+        raise HTTPException(status_code=400, detail="Referrer has reached the maximum referral limit")
+
+    now = datetime.now(timezone.utc)
+    await db.referrals.insert_one({
+        "id": str(uuid.uuid4()),
+        "referrer_address": referrer_address,
+        "referred_address": new_address,
+        "referral_code": referral_code,
+        "status": "completed",
+        "created_at": now,
+        "referrer_points_awarded": REFERRAL_POINTS_REFERRER,
+        "referred_points_awarded": REFERRAL_POINTS_NEW_PLAYER
+    })
+
+    await db.players.update_one(
+        {"address": referrer_address},
+        {
+            "$inc": {"points": REFERRAL_POINTS_REFERRER, "total_points_collected": REFERRAL_POINTS_REFERRER},
+            "$set": {"referral_code": referral_code}
+        }
+    )
+
+    new_player_address_key = new_player.get("address", new_address)
+    await db.players.update_one(
+        {"address": new_player_address_key},
+        {
+            "$inc": {"points": REFERRAL_POINTS_NEW_PLAYER, "total_points_collected": REFERRAL_POINTS_NEW_PLAYER},
+            "$set": {"referral_used": True, "referred_by": referrer_address, "referred_by_code": referral_code}
+        }
+    )
+
+    logger.info(f"✅ Referral applied: {referrer_address} referred {new_address} | +{REFERRAL_POINTS_REFERRER} / +{REFERRAL_POINTS_NEW_PLAYER} pts")
+
+    return {
+        "success": True,
+        "message": f"Referral applied! You earned {REFERRAL_POINTS_NEW_PLAYER} bonus points!",
+        "referrer_points_awarded": REFERRAL_POINTS_REFERRER,
+        "new_player_points_awarded": REFERRAL_POINTS_NEW_PLAYER,
+        "referrer_address": referrer_address
+    }
+
+
+@api_router.get("/referral/stats/{address}")
+async def get_referral_stats(address: str):
+    """Get full referral history for a player."""
+    address = sanitize_address(address)
+    player = await find_player_by_address(address)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    real_address = player.get("address", address)
+
+    referrals = await db.referrals.find(
+        {"referrer_address": real_address, "status": "completed"},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+
+    enriched = []
+    for r in referrals:
+        referred_player = await find_player_by_address(r["referred_address"])
+        enriched.append({
+            "referred_address": r["referred_address"],
+            "referred_nickname": referred_player.get("nickname", "Anonymous") if referred_player else "Anonymous",
+            "points_awarded": r["referrer_points_awarded"],
+            "date": r["created_at"].isoformat() if hasattr(r["created_at"], "isoformat") else str(r["created_at"])
+        })
+
+    return {
+        "total_referrals": len(enriched),
+        "total_points_earned": len(enriched) * REFERRAL_POINTS_REFERRER,
+        "max_referrals": REFERRAL_MAX_PER_PLAYER,
+        "remaining_slots": max(0, REFERRAL_MAX_PER_PLAYER - len(enriched)),
+        "referrals": enriched
+    }
+
 
 # Player Management Routes
 @api_router.post("/player", response_model=Player)
@@ -727,12 +965,14 @@ async def create_player(player_data: PlayerCreate):
     await db.players.insert_one(player.dict())
     return player
 
+
 @api_router.get("/player/{address}", response_model=Player)
 async def get_player(address: str):
     player = await db.players.find_one({"address": address})
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     return Player(**player)
+
 
 @api_router.post("/player/progress")
 async def update_player_progress(progress: PlayerProgress):
@@ -755,9 +995,11 @@ async def update_player_progress(progress: PlayerProgress):
     
     return {"message": "Progress updated successfully"}
 
+
 # =====================================================
 # ANTI-CHEAT & DAILY LIMIT ENDPOINTS
 # =====================================================
+
 
 @api_router.get("/daily-status/{address}")
 async def get_daily_treat_status(address: str):
@@ -778,10 +1020,13 @@ async def get_daily_treat_status(address: str):
         logger.error(f"Error getting daily status: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+
 @api_router.get("/happy-hour/status")
 async def happy_hour_status():
     """Get current Happy Hour status - active/upcoming with timing"""
     return get_happy_hour_status()
+
+
 
 
 @api_router.get("/activity/recent")
@@ -831,7 +1076,10 @@ async def get_recent_activity(limit: int = 20):
         return {"activity": []}
 
 
+
+
 # ─── Live Chat Endpoints ──────────────────────────────────────
+
 
 @api_router.get("/chat/messages")
 async def get_chat_messages(limit: int = 50):
@@ -864,6 +1112,8 @@ async def get_chat_messages(limit: int = 50):
         return {"messages": []}
 
 
+
+
 @api_router.post("/chat/send")
 async def send_chat_message(data: dict):
     """Send a chat message (registered players only)"""
@@ -874,17 +1124,21 @@ async def send_chat_message(data: dict):
         reply_nickname = data.get("reply_nickname")
         reply_text = data.get("reply_text")
 
+
         if not player_id or not message:
             raise HTTPException(status_code=400, detail="player_id and message required")
         if len(message) > 500:
             raise HTTPException(status_code=400, detail="Message too long (max 500 chars)")
 
+
         player = await db.players.find_one({"address": player_id}, {"_id": 0, "nickname": 1, "profile_image": 1})
         if not player:
             raise HTTPException(status_code=404, detail="Player not found")
 
+
         emoji_chars = set('😀😁😂🤣😃😄😅😆😉😊😋😎😍😘🥰😗😙🥲😚☺😌😛😝😜🤪🤨🧐🤓😎🥳🤩😏😒😞😔😟😕🙁☹😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🫣🤗🫡🤔🫢🤭🤫🤥😶😐😑😬🫠🫨🙄😯😦😧😮😲🥱😴🤤😪😵🫥🤐🥴🤢🤮🤧😷🤒🤕🤑🤠😈👿👹👺🤡💩👻💀☠👽👾🤖🎃😺😸😹😻😼😽🙀😿😾🫶🤲👐🙌👏🤝👍👎👊✊🤛🤜🤞✌🫰🤟🤘👌🤌🤏👈👉👆🖕👇☝🫵👋🤚🖐✋🖖🫳🫴👊👏🔥❤💛💚💙💜🖤🤍🤎💔❣💕💞💓💗💖💘💝🏆🎯🎮🎲🎰🎪🎨🎭🎬🎤🎧🎼🎵🎶🐕🐶🐩🦮🐕‍🦺🐾💎✨🌟⭐💫🎉🎊🪄')
         is_emoji_only = all(c in emoji_chars or c == ' ' for c in message)
+
 
         doc = {
             "player_id": player_id,
@@ -900,7 +1154,9 @@ async def send_chat_message(data: dict):
         if reply_text:
             doc["reply_text"] = reply_text[:100]
 
+
         result = await db.chat_messages.insert_one(doc)
+
 
         return {
             "success": True,
@@ -918,6 +1174,8 @@ async def send_chat_message(data: dict):
         raise HTTPException(status_code=500, detail="Failed to send message")
 
 
+
+
 @api_router.get("/extra-life/packages")
 async def get_extra_life_packages():
     """Get available extra life packages with DOGE pricing"""
@@ -926,6 +1184,7 @@ async def get_extra_life_packages():
         "payment_address": AUTO_MIXER_CONFIG["payment_address"],
         "required_confirmations": AUTO_MIXER_CONFIG["required_confirmations"]
     }
+
 
 @api_router.post("/extra-life/create")
 async def create_extra_life_purchase(request: ExtraLifeCreateRequest):
@@ -1025,6 +1284,7 @@ async def create_extra_life_purchase(request: ExtraLifeCreateRequest):
         logger.error(f"Error creating extra life purchase: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.post("/extra-life/verify-payment")
 async def verify_extra_life_payment(request: ExtraLifeVerifyRequest):
     """Verify payment for extra life purchase"""
@@ -1118,6 +1378,7 @@ async def verify_extra_life_payment(request: ExtraLifeVerifyRequest):
         logger.error(f"Error verifying extra life payment: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/extra-life/status/{player_address}")
 async def get_extra_life_status(player_address: str):
     """Get player's extra life purchase status and balance"""
@@ -1149,6 +1410,7 @@ async def get_extra_life_status(player_address: str):
         logger.error(f"Error getting extra life status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.delete("/extra-life/cancel/{purchase_id}")
 async def cancel_extra_life_purchase(purchase_id: str, player_address: str):
     """Cancel a pending extra life purchase"""
@@ -1168,6 +1430,7 @@ async def cancel_extra_life_purchase(purchase_id: str, player_address: str):
     except Exception as e:
         logger.error(f"Error cancelling extra life purchase: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.get("/streak/{address}")
 async def get_player_streak(address: str):
@@ -1197,6 +1460,7 @@ async def get_player_streak(address: str):
     except Exception as e:
         logger.error(f"Error getting streak: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
 
 @api_router.get("/player-stats/{address}")
 async def get_player_weekly_stats(address: str):
@@ -1351,6 +1615,7 @@ async def get_player_weekly_stats(address: str):
         logger.error(f"Error getting player stats: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+
 @api_router.post("/streak/{address}/checkin")
 async def update_player_streak(address: str):
     """
@@ -1362,6 +1627,7 @@ async def update_player_streak(address: str):
     except Exception as e:
         logger.error(f"Error updating streak: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
 
 # Treat Management Routes
 @api_router.post("/treats", response_model=DogeTreat)
@@ -1403,10 +1669,12 @@ async def create_treat(treat_data: TreatCreate, background_tasks: BackgroundTask
     
     return treat
 
+
 @api_router.get("/treats/{address}", response_model=List[DogeTreat])
 async def get_player_treats(address: str):
     treats = await db.treats.find({"creator_address": address}).to_list(1000)
     return [DogeTreat(**treat) for treat in treats]
+
 
 # Player Profile Update Endpoints
 @api_router.post("/player/{address}/update-username")
@@ -1429,6 +1697,7 @@ async def update_player_username(address: str, username: str):
     )
     
     return {"success": True, "username": username}
+
 
 @api_router.post("/player/{address}/select-character")
 async def select_player_character(address: str, character_id: str):
@@ -1476,6 +1745,7 @@ async def select_player_character(address: str, character_id: str):
         "message": f"Character {character_id} selected! This choice is permanent."
     }
 
+
 @api_router.get("/characters")
 async def get_characters():
     """Get all available characters and their bonuses"""
@@ -1517,6 +1787,7 @@ async def get_characters():
         "note": "Character selection is permanent and cannot be changed!"
     }
 
+
 @api_router.get("/player/{address}/profile")
 async def get_player_profile(address: str):
     """Get player profile including character and username"""
@@ -1545,6 +1816,7 @@ async def get_player_profile(address: str):
         }
     
     return player
+
 
 @api_router.post("/player/{address}/profile-image")
 async def update_profile_image(address: str, data: dict):
@@ -1579,6 +1851,7 @@ async def update_profile_image(address: str, data: dict):
     except Exception as e:
         logger.error(f"Error updating profile image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/admin/credit-nft-holders")
 async def credit_existing_nft_holders():
@@ -1633,6 +1906,7 @@ async def credit_existing_nft_holders():
     except Exception as e:
         logger.error(f"Error crediting NFT holders: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/admin/credit-nft-holder/{address}")
 async def credit_single_nft_holder(address: str):
@@ -1719,6 +1993,7 @@ async def credit_single_nft_holder(address: str):
         logger.error(f"Error crediting NFT holder {address}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.delete("/admin/remove-test-users")
 async def remove_test_users():
     """
@@ -1768,6 +2043,7 @@ async def remove_test_users():
     except Exception as e:
         logger.error(f"Error removing test users: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.delete("/admin/remove-placeholder-accounts")
 async def remove_placeholder_accounts():
@@ -1823,6 +2099,7 @@ async def remove_placeholder_accounts():
         logger.error(f"Error removing placeholder accounts: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/admin/check-nft-holders")
 async def check_nft_holders_status():
     """
@@ -1858,6 +2135,7 @@ async def check_nft_holders_status():
     except Exception as e:
         logger.error(f"Error checking NFT holders: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/admin/verify-nft-blockchain/{address}")
 async def verify_nft_on_blockchain(address: str):
@@ -1966,6 +2244,8 @@ async def verify_nft_on_blockchain(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 @api_router.post("/admin/verify-all-nft-holders")
 async def verify_all_nft_holders_blockchain():
     """
@@ -2062,16 +2342,23 @@ async def verify_all_nft_holders_blockchain():
 
 
 
+
+
+
 # $DOGEONEWS Token Configuration (Solana)
 DOGEONEWS_TOKEN_ADDRESS = "GHoZwXKEJSsTYeNmBPgQFuKsjVGJ1HMGv5QghtQVdoge"
 DOGEONEWS_MIN_HOLDING = 1_000_000  # 1 million tokens required
+
 
 # Helius API for reliable Solana RPC
 HELIUS_API_KEY = os.environ.get("HELIUS_API_KEY")
 SOLANA_RPC_URL = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}" if HELIUS_API_KEY else "https://api.mainnet-beta.solana.com"
 
+
 if not HELIUS_API_KEY:
     logging.warning("⚠️ HELIUS_API_KEY not set - using public Solana RPC (rate limited)")
+
+
 
 
 @api_router.post("/verify-dogeonews-holder")
@@ -2222,6 +2509,8 @@ async def verify_dogeonews_token_holder(player_address: str, solana_address: str
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 @api_router.get("/check-dogeonews-balance/{solana_address}")
 async def check_dogeonews_balance(solana_address: str):
     """
@@ -2280,6 +2569,8 @@ async def check_dogeonews_balance(solana_address: str):
     except Exception as e:
         logger.error(f"Error checking $DOGEONEWS balance: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @api_router.post("/admin/scan-dogeonews-holders")
@@ -2358,6 +2649,8 @@ async def scan_dogeonews_holders():
     except Exception as e:
         logger.error(f"Error scanning $DOGEONEWS holders: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @api_router.post("/admin/scan-and-credit-all-holders")
@@ -2457,10 +2750,12 @@ async def scan_and_credit_all_nft_holders():
         logger.error(f"Error scanning NFT holders on DogeOS: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/treats", response_model=List[DogeTreat])
 async def get_all_treats(limit: int = 50):
     treats = await db.treats.find().sort("created_at", -1).limit(limit).to_list(limit)
     return [DogeTreat(**treat) for treat in treats]
+
 
 # Enhanced: Timer system routes
 @api_router.post("/treats/{treat_id}/check-timer")
@@ -2490,6 +2785,7 @@ async def check_treat_timer(treat_id: str):
             }
     
     return {"status": treat.get("brewing_status", "ready"), "message": "Treat status checked"}
+
 
 @api_router.get("/treats/{address}/brewing")
 async def get_brewing_treats(address: str):
@@ -2537,6 +2833,7 @@ async def get_brewing_treats(address: str):
         logger.error(f"Error getting brewing treats: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+
 def format_time_remaining(seconds: int) -> str:
     """Format seconds into human readable time"""
     if seconds <= 0:
@@ -2549,6 +2846,7 @@ def format_time_remaining(seconds: int) -> str:
     elif minutes > 0:
         return f"{minutes}m {secs}s"
     return f"{secs}s"
+
 
 @api_router.get("/treats/{address}/active")
 async def get_active_treats_with_timer(address: str):
@@ -2639,6 +2937,7 @@ async def get_active_treats_with_timer(address: str):
     except Exception as e:
         logger.error(f"Error getting active treats: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
 
 @api_router.post("/treats/{treat_id}/collect")
 async def collect_treat(treat_id: str, data: dict):
@@ -2753,6 +3052,7 @@ async def collect_treat(treat_id: str, data: dict):
                 "telegram_id": player.get("telegram_id")
             }
 
+
             player_update_task = db.players.update_one(
                 player_update_filter,
                 {"$set": {
@@ -2802,6 +3102,7 @@ async def collect_treat(treat_id: str, data: dict):
         logger.error(f"Error collecting treat: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+
 # Leaderboard Routes
 @api_router.get("/leaderboard")
 async def get_leaderboard(limit: int = 200):
@@ -2814,8 +3115,10 @@ async def get_leaderboard(limit: int = 200):
         }
     )
 
+
     if not active_creator_addresses:
         return []
+
 
     query = {
         "address": {"$in": active_creator_addresses},
@@ -2889,6 +3192,7 @@ async def get_leaderboard(limit: int = 200):
     
     return leaderboard
 
+
 # Game Stats Routes
 @api_router.get("/stats")
 async def get_game_stats():
@@ -2929,12 +3233,14 @@ async def get_game_stats():
             "active_today": 0
         }
 
+
 # Phase 2: Enhanced Points System Routes
 @api_router.get("/points/leaderboard")
 async def get_points_leaderboard(limit: int = 50, nft_holders_only: bool = False):
     """Get enhanced points-based leaderboard - now includes all players by default"""
     leaderboard = await points_system.get_points_leaderboard(limit=limit, nft_holders_only=nft_holders_only)
     return {"leaderboard": leaderboard, "generated_at": datetime.now(timezone.utc)}
+
 
 @api_router.get("/points/{address}/stats")
 async def get_player_points_stats(address: str):
@@ -2977,11 +3283,13 @@ async def get_player_points_stats(address: str):
             logger.error(f"Fallback stats failed for {address}: {str(fallback_error)}")
             raise HTTPException(status_code=500, detail="Unable to retrieve player statistics")
 
+
 @api_router.get("/points/{address}/history")
 async def get_player_points_history(address: str, days: int = 30):
     """Get player's points transaction history"""
     history = await points_system.get_player_points_history(address, days)
     return {"transactions": history, "days": days}
+
 
 @api_router.post("/points/{address}/daily-bonus")
 async def claim_daily_bonus(address: str):
@@ -2992,6 +3300,7 @@ async def claim_daily_bonus(address: str):
     else:
         raise HTTPException(status_code=400, detail="Daily bonus already claimed or not eligible")
 
+
 # Phase 2: Anti-cheat System Routes  
 @api_router.get("/security/player-risk/{address}")
 async def get_player_risk_score(address: str):
@@ -2999,16 +3308,19 @@ async def get_player_risk_score(address: str):
     risk_data = await anti_cheat_system.get_player_risk_score(address)
     return risk_data
 
+
 @api_router.get("/security/flagged-players")
 async def get_flagged_players(risk_level: str = "high"):
     """Get list of players flagged for suspicious activity (admin only)"""
     flagged = await anti_cheat_system.get_flagged_players(risk_level)
     return {"flagged_players": flagged, "risk_level": risk_level}
 
+
 # NFT Verification Route
 # DogeFood Lab NFT Contract on DogeOS Network
 DOGEFOOD_NFT_CONTRACT = "0xA74Dad05f54d32575f82C3e065C4441b8d979a54"
 DOGEOS_BLOCKSCOUT_URL = "https://blockscout.testnet.dogeos.com"
+
 
 @api_router.post("/player/{address}/verify-nft")
 async def verify_player_nft(address: str, data: dict = None):
@@ -3096,6 +3408,7 @@ async def verify_player_nft(address: str, data: dict = None):
     except Exception as e:
         logger.error(f"Error verifying NFT for {address}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/verify-nft/{address}")
 async def verify_nft_ownership(address: str, is_holder: str = "false"):
@@ -3231,6 +3544,7 @@ async def verify_nft_ownership(address: str, is_holder: str = "false"):
         logger.error(f"Error in verify-nft: {e}")
         raise HTTPException(status_code=500, detail=f"Error verifying NFT: {str(e)}")
 
+
 # Phase 2: Web3 Rewards & Merkle Tree Routes
 @api_router.post("/rewards/generate-season/{season_id}")
 async def generate_season_rewards(season_id: int, reward_pool_tokens: int = 100000):
@@ -3300,6 +3614,7 @@ async def generate_season_rewards(season_id: int, reward_pool_tokens: int = 1000
         "summary": summary
     }
 
+
 @api_router.get("/rewards/season/{season_id}")
 async def get_season_rewards(season_id: int):
     """Get season rewards information"""
@@ -3315,6 +3630,7 @@ async def get_season_rewards(season_id: int):
         season_data['generated_at'] = season_data['generated_at'].isoformat()
     
     return season_data
+
 
 @api_router.get("/rewards/claim/{address}/{season_id}")
 async def get_claim_data(address: str, season_id: int):
@@ -3337,15 +3653,18 @@ async def get_claim_data(address: str, season_id: int):
         "merkle_root": season_data["merkle_root"]
     }
 
+
 @api_router.get("/rewards/seasons")
 async def get_all_seasons():
     """Get all reward seasons"""
     seasons = await db.reward_seasons.find({}).sort("season_id", -1).to_list(100)
     return {"seasons": seasons}
 
+
 # =====================================================
 # ENHANCED GAME MECHANICS API ENDPOINTS (PHASE 3)
 # =====================================================
+
 
 @api_router.get("/game/rarity-system")
 async def get_rarity_system():
@@ -3357,6 +3676,7 @@ async def get_rarity_system():
         "description": "Rarity determines timer duration, points reward, and XP reward for each treat",
         "note": "Higher ingredient count unlocks higher rarity tiers"
     }
+
 
 # Enhanced Treat Creation with Game Engine
 @api_router.post("/treats/enhanced")
@@ -3658,9 +3978,12 @@ async def create_enhanced_treat(treat_data: EnhancedTreatCreate, background_task
         raise HTTPException(status_code=500, detail=f"Error creating enhanced treat: {str(e)}")
 
 
+
+
 # =====================================================
 # INGREDIENT SYSTEM API ENDPOINTS
 # =====================================================
+
 
 @api_router.get("/ingredients/catalog")
 async def get_ingredient_catalog():
@@ -3674,6 +3997,8 @@ async def get_ingredient_catalog():
         "recipes": RECIPE_TEMPLATES,
         "total_ingredients": len(ing_system.ingredients)
     }
+
+
 
 
 @api_router.get("/ingredients/unlocked/{player_level}")
@@ -3723,6 +4048,8 @@ async def get_unlocked_ingredients(player_level: int):
     }
 
 
+
+
 @api_router.post("/ingredients/validate-recipe")
 async def validate_recipe(ingredients: List[str] = [], player_level: int = 1):
     """Validate a recipe before creating a treat"""
@@ -3758,6 +4085,8 @@ async def validate_recipe(ingredients: List[str] = [], player_level: int = 1):
     }
 
 
+
+
 # Season 1: Points to LAB Token Conversion (Placeholder - Not Active)
 @api_router.post("/points/convert")
 async def convert_points_to_lab_tokens(conversion_request: PointsConversionRequest):
@@ -3784,6 +4113,7 @@ async def convert_points_to_lab_tokens(conversion_request: PointsConversionReque
         "conversion_available": False,
         "reason": "Season 1 active - conversion available at season end only"
     }
+
 
 # User Registration API
 @api_router.post("/players/register")
@@ -3850,6 +4180,7 @@ async def register_player(registration_data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
+
 # Telegram Authentication Functions
 def validate_telegram_data(init_data: str) -> dict:
     """Validate Telegram Mini App init data"""
@@ -3890,6 +4221,7 @@ def validate_telegram_data(init_data: str) -> dict:
         
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid Telegram data: {str(e)}")
+
 
 # Telegram User Registration API
 @api_router.post("/players/telegram-register")
@@ -3971,6 +4303,7 @@ async def register_telegram_player(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Telegram registration failed: {str(e)}")
 
+
 # Guest Registration (Username only)
 @api_router.post("/players/guest-register")
 async def register_guest_player(request: Request):
@@ -4040,6 +4373,7 @@ async def register_guest_player(request: Request):
     except Exception as e:
         logger.error(f"Guest registration failed: {e}")
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
 
 # Firebase Authentication (Email/Google)
 @api_router.post("/players/firebase-register")
@@ -4160,6 +4494,7 @@ async def register_firebase_player(request: Request):
         logger.error(f"Firebase registration failed: {e}")
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
+
 # Link wallet to any account type (guest/firebase/telegram)
 @api_router.post("/players/link-nft-wallet")
 async def link_nft_wallet(request: Request):
@@ -4222,6 +4557,7 @@ async def link_nft_wallet(request: Request):
         logger.error(f"Wallet linking failed: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to link wallet: {str(e)}")
 
+
 # Link Telegram Account to Wallet
 @api_router.post("/players/link-wallet")
 async def link_wallet_to_telegram(request: Request):
@@ -4282,6 +4618,7 @@ async def link_wallet_to_telegram(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Wallet linking failed: {str(e)}")
 
+
 # Get Player by Telegram ID
 @api_router.get("/player/telegram/{telegram_id}")
 async def get_player_by_telegram_id(telegram_id: int):
@@ -4290,6 +4627,7 @@ async def get_player_by_telegram_id(telegram_id: int):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     return Player(**player)
+
 
 # Season Information API
 @api_router.get("/season/current")
@@ -4311,6 +4649,7 @@ async def get_current_season_info():
         "description": "Season 1 focuses on offchain gameplay. NFT minting and points conversion will be available in future seasons."
     }
 
+
 # Ingredient System Endpoints
 @api_router.get("/ingredients")
 async def get_ingredients(level: int = 1):
@@ -4318,10 +4657,12 @@ async def get_ingredients(level: int = 1):
     ingredients = ingredient_system.export_ingredients_for_frontend(level)
     return {"ingredients": ingredients, "level": level}
 
+
 @api_router.get("/ingredients/stats")
 async def get_ingredient_stats():
     """Get ingredient system statistics"""
     return ingredient_system.get_ingredient_stats()
+
 
 @api_router.post("/ingredients/analyze")
 async def analyze_ingredient_combination(ingredient_ids: List[str]):
@@ -4344,6 +4685,7 @@ async def analyze_ingredient_combination(ingredient_ids: List[str]):
         "recommended": compatibility["is_balanced"] and len(ingredient_ids) >= 3
     }
 
+
 # Game Engine Endpoints
 @api_router.get("/game/timer-progression")
 async def get_timer_progression(max_level: int = 50):
@@ -4358,6 +4700,7 @@ async def get_timer_progression(max_level: int = 50):
             "timer_formatted": f"{timer_seconds // 3600}h {(timer_seconds % 3600) // 60}m"
         })
     return {"progression": progression}
+
 
 @api_router.post("/game/simulate-outcome")
 async def simulate_treat_outcome(
@@ -4393,7 +4736,9 @@ async def simulate_treat_outcome(
         "player_level": player_level
     }
 
+
 # Season Management Endpoints
+
 
 @api_router.delete("/admin/delete-player/{address}")
 async def delete_player(address: str, admin_key: str):
@@ -4422,6 +4767,8 @@ async def delete_player(address: str, admin_key: str):
         "nickname": player.get("nickname"),
         "treats_deleted": treats_result.deleted_count
     }
+
+
 
 
 @api_router.delete("/admin/cleanup-test-players")
@@ -4467,6 +4814,8 @@ async def cleanup_test_players(admin_key: str = None):
     }
 
 
+
+
 @api_router.get("/seasons/current")
 async def get_current_season():
     """Get current season information"""
@@ -4485,6 +4834,7 @@ async def get_current_season():
         "time_remaining": time_remaining
     }
 
+
 @api_router.get("/seasons/{season_id}")
 async def get_season_info(season_id: int):
     """Get specific season information"""
@@ -4502,6 +4852,7 @@ async def get_season_info(season_id: int):
         },
         "stats": stats
     }
+
 
 @api_router.get("/seasons")
 async def list_seasons(include_upcoming: bool = True, include_archived: bool = False):
@@ -4522,6 +4873,7 @@ async def list_seasons(include_upcoming: bool = True, include_archived: bool = F
         ]
     }
 
+
 @api_router.get("/seasons/{season_id}/leaderboard")
 async def get_season_leaderboard(season_id: int, limit: int = 50):
     """Get season-specific leaderboard"""
@@ -4533,6 +4885,7 @@ async def get_season_leaderboard(season_id: int, limit: int = 50):
         "season_name": season.name,
         "leaderboard": leaderboard
     }
+
 
 # Admin Endpoints for Game Management
 @api_router.post("/admin/seasons/{season_id}/activate")
@@ -4549,6 +4902,7 @@ async def activate_season(season_id: int):
             "status": season.status.value
         }
     }
+
 
 # Health check endpoint for Vercel
 @app.get("/api/health")
@@ -4571,10 +4925,12 @@ async def health_check():
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Service unavailable: {str(e)}")
 
+
 # Root endpoint - Fast response for health checks
 @app.get("/")
 async def root():
     return {"status": "ok", "service": "DogeFood Lab API"}
+
 
 # Detailed health check endpoint
 @app.get("/health")
@@ -4586,14 +4942,17 @@ async def detailed_health():
         "health": "/api/health"
     }
 
+
 # API Health check
 @api_router.get("/")
 async def api_root():
     return {"message": "DogeFood Lab API is running! 🐕🧪"}
 
+
 # ============================================
 # SEASON 1 OFFICIAL LAUNCH - ADMIN ENDPOINTS
 # ============================================
+
 
 # Admin secret key for protected operations - MUST be set via environment variable
 ADMIN_SECRET = os.environ.get("ADMIN_SECRET")
@@ -4601,6 +4960,7 @@ if not ADMIN_SECRET:
     # Generate a secure random admin key if not provided
     ADMIN_SECRET = os.urandom(32).hex()
     logging.warning(f"⚠️ ADMIN_SECRET not set - generated temporary key (set env var in production)")
+
 
 @api_router.post("/admin/reset-leaderboard")
 async def reset_leaderboard(admin_key: str = None):
@@ -4673,6 +5033,7 @@ async def reset_leaderboard(admin_key: str = None):
         logger.error(f"Error resetting leaderboard: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to reset leaderboard: {str(e)}")
 
+
 @api_router.get("/season/timer")
 async def get_season_timer():
     """
@@ -4729,6 +5090,7 @@ async def get_season_timer():
         logger.error(f"Error getting season timer: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get season timer: {str(e)}")
 
+
 @api_router.get("/nft/contract")
 async def get_nft_contract_info():
     """Get DogeFood Lab NFT contract information"""
@@ -4743,9 +5105,11 @@ async def get_nft_contract_info():
         "description": "DogeFood Lab NFT holders receive VIP Scientist status with 500 bonus points on signup!"
     }
 
+
 # ================================
 # CHAT SYSTEM ENDPOINTS
 # ================================
+
 
 @api_router.post("/chat/messages")
 async def create_chat_message(message_data: ChatMessageCreate):
@@ -4785,6 +5149,7 @@ async def create_chat_message(message_data: ChatMessageCreate):
     except Exception as e:
         logger.error(f"Error creating chat message: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/chat/upvote")
 async def upvote_chat_message(upvote_data: ChatUpvoteRequest):
@@ -4838,6 +5203,7 @@ async def upvote_chat_message(upvote_data: ChatUpvoteRequest):
         logger.error(f"Error upvoting message: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.delete("/chat/messages/{message_id}")
 async def delete_chat_message(message_id: str, sender_address: str):
     """Delete own chat message"""
@@ -4857,13 +5223,16 @@ async def delete_chat_message(message_id: str, sender_address: str):
         logger.error(f"Error deleting message: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # ============================================
 # NOTIFICATION SYSTEM ENDPOINTS
 # ============================================
 
+
 # VAPID keys for web push (generate once and store)
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U")
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+
 
 class NotificationSubscription(BaseModel):
     player_address: Optional[str] = None
@@ -4872,6 +5241,7 @@ class NotificationSubscription(BaseModel):
     treat_ready: bool = True
     limit_reset: bool = True
 
+
 class ScheduleNotification(BaseModel):
     player_address: Optional[str] = None
     telegram_id: Optional[int] = None
@@ -4879,10 +5249,12 @@ class ScheduleNotification(BaseModel):
     ready_time: Optional[str] = None
     reset_time: Optional[str] = None
 
+
 @api_router.get("/notifications/vapid-key")
 async def get_vapid_key():
     """Get VAPID public key for web push subscription"""
     return {"publicKey": VAPID_PUBLIC_KEY}
+
 
 @api_router.post("/notifications/telegram/subscribe")
 async def subscribe_telegram_notifications(data: NotificationSubscription):
@@ -4923,6 +5295,7 @@ async def subscribe_telegram_notifications(data: NotificationSubscription):
         logger.error(f"Error subscribing to Telegram notifications: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.post("/notifications/telegram/unsubscribe")
 async def unsubscribe_telegram_notifications(data: NotificationSubscription):
     """Unsubscribe from Telegram notifications"""
@@ -4939,6 +5312,7 @@ async def unsubscribe_telegram_notifications(data: NotificationSubscription):
     except Exception as e:
         logger.error(f"Error unsubscribing from Telegram notifications: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/notifications/telegram/preferences")
 async def update_telegram_preferences(data: NotificationSubscription):
@@ -4961,6 +5335,7 @@ async def update_telegram_preferences(data: NotificationSubscription):
     except Exception as e:
         logger.error(f"Error updating Telegram preferences: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/notifications/web/subscribe")
 async def subscribe_web_notifications(data: NotificationSubscription):
@@ -4990,6 +5365,7 @@ async def subscribe_web_notifications(data: NotificationSubscription):
         logger.error(f"Error subscribing to web notifications: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.post("/notifications/web/unsubscribe")
 async def unsubscribe_web_notifications(data: NotificationSubscription):
     """Unsubscribe from web push notifications"""
@@ -5006,6 +5382,7 @@ async def unsubscribe_web_notifications(data: NotificationSubscription):
     except Exception as e:
         logger.error(f"Error unsubscribing from web notifications: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/notifications/web/preferences")
 async def update_web_preferences(data: NotificationSubscription):
@@ -5028,6 +5405,7 @@ async def update_web_preferences(data: NotificationSubscription):
     except Exception as e:
         logger.error(f"Error updating web preferences: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/notifications/schedule/treat-ready")
 async def schedule_treat_ready_notification(data: ScheduleNotification, background_tasks: BackgroundTasks):
@@ -5059,6 +5437,7 @@ async def schedule_treat_ready_notification(data: ScheduleNotification, backgrou
         logger.error(f"Error scheduling treat notification: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.post("/notifications/schedule/limit-reset")
 async def schedule_limit_reset_notification(data: ScheduleNotification, background_tasks: BackgroundTasks):
     """Schedule a notification for when daily limit resets"""
@@ -5087,6 +5466,7 @@ async def schedule_limit_reset_notification(data: ScheduleNotification, backgrou
     except Exception as e:
         logger.error(f"Error scheduling limit reset notification: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 async def send_scheduled_notification(notification_id: str):
     """Background task to send scheduled notification immediately when ready"""
@@ -5180,6 +5560,7 @@ async def send_scheduled_notification(notification_id: str):
     except Exception as e:
         logger.error(f"Error sending scheduled notification {notification_id}: {e}")
 
+
 async def notification_processor_loop():
     """Background loop that checks for pending notifications every minute"""
     logger.info("🔔 Notification processor loop started")
@@ -5249,12 +5630,15 @@ async def notification_processor_loop():
         # Check every 60 seconds
         await asyncio.sleep(60)
 
+
 # ============================================
 # GUEST REGISTRATION ENDPOINT
 # ============================================
 
+
 class GuestRegisterRequest(BaseModel):
     username: str
+
 
 @api_router.post("/players/guest-register")
 async def register_guest_player(request: GuestRegisterRequest):
@@ -5315,13 +5699,16 @@ async def register_guest_player(request: GuestRegisterRequest):
         logger.error(f"Guest registration failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # ============================================
 # ADMIN ENDPOINTS
 # ============================================
 
+
 class DeleteTestPlayersRequest(BaseModel):
     addresses: List[str]
     admin_key: Optional[str] = None
+
 
 @api_router.post("/admin/delete-test-players")
 async def delete_test_players(request: DeleteTestPlayersRequest):
@@ -5356,9 +5743,11 @@ async def delete_test_players(request: DeleteTestPlayersRequest):
         logger.error(f"Failed to delete test players: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # ============================================
 # TOURNAMENT SYSTEM ENDPOINTS
 # ============================================
+
 
 class TournamentCreate(BaseModel):
     name: str
@@ -5366,12 +5755,14 @@ class TournamentCreate(BaseModel):
     start_date: str
     match_duration_hours: int = 48
 
+
 class MatchUpdate(BaseModel):
     match_id: str
     player1_treats: Optional[int] = None
     player1_points: Optional[int] = None
     player2_treats: Optional[int] = None
     player2_points: Optional[int] = None
+
 
 @api_router.get("/tournament/current")
 async def get_current_tournament():
@@ -5431,6 +5822,7 @@ async def get_current_tournament():
     except Exception as e:
         logger.error(f"Error fetching tournament: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/tournament/create")
 async def create_tournament(data: TournamentCreate):
@@ -5505,6 +5897,7 @@ async def create_tournament(data: TournamentCreate):
         logger.error(f"Error creating tournament: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.post("/tournament/start/{tournament_id}")
 async def start_tournament(tournament_id: str):
     """Start a tournament (activate quarterfinal matches)"""
@@ -5542,6 +5935,7 @@ async def start_tournament(tournament_id: str):
         logger.error(f"Error starting tournament: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.post("/tournament/match/update")
 async def update_match_scores(data: MatchUpdate):
     """Update match scores during a tournament match"""
@@ -5567,6 +5961,7 @@ async def update_match_scores(data: MatchUpdate):
     except Exception as e:
         logger.error(f"Error updating match: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/tournament/match/complete/{match_id}")
 async def complete_match(match_id: str):
@@ -5638,6 +6033,7 @@ async def complete_match(match_id: str):
         logger.error(f"Error completing match: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 async def create_next_stage_matches(tournament_id: str, stage: str, tournament: dict):
     """Helper function to create next stage matches from winners"""
     try:
@@ -5691,9 +6087,11 @@ async def create_next_stage_matches(tournament_id: str, stage: str, tournament: 
     except Exception as e:
         logger.error(f"Error creating next stage matches: {e}")
 
+
 # ============================================
 # KERNEL OF WOW - SPECIAL INGREDIENT ENDPOINTS
 # ============================================
+
 
 def calculate_kernel_bonus(ingredients: List[str]) -> dict:
     """Calculate bonus tier based on ingredients used with Kernel of Wow"""
@@ -5733,6 +6131,7 @@ def calculate_kernel_bonus(ingredients: List[str]) -> dict:
         "description": KERNEL_BONUS_COMBOS["common"]["description"]
     }
 
+
 @api_router.get("/special-ingredient/current")
 async def get_current_special_ingredient_holder():
     """Get the current holder of the Kernel of Wow"""
@@ -5769,6 +6168,7 @@ async def get_current_special_ingredient_holder():
         logger.error(f"Error getting special ingredient holder: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/special-ingredient/check/{address}")
 async def check_player_has_special_ingredient(address: str):
     """Check if a specific player currently has the Kernel of Wow"""
@@ -5804,6 +6204,7 @@ async def check_player_has_special_ingredient(address: str):
     except Exception as e:
         logger.error(f"Error checking special ingredient: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/special-ingredient/select-random")
 async def select_random_special_ingredient_holder():
@@ -5907,6 +6308,7 @@ async def select_random_special_ingredient_holder():
         logger.error(f"Error selecting special ingredient holder: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/special-ingredient/history")
 async def get_special_ingredient_history(limit: int = 20):
     """Get history of Kernel of Wow holders"""
@@ -5924,6 +6326,7 @@ async def get_special_ingredient_history(limit: int = 20):
     except Exception as e:
         logger.error(f"Error fetching special ingredient history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/special-ingredient/use")
 async def use_special_ingredient_in_treat(treat_id: str, player_address: str, ingredients: List[str]):
@@ -5966,6 +6369,7 @@ async def use_special_ingredient_in_treat(treat_id: str, player_address: str, in
         logger.error(f"Error using special ingredient: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/special-ingredient/bonus-preview")
 async def preview_kernel_bonus(ingredients: str):
     """Preview bonus for a set of ingredients (comma-separated)"""
@@ -5982,6 +6386,7 @@ async def preview_kernel_bonus(ingredients: str):
     except Exception as e:
         logger.error(f"Error previewing bonus: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.get("/special-ingredient/scheduler-status")
 async def get_scheduler_status():
@@ -6010,6 +6415,7 @@ async def get_scheduler_status():
         logger.error(f"Error getting scheduler status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.post("/special-ingredient/force-expire")
 async def force_expire_kernel(address: str = None):
     """Force expire current Kernel of Wow holder (admin endpoint)"""
@@ -6033,9 +6439,11 @@ async def force_expire_kernel(address: str = None):
         logger.error(f"Error force expiring kernel: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # ============================================
 # MARKETPLACE SYSTEM ENDPOINTS
 # ============================================
+
 
 @api_router.post("/marketplace/list")
 async def create_marketplace_listing(data: CreateListingRequest):
@@ -6097,6 +6505,7 @@ async def create_marketplace_listing(data: CreateListingRequest):
     except Exception as e:
         logger.error(f"Error creating marketplace listing: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.get("/marketplace/listings")
 async def get_marketplace_listings(
@@ -6171,6 +6580,7 @@ async def get_marketplace_listings(
         logger.error(f"Error fetching marketplace listings: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/marketplace/listing/{listing_id}")
 async def get_marketplace_listing(listing_id: str):
     """Get a single marketplace listing by ID"""
@@ -6191,6 +6601,7 @@ async def get_marketplace_listing(listing_id: str):
         logger.error(f"Error fetching listing: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/marketplace/my-listings/{address}")
 async def get_my_listings(address: str):
     """Get all listings for a specific seller"""
@@ -6205,6 +6616,7 @@ async def get_my_listings(address: str):
     except Exception as e:
         logger.error(f"Error fetching seller listings: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.delete("/marketplace/listing/{listing_id}")
 async def cancel_marketplace_listing(listing_id: str, seller_address: str):
@@ -6238,6 +6650,7 @@ async def cancel_marketplace_listing(listing_id: str, seller_address: str):
         logger.error(f"Error cancelling listing: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.post("/marketplace/buy/{listing_id}")
 async def buy_marketplace_listing(listing_id: str, data: BuyListingRequest):
     """Buy a treat from the marketplace (disabled until $LAB is live)"""
@@ -6261,6 +6674,7 @@ async def buy_marketplace_listing(listing_id: str, data: BuyListingRequest):
     except Exception as e:
         logger.error(f"Error processing purchase: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.get("/marketplace/stats")
 async def get_marketplace_stats():
@@ -6300,6 +6714,7 @@ async def get_marketplace_stats():
         logger.error(f"Error fetching marketplace stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/marketplace/check-listed/{treat_id}")
 async def check_treat_listed(treat_id: str):
     """Check if a treat is listed on the marketplace"""
@@ -6318,9 +6733,11 @@ async def check_treat_listed(treat_id: str):
         logger.error(f"Error checking listing status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # =====================================================
 # AUTO-MIXER SUBSCRIPTION ENDPOINTS
 # =====================================================
+
 
 @api_router.get("/auto-mixer/config")
 async def get_auto_mixer_config():
@@ -6334,6 +6751,7 @@ async def get_auto_mixer_config():
         "dev_percent": AUTO_MIXER_CONFIG["dev_percent"],
         "mixes_per_hour": AUTO_MIXER_CONFIG["mixes_per_hour"]
     }
+
 
 @api_router.post("/auto-mixer/create-subscription")
 async def create_auto_mixer_subscription(request: AutoMixerCreateRequest):
@@ -6419,9 +6837,11 @@ async def create_auto_mixer_subscription(request: AutoMixerCreateRequest):
         logger.error(f"Error creating auto-mixer subscription: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # =====================================================
 # TATUM DOGE API - Auto Payment Detection
 # =====================================================
+
 
 async def get_address_transactions_tatum(payment_address: str, page_size: int = 50):
     """
@@ -6452,6 +6872,7 @@ async def get_address_transactions_tatum(payment_address: str, page_size: int = 
     except Exception as e:
         logger.error(f"Tatum get_address_transactions error: {e}")
         return []
+
 
 async def get_transaction_details_tatum(tx_hash: str):
     """
@@ -6487,6 +6908,7 @@ async def get_transaction_details_tatum(tx_hash: str):
     except Exception as e:
         logger.error(f"Tatum get_transaction_details error: {e}")
         return None
+
 
 async def check_and_activate_pending_payments():
     """
@@ -6590,6 +7012,7 @@ async def check_and_activate_pending_payments():
     except Exception as e:
         logger.error(f"Error in check_and_activate_pending_payments: {e}")
         return {"checked": 0, "activated": 0, "error": str(e)}
+
 
 async def match_and_activate_payment(tx_hash: str, amount: float, confirmations: int):
     """
@@ -6757,8 +7180,10 @@ async def match_and_activate_payment(tx_hash: str, amount: float, confirmations:
     
     return None
 
+
 # Background task to run payment checks periodically
 payment_check_running = False
+
 
 async def payment_check_loop():
     """Background loop to check for payments every 30 seconds."""
@@ -6779,12 +7204,14 @@ async def payment_check_loop():
         
         await asyncio.sleep(30)  # Check every 30 seconds
 
+
 # Manual trigger endpoint for payment check
 @api_router.post("/payments/check-pending")
 async def trigger_payment_check():
     """Manually trigger a payment check (for testing or immediate updates)."""
     result = await check_and_activate_pending_payments()
     return result
+
 
 @api_router.post("/payments/recheck-unmatched")
 async def recheck_unmatched_payments():
@@ -6818,6 +7245,7 @@ async def recheck_unmatched_payments():
     except Exception as e:
         logger.error(f"Error rechecking unmatched payments: {e}")
         return {"error": str(e)}
+
 
 # Admin endpoint to manually verify and credit a payment
 @api_router.post("/payments/admin/verify-tx")
@@ -6934,6 +7362,7 @@ async def admin_verify_transaction(
         logger.error(f"Admin verify error: {e}")
         return {"success": False, "error": str(e)}
 
+
 # Get pending orders for a player
 @api_router.get("/payments/pending/{player_address}")
 async def get_pending_payments(player_address: str):
@@ -6955,6 +7384,7 @@ async def get_pending_payments(player_address: str):
         "subscription_cost": AUTO_MIXER_CONFIG["monthly_fee_doge"],
         "extra_life_packages": list(EXTRA_LIFE_PACKAGES.values())
     }
+
 
 async def verify_doge_transaction_blockcypher(tx_hash: str, payment_address: str, api_key: str = None):
     """
@@ -7007,6 +7437,8 @@ async def verify_doge_transaction_blockcypher(tx_hash: str, payment_address: str
     except Exception as e:
         logger.error(f"BlockCypher error: {str(e)}")
         return None, 0, 0, str(e)
+
+
 
 
 async def verify_doge_transaction_via_address(tx_hash: str, payment_address: str, api_key: str = None):
@@ -7062,6 +7494,8 @@ async def verify_doge_transaction_via_address(tx_hash: str, payment_address: str
     except Exception as e:
         logger.error(f"Address lookup error: {str(e)}")
         return None, 0, 0, str(e)
+
+
 
 
 async def verify_doge_transaction_with_fallback(tx_hash: str, payment_address: str, api_key: str = None):
@@ -7127,6 +7561,7 @@ async def verify_doge_transaction_with_fallback(tx_hash: str, payment_address: s
     
     # All methods failed
     return None, 0, 0, last_error or "Transaction verification failed. Please ensure the transaction hash is correct and try again."
+
 
 @api_router.post("/auto-mixer/verify-payment")
 async def verify_auto_mixer_payment(request: AutoMixerPaymentVerifyRequest):
@@ -7236,6 +7671,7 @@ async def verify_auto_mixer_payment(request: AutoMixerPaymentVerifyRequest):
         logger.error(f"Error verifying payment: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/auto-mixer/subscription/{player_address}")
 async def get_auto_mixer_subscription(player_address: str):
     """Get player's auto-mixer subscription"""
@@ -7277,6 +7713,7 @@ async def get_auto_mixer_subscription(player_address: str):
     except Exception as e:
         logger.error(f"Error fetching subscription: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/auto-mixer/update-window")
 async def update_auto_mixer_window(request: AutoMixerWindowUpdateRequest):
@@ -7325,6 +7762,7 @@ async def update_auto_mixer_window(request: AutoMixerWindowUpdateRequest):
         logger.error(f"Error updating window: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.post("/auto-mixer/cancel/{subscription_id}")
 async def cancel_auto_mixer_subscription(subscription_id: str, player_address: str):
     """Cancel an auto-mixer subscription"""
@@ -7349,6 +7787,7 @@ async def cancel_auto_mixer_subscription(subscription_id: str, player_address: s
     except Exception as e:
         logger.error(f"Error cancelling subscription: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.get("/auto-mixer/funds-stats")
 async def get_auto_mixer_funds_stats():
@@ -7396,6 +7835,7 @@ async def get_auto_mixer_funds_stats():
         logger.error(f"Error fetching funds stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/auto-mixer/history/{player_address}")
 async def get_auto_mixer_history(player_address: str, limit: int = 20):
     """Get auto-mix history for a player"""
@@ -7413,6 +7853,8 @@ async def get_auto_mixer_history(player_address: str, limit: int = 20):
     except Exception as e:
         logger.error(f"Error fetching auto-mix history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @api_router.get("/auto-mixer/debug-subscriptions")
@@ -7465,6 +7907,8 @@ async def debug_subscriptions(admin_secret: str = Query(..., description="Admin 
     except Exception as e:
         logger.error(f"Debug subscriptions error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @api_router.get("/auto-mixer/agent-status")
@@ -7593,6 +8037,8 @@ async def get_auto_mixer_agent_status():
     except Exception as e:
         logger.error(f"Error fetching agent status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @api_router.get("/auto-mixer/detailed-stats/{player_address}")
@@ -7763,6 +8209,8 @@ async def get_auto_mixer_detailed_stats(player_address: str):
     except Exception as e:
         logger.error(f"Error fetching detailed stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @api_router.post("/auto-mixer/trigger-now")
@@ -7976,6 +8424,8 @@ async def trigger_auto_mixer_now():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 # Auto-mixer background task
 async def auto_mixer_processor_loop():
     """
@@ -8176,9 +8626,11 @@ async def auto_mixer_processor_loop():
         logger.info("🤖 Auto-mixer sleeping for 30 minutes...")
         await asyncio.sleep(1800)
 
+
 # =====================================================
 # SPIN THE WHEEL SYSTEM
 # =====================================================
+
 
 SPIN_WHEEL_PRIZES = [
     {"id": "points_100", "label": "100 Points", "type": "points", "value": 100, "weight": 25, "color": "#3b82f6", "emoji": "star"},
@@ -8192,7 +8644,10 @@ SPIN_WHEEL_PRIZES = [
     {"id": "double_next", "label": "2x Next Treat", "type": "double_next", "value": 2, "weight": 5, "color": "#a855f7", "emoji": "zap"},
 ]
 
+
 SPIN_COOLDOWN_HOURS = 24
+
+
 
 
 @api_router.get("/spin-wheel/status/{player_address}")
@@ -8200,14 +8655,17 @@ async def get_spin_wheel_status(player_address: str):
     """Check if player can spin and get wheel configuration"""
     now = datetime.now(timezone.utc)
 
+
     last_spin = await db.spin_wheel_history.find_one(
         {"player_address": player_address},
         sort=[("spun_at", -1)]
     )
 
+
     can_spin = True
     next_spin_at = None
     hours_remaining = 0
+
 
     if last_spin:
         spun_at = parse_utc_datetime(last_spin.get("spun_at", now))
@@ -8217,9 +8675,12 @@ async def get_spin_wheel_status(player_address: str):
             next_spin_at = next_available.isoformat()
             hours_remaining = max(0, (next_available - now).total_seconds() / 3600)
 
+
     total_spins = await db.spin_wheel_history.count_documents({"player_address": player_address})
 
+
     prizes = [{"id": p["id"], "label": p["label"], "color": p["color"], "emoji": p["emoji"]} for p in SPIN_WHEEL_PRIZES]
+
 
     return {
         "can_spin": can_spin,
@@ -8231,6 +8692,8 @@ async def get_spin_wheel_status(player_address: str):
     }
 
 
+
+
 @api_router.post("/spin-wheel/spin")
 async def spin_the_wheel(data: dict):
     """Execute a spin — 1 free spin per 24 hours"""
@@ -8238,13 +8701,16 @@ async def spin_the_wheel(data: dict):
     if not player_address:
         raise HTTPException(status_code=400, detail="Player address required")
 
+
     now = datetime.now(timezone.utc)
+
 
     # Check cooldown
     last_spin = await db.spin_wheel_history.find_one(
         {"player_address": player_address},
         sort=[("spun_at", -1)]
     )
+
 
     if last_spin:
         spun_at = parse_utc_datetime(last_spin.get("spun_at", now))
@@ -8257,12 +8723,14 @@ async def spin_the_wheel(data: dict):
                 "hours_remaining": round(hours_left, 1)
             })
 
+
     # Weighted random selection
     total_weight = sum(p["weight"] for p in SPIN_WHEEL_PRIZES)
     roll = random.uniform(0, total_weight)
     cumulative = 0
     selected_prize = SPIN_WHEEL_PRIZES[0]
     prize_index = 0
+
 
     for i, prize in enumerate(SPIN_WHEEL_PRIZES):
         cumulative += prize["weight"]
@@ -8271,6 +8739,7 @@ async def spin_the_wheel(data: dict):
             prize_index = i
             break
 
+
     segment_angle = 360 / len(SPIN_WHEEL_PRIZES)
     target_segment_center = (prize_index * segment_angle) + (segment_angle / 2)
     pointer_angle = 270
@@ -8278,11 +8747,14 @@ async def spin_the_wheel(data: dict):
     full_spins = random.randint(6, 8)
     spin_rotation_degrees = (full_spins * 360) + landing_angle_degrees
 
+
     # Apply the prize
     reward_applied = False
     reward_details = {}
 
+
     player = await find_player_by_address(player_address)
+
 
     if selected_prize["type"] == "points":
         if player:
@@ -8293,6 +8765,7 @@ async def spin_the_wheel(data: dict):
         reward_applied = True
         reward_details = {"points_awarded": selected_prize["value"]}
 
+
     elif selected_prize["type"] == "extra_lives":
         if player:
             await db.players.update_one(
@@ -8301,6 +8774,7 @@ async def spin_the_wheel(data: dict):
             )
         reward_applied = True
         reward_details = {"extra_lives_awarded": selected_prize["value"]}
+
 
     elif selected_prize["type"] == "mythic_ingredient":
         expires_at = now + timedelta(hours=24)
@@ -8318,6 +8792,7 @@ async def spin_the_wheel(data: dict):
         reward_applied = True
         reward_details = {"mythic_ingredient_hours": 24, "expires_at": expires_at.isoformat()}
 
+
     elif selected_prize["type"] == "double_next":
         await db.spin_wheel_buffs.update_one(
             {"player_address": player_address, "buff_type": "double_next_treat"},
@@ -8334,6 +8809,7 @@ async def spin_the_wheel(data: dict):
         reward_applied = True
         reward_details = {"multiplier": 2, "uses": 1}
 
+
     # Record in history
     await db.spin_wheel_history.insert_one({
         "id": str(uuid.uuid4()),
@@ -8346,8 +8822,10 @@ async def spin_the_wheel(data: dict):
         "reward_applied": reward_applied
     })
 
+
     # Calculate next spin time
     next_spin_at = now + timedelta(hours=SPIN_COOLDOWN_HOURS)
+
 
     return {
         "prize": {
@@ -8369,8 +8847,11 @@ async def spin_the_wheel(data: dict):
     }
 
 
+
+
 # Include the router in the main app
 app.include_router(api_router)
+
 
 # CORS Configuration - always include known frontend domains
 ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', '')
@@ -8392,6 +8873,7 @@ else:
         if origin not in cors_origins:
             cors_origins.append(origin)
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -8400,12 +8882,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -8473,6 +8957,7 @@ async def startup_event():
     # Schedule delayed startup as a background task
     asyncio.create_task(delayed_startup())
     logger.info("✅ API ready to accept requests")
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
