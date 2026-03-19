@@ -14,7 +14,7 @@ import { defineChain } from 'viem';
 
 export const dogeOSDevnet = defineChain({
   id: 6281971,
-  name: 'DogeOS Chikyū Testnet',
+  name: 'DogeOS ChikyÅ« Testnet',
   nativeCurrency: {
     decimals: 18,
     name: 'Dogecoin',
@@ -55,14 +55,10 @@ const detectTelegramEnvironment = () => {
 
 const isTelegramEnv = detectTelegramEnvironment();
 
-// OKX wallet: inside Telegram use standard WalletConnect flow (no deep link).
-// Outside Telegram: inject okx:// deep link for mobile OKX app.
-// The okx:// scheme crashes Telegram's in-app browser with ERR_UNKNOWN_URL_SCHEME.
+// OKX wallet with deep link only outside Telegram
 const okxDeepLinkWallet = ({ projectId: wcProjectId, walletConnectParameters }) => {
   const baseWallet = okxWallet({ projectId: wcProjectId, walletConnectParameters });
-  if (isTelegramEnv) {
-    return baseWallet;
-  }
+  if (isTelegramEnv) return baseWallet;
   return {
     ...baseWallet,
     mobile: {
@@ -71,6 +67,23 @@ const okxDeepLinkWallet = ({ projectId: wcProjectId, walletConnectParameters }) 
     },
   };
 };
+
+// In Telegram's in-app browser, ALL wallet deep links (okx://, metamask://, 
+// coinbase://, etc.) cause ERR_UNKNOWN_URL_SCHEME crashes.
+// Only walletConnectWallet uses safe https:// URLs and works reliably in Telegram.
+const telegramWallets = [walletConnectWallet];
+
+const regularWallets = [
+  metaMaskWallet,
+  okxDeepLinkWallet,
+  coinbaseWallet,
+  rainbowWallet,
+  trustWallet,
+  rabbyWallet,
+  phantomWallet,
+  walletConnectWallet,
+  injectedWallet,
+];
 
 export const wagmiConfig = getDefaultConfig({
   appName: 'DogeFood Lab Beta',
@@ -81,9 +94,7 @@ export const wagmiConfig = getDefaultConfig({
   wallets: [
     {
       groupName: 'Recommended',
-      wallets: isTelegramEnv
-        ? [okxDeepLinkWallet, walletConnectWallet, coinbaseWallet]
-        : [metaMaskWallet, okxDeepLinkWallet, coinbaseWallet, rainbowWallet, trustWallet, rabbyWallet, phantomWallet, walletConnectWallet, injectedWallet],
+      wallets: isTelegramEnv ? telegramWallets : regularWallets,
     },
   ],
   walletConnectParameters: {
