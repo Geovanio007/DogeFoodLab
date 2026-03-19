@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
 import { Check } from 'lucide-react';
 
 const CharacterSelection = ({ onCharacterSelected }) => {
@@ -49,99 +47,149 @@ const CharacterSelection = ({ onCharacterSelected }) => {
   };
 
   return (
-    <div className="min-h-screen p-4 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #4c1d95 0%, #1e3a8a 50%, #312e81 100%)' }}>
+    <div
+      className="min-h-screen p-4 flex items-center justify-center"
+      style={{ background: 'linear-gradient(135deg, #4c1d95 0%, #1e3a8a 50%, #312e81 100%)' }}
+    >
       <div className="max-w-6xl mx-auto w-full">
+
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-3" style={{ color: '#ffffff' }}>
-            Choose Your Scientist!
+            🧪 Choose Your Scientist! 🧪
           </h1>
           <p className="text-lg mb-1" style={{ color: 'rgba(255,255,255,0.9)' }}>
             Select your character to begin your DogeFood Lab adventure
           </p>
           <p className="text-base font-semibold" style={{ color: '#facc15' }}>
-            Each scientist has unique bonuses and personality!
+            ⚠️ This choice is permanent!
           </p>
         </div>
 
         {/* Character Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {characters.map((character) => (
-            <div
-              key={character.id}
-              onClick={() => handleCharacterSelect(character)}
-              className="relative cursor-pointer transition-all duration-300 transform hover:scale-105 rounded-2xl overflow-hidden"
-              style={{
-                background: selectedCharacter?.id === character.id
-                  ? 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)'
-                  : '#ffffff',
-                border: selectedCharacter?.id === character.id
-                  ? '3px solid #facc15'
-                  : '3px solid transparent',
-                boxShadow: selectedCharacter?.id === character.id
-                  ? '0 0 30px rgba(250, 204, 21, 0.4)'
-                  : '0 10px 30px rgba(0,0,0,0.3)',
-              }}
-            >
-              {/* Selected checkmark */}
-              {selectedCharacter?.id === character.id && (
-                <div className="absolute top-3 right-3 p-2 rounded-full" style={{ background: '#facc15' }}>
-                  <Check className="w-5 h-5" style={{ color: '#92400e' }} />
-                </div>
-              )}
+          {characters.map((character) => {
+            const isSelected = selectedCharacter?.id === character.id;
+            return (
+              <div
+                key={character.id}
+                onClick={() => handleCharacterSelect(character)}
+                className="relative cursor-pointer transition-all duration-300 transform hover:scale-105 rounded-2xl overflow-hidden"
+                style={{
+                  background: isSelected
+                    ? 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)'
+                    : 'rgba(255, 255, 255, 0.12)',
+                  border: isSelected
+                    ? '3px solid #facc15'
+                    : '3px solid rgba(255,255,255,0.2)',
+                  boxShadow: isSelected
+                    ? '0 0 30px rgba(250, 204, 21, 0.4)'
+                    : '0 10px 30px rgba(0,0,0,0.3)',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                {/* Selected checkmark */}
+                {isSelected && (
+                  <div
+                    className="absolute top-3 right-3 p-2 rounded-full"
+                    style={{ background: '#facc15' }}
+                  >
+                    <Check className="w-5 h-5" style={{ color: '#92400e' }} />
+                  </div>
+                )}
 
-              <div className="p-6">
-                {/* Character Image */}
-                <div className="w-28 h-28 mx-auto mb-4 rounded-full overflow-hidden border-4 shadow-lg" style={{ borderColor: '#93c5fd' }}>
-                  <img
-                    src={character.image}
-                    alt={character.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => { e.target.src = '/placeholder-scientist.png'; }}
-                  />
-                </div>
+                <div className="p-6">
+                  {/* Character Image */}
+                  <div
+                    className="w-28 h-28 mx-auto mb-4 rounded-full overflow-hidden border-4 shadow-lg"
+                    style={{ borderColor: '#93c5fd' }}
+                  >
+                    <img
+                      src={character.image}
+                      alt={character.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.src = '/placeholder-scientist.png'; }}
+                    />
+                  </div>
 
-                {/* Name */}
-                <h3 className="text-xl font-bold text-center mb-1" style={{ color: '#1e293b' }}>
-                  {character.name}
-                </h3>
+                  {/* Name */}
+                  <h3
+                    className="text-xl font-bold text-center mb-1"
+                    style={{ color: isSelected ? '#1e293b' : '#ffffff' }}
+                  >
+                    {character.name}
+                  </h3>
 
-                {/* Description */}
-                <p className="text-center font-semibold mb-3" style={{ color: '#2563eb' }}>
-                  {character.description}
-                </p>
+                  {/* Description */}
+                  <p
+                    className="text-center font-semibold mb-3"
+                    style={{ color: isSelected ? '#2563eb' : '#93c5fd' }}
+                  >
+                    {character.description}
+                  </p>
 
-                {/* Personality */}
-                <p className="text-center text-sm leading-relaxed mb-4" style={{ color: '#374151' }}>
-                  {character.personality}
-                </p>
+                  {/* Personality */}
+                  <p
+                    className="text-center text-sm leading-relaxed mb-4"
+                    style={{ color: isSelected ? '#374151' : 'rgba(255,255,255,0.8)' }}
+                  >
+                    {character.personality}
+                  </p>
 
-                {/* Traits */}
-                <div className="mb-4">
-                  <h4 className="font-bold text-center mb-2" style={{ color: '#1e293b' }}>Traits:</h4>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {character.traits.map((trait, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 rounded-full text-sm font-medium"
-                        style={{ background: '#dbeafe', color: '#1e40af' }}
-                      >
-                        {trait}
-                      </span>
-                    ))}
+                  {/* Traits */}
+                  <div className="mb-4">
+                    <h4
+                      className="font-bold text-center mb-2"
+                      style={{ color: isSelected ? '#1e293b' : '#ffffff' }}
+                    >
+                      Traits:
+                    </h4>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {character.traits.map((trait, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 rounded-full text-sm font-medium"
+                          style={{
+                            background: isSelected ? '#dbeafe' : 'rgba(147,197,253,0.2)',
+                            color: isSelected ? '#1e40af' : '#93c5fd',
+                            border: isSelected ? 'none' : '1px solid rgba(147,197,253,0.4)',
+                          }}
+                        >
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Bonus */}
+                  <div
+                    className="p-3 rounded-xl text-center"
+                    style={{
+                      background: isSelected
+                        ? 'linear-gradient(135deg, #dcfce7, #d1fae5)'
+                        : 'rgba(134,239,172,0.15)',
+                      border: isSelected
+                        ? '2px solid #86efac'
+                        : '2px solid rgba(134,239,172,0.4)',
+                    }}
+                  >
+                    <p
+                      className="text-xs font-bold mb-1"
+                      style={{ color: isSelected ? '#166534' : '#86efac' }}
+                    >
+                      Special Bonus:
+                    </p>
+                    <p
+                      className="font-bold"
+                      style={{ color: isSelected ? '#15803d' : '#4ade80' }}
+                    >
+                      {character.bonus}
+                    </p>
                   </div>
                 </div>
-
-                {/* Bonus */}
-                <div className="p-3 rounded-xl text-center" style={{ background: 'linear-gradient(135deg, #dcfce7, #d1fae5)', border: '2px solid #86efac' }}>
-                  <p className="text-xs font-bold mb-1" style={{ color: '#166534' }}>Special Bonus:</p>
-                  <p className="font-bold" style={{ color: '#15803d' }}>
-                    {character.bonus}
-                  </p>
-                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Confirm Button */}
@@ -153,11 +201,10 @@ const CharacterSelection = ({ onCharacterSelected }) => {
             style={{
               background: selectedCharacter
                 ? 'linear-gradient(135deg, #facc15 0%, #f97316 100%)'
-                : '#9ca3af',
-              color: selectedCharacter ? '#ffffff' : '#6b7280',
+                : 'rgba(156,163,175,0.3)',
+              color: selectedCharacter ? '#ffffff' : 'rgba(255,255,255,0.4)',
               cursor: selectedCharacter ? 'pointer' : 'not-allowed',
-              transform: selectedCharacter ? 'scale(1)' : 'scale(1)',
-              border: 'none',
+              border: selectedCharacter ? 'none' : '2px solid rgba(255,255,255,0.2)',
             }}
           >
             {selectedCharacter
@@ -171,6 +218,7 @@ const CharacterSelection = ({ onCharacterSelected }) => {
             </p>
           )}
         </div>
+
       </div>
     </div>
   );
