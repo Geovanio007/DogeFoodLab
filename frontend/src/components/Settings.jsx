@@ -14,6 +14,7 @@ import { useTelegram } from '../contexts/TelegramContext';
 import { useNFTVerification } from '../hooks/useNFTVerification';
 import { NotificationSettings } from './NotificationPrompt';
 import AutoMixerSubscription from './AutoMixerSubscription';
+import ReferralPanel from './ReferralPanel';
 import { 
   ArrowLeft, 
   Volume2, 
@@ -35,7 +36,8 @@ import {
   Shield,
   Info,
   Moon,
-  Sun
+  Sun,
+  Gift
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -73,10 +75,9 @@ const Settings = () => {
   }, [location.state]);
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check localStorage - use same key as ThemeContext for consistency
     const saved = localStorage.getItem('dogefood-theme');
     if (saved !== null) return saved === 'dark';
-    return true; // Default to dark mode
+    return true;
   });
   
   const { 
@@ -93,7 +94,6 @@ const Settings = () => {
     playSuccess
   } = useAudio();
 
-  // Music context for background music enabled setting
   const { musicEnabled, setMusicEnabled } = useMusic();
 
   const [visualSettings, setVisualSettings] = useState({
@@ -103,10 +103,8 @@ const Settings = () => {
     notifications: true,
   });
 
-  // Save dark mode preference - use same key as ThemeContext
   useEffect(() => {
     localStorage.setItem('dogefood-theme', isDarkMode ? 'dark' : 'light');
-    // Also apply dark class to document root for Tailwind
     if (isDarkMode) {
       document.documentElement.classList.add('dark-mode', 'dark');
       document.documentElement.classList.remove('light-mode');
@@ -116,7 +114,6 @@ const Settings = () => {
     }
   }, [isDarkMode]);
 
-  // Get effective player address
   const getEffectiveAddress = () => {
     if (address) return address;
     if (isTelegram && telegramUser?.id) return `TG_${telegramUser.id}`;
@@ -134,11 +131,9 @@ const Settings = () => {
 
   const effectiveAddress = getEffectiveAddress();
 
-  // Fetch player data including NFT status
   useEffect(() => {
     const fetchPlayerData = async () => {
       if (!effectiveAddress) return;
-      
       try {
         const response = await fetch(`${BACKEND_URL}/api/player/${effectiveAddress}`);
         if (response.ok) {
@@ -154,41 +149,32 @@ const Settings = () => {
         console.error('Error fetching player data:', error);
       }
     };
-    
     fetchPlayerData();
   }, [effectiveAddress, dispatch]);
 
-  // Use the fetched NFT status or the one from GameContext or direct verification
   const effectiveNFTStatus = nftVerifiedHolder || playerNFTStatus || gameNFTHolder;
 
-  // Handle username update
   const handleSaveUsername = async () => {
     if (!newUsername.trim()) {
       setUsernameError('Username is required');
       return;
     }
-    
     if (newUsername.length < 3 || newUsername.length > 20) {
       setUsernameError('Username must be 3-20 characters');
       return;
     }
-    
     if (!newUsername.replace(/_/g, '').match(/^[a-zA-Z0-9]+$/)) {
       setUsernameError('Only letters, numbers, and underscores allowed');
       return;
     }
-    
     setSavingUsername(true);
     setUsernameError('');
-    
     try {
       const response = await fetch(`${BACKEND_URL}/api/player/${effectiveAddress}/update-username?username=${encodeURIComponent(newUsername.trim())}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      
       if (response.ok) {
-        const data = await response.json();
         setPlayerData(prev => ({ ...prev, nickname: newUsername.trim() }));
         setIsEditingUsername(false);
         playSuccess();
@@ -223,51 +209,27 @@ const Settings = () => {
 
   const handleSoundToggle = (checked) => {
     setSoundEnabled(checked);
-    if (!checked) {
-      stopBackgroundMusic();
-    }
+    if (!checked) stopBackgroundMusic();
   };
 
-  const handleMusicVolumeChange = (value) => {
-    setMusicVolume(value[0]);
-  };
-
-  const handleEffectsVolumeChange = (value) => {
-    setEffectsVolume(value[0]);
-  };
-
-  const testEffectSound = () => {
-    playSuccess();
-  };
+  const handleMusicVolumeChange = (value) => setMusicVolume(value[0]);
+  const handleEffectsVolumeChange = (value) => setEffectsVolume(value[0]);
+  const testEffectSound = () => playSuccess();
 
   const resetSettings = () => {
     setSoundEnabled(true);
     setMusicVolume(75);
     setEffectsVolume(80);
-    setVisualSettings({
-      particleEffects: true,
-      reducedMotion: false,
-      autoMix: false,
-      notifications: true,
-    });
+    setVisualSettings({ particleEffects: true, reducedMotion: false, autoMix: false, notifications: true });
     playClick();
   };
 
-  // Check Solana balance without linking
   const checkSolanaBalance = async () => {
-    if (!solanaAddress.trim()) {
-      setSolanaError('Please enter a Solana wallet address');
-      return;
-    }
-    
-    setSolanaVerifying(true);
-    setSolanaError('');
-    setSolanaSuccess('');
-    
+    if (!solanaAddress.trim()) { setSolanaError('Please enter a Solana wallet address'); return; }
+    setSolanaVerifying(true); setSolanaError(''); setSolanaSuccess('');
     try {
       const response = await fetch(`${BACKEND_URL}/api/check-dogeonews-balance/${solanaAddress.trim()}`);
       const data = await response.json();
-      
       if (response.ok) {
         setSolanaBalance(data);
         if (data.is_eligible) {
@@ -285,38 +247,20 @@ const Settings = () => {
     }
   };
 
-  // Verify and link Solana wallet
   const verifySolanaWallet = async () => {
-    if (!solanaAddress.trim()) {
-      setSolanaError('Please enter a Solana wallet address');
-      return;
-    }
-    
-    if (!effectiveAddress) {
-      setSolanaError('Please connect your game account first');
-      return;
-    }
-    
-    setSolanaVerifying(true);
-    setSolanaError('');
-    setSolanaSuccess('');
-    
+    if (!solanaAddress.trim()) { setSolanaError('Please enter a Solana wallet address'); return; }
+    if (!effectiveAddress) { setSolanaError('Please connect your game account first'); return; }
+    setSolanaVerifying(true); setSolanaError(''); setSolanaSuccess('');
     try {
-      const response = await fetch(`${BACKEND_URL}/api/verify-dogeonews-holder?player_address=${effectiveAddress}&solana_address=${solanaAddress.trim()}`, {
-        method: 'POST'
-      });
+      const response = await fetch(`${BACKEND_URL}/api/verify-dogeonews-holder?player_address=${effectiveAddress}&solana_address=${solanaAddress.trim()}`, { method: 'POST' });
       const data = await response.json();
-      
       if (response.ok && data.success) {
         setSolanaSuccess(data.message);
         setSolanaBalance({ balance: data.token_balance, is_eligible: true });
-        // Refresh player data
         fetchPlayerData();
       } else {
         setSolanaError(data.message || data.error || 'Verification failed');
-        if (data.token_balance !== undefined) {
-          setSolanaBalance({ balance: data.token_balance, is_eligible: false });
-        }
+        if (data.token_balance !== undefined) setSolanaBalance({ balance: data.token_balance, is_eligible: false });
       }
     } catch (err) {
       setSolanaError('Failed to verify wallet. Please try again.');
@@ -325,7 +269,6 @@ const Settings = () => {
     }
   };
 
-  // Fetch player data function (if not already defined)
   const fetchPlayerData = async () => {
     if (!effectiveAddress) return;
     try {
@@ -333,9 +276,7 @@ const Settings = () => {
       if (response.ok) {
         const data = await response.json();
         setPlayerData(data);
-        if (data.solana_address) {
-          setSolanaAddress(data.solana_address);
-        }
+        if (data.solana_address) setSolanaAddress(data.solana_address);
       }
     } catch (err) {
       console.error('Error fetching player data:', err);
@@ -365,20 +306,10 @@ const Settings = () => {
                 </div>
               </div>
             </div>
-            
             <div className="flex items-center gap-3">
-              {/* Dark Mode Toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="text-white hover:bg-white/20"
-                data-testid="dark-mode-toggle"
-              >
+              <Button variant="ghost" size="sm" onClick={() => setIsDarkMode(!isDarkMode)} className="text-white hover:bg-white/20" data-testid="dark-mode-toggle">
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </Button>
-              
-              {/* Account Status Badge */}
               {effectiveNFTStatus && (
                 <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-400 to-sky-500 rounded-full shadow-lg">
                   <Crown className="w-5 h-5" />
@@ -393,36 +324,24 @@ const Settings = () => {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full grid-cols-4 p-1 rounded-2xl shadow-sm ${isDarkMode ? 'bg-slate-800' : 'bg-white/80 backdrop-blur-sm'}`}>
-            <TabsTrigger 
-              value="general" 
-              className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`}
-              data-testid="tab-general"
-            >
+          <TabsList className={`grid w-full grid-cols-5 p-1 rounded-2xl shadow-sm ${isDarkMode ? 'bg-slate-800' : 'bg-white/80 backdrop-blur-sm'}`}>
+            <TabsTrigger value="general" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-general">
               <SettingsIcon className="w-4 h-4 mr-2" />
               General
             </TabsTrigger>
-            <TabsTrigger 
-              value="auto-mixer" 
-              className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`}
-              data-testid="tab-auto-mixer"
-            >
+            <TabsTrigger value="auto-mixer" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-auto-mixer">
               <Bot className="w-4 h-4 mr-2" />
               Auto-Mixer
             </TabsTrigger>
-            <TabsTrigger 
-              value="audio" 
-              className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`}
-              data-testid="tab-audio"
-            >
+            <TabsTrigger value="audio" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-audio">
               <Music className="w-4 h-4 mr-2" />
               Audio
             </TabsTrigger>
-            <TabsTrigger 
-              value="account" 
-              className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`}
-              data-testid="tab-account"
-            >
+            <TabsTrigger value="referral" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-referral">
+              <Gift className="w-4 h-4 mr-2" />
+              Referral
+            </TabsTrigger>
+            <TabsTrigger value="account" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-account">
               <User className="w-4 h-4 mr-2" />
               Account
             </TabsTrigger>
@@ -430,7 +349,6 @@ const Settings = () => {
 
           {/* General Settings Tab */}
           <TabsContent value="general" className="space-y-6">
-            {/* Dark Mode Card */}
             <Card className={`border-0 shadow-lg ${isDarkMode ? 'bg-slate-800' : 'bg-white/90 backdrop-blur-sm'}`}>
               <CardHeader>
                 <CardTitle className={`flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
@@ -444,32 +362,24 @@ const Settings = () => {
                     <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Dark Mode</div>
                     <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>Toggle between light and dark themes</div>
                   </div>
-                  <Switch
-                    checked={isDarkMode}
-                    onCheckedChange={setIsDarkMode}
-                    data-testid="dark-mode-switch"
-                  />
+                  <Switch checked={isDarkMode} onCheckedChange={setIsDarkMode} data-testid="dark-mode-switch" />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Notifications */}
             <Card className={`border-0 shadow-lg ${isDarkMode ? 'bg-slate-800' : 'bg-white/90 backdrop-blur-sm'}`}>
               <CardHeader>
                 <CardTitle className={`flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
                   <Bell className={`w-5 h-5 ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`} />
                   Notifications
                 </CardTitle>
-                <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-muted-foreground'}`}>
-                  Configure your notification preferences
-                </p>
+                <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-muted-foreground'}`}>Configure your notification preferences</p>
               </CardHeader>
               <CardContent>
                 <NotificationSettings isDarkMode={isDarkMode} />
               </CardContent>
             </Card>
 
-            {/* Visual Settings */}
             <Card className={`border-0 shadow-lg ${isDarkMode ? 'bg-slate-800' : 'bg-white/90 backdrop-blur-sm'}`}>
               <CardHeader>
                 <CardTitle className={`flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
@@ -483,28 +393,18 @@ const Settings = () => {
                     <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Particle Effects</div>
                     <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>Show floating particles and animations</div>
                   </div>
-                  <Switch
-                    checked={visualSettings.particleEffects}
-                    onCheckedChange={(checked) => updateVisualSetting('particleEffects', checked)}
-                    data-testid="particle-effects-toggle"
-                  />
+                  <Switch checked={visualSettings.particleEffects} onCheckedChange={(checked) => updateVisualSetting('particleEffects', checked)} data-testid="particle-effects-toggle" />
                 </div>
-                
                 <div className={`flex items-center justify-between p-4 rounded-xl ${isDarkMode ? 'bg-slate-700' : 'bg-slate-50'}`}>
                   <div>
                     <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Reduced Motion</div>
                     <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>Minimize animations for better performance</div>
                   </div>
-                  <Switch
-                    checked={visualSettings.reducedMotion}
-                    onCheckedChange={(checked) => updateVisualSetting('reducedMotion', checked)}
-                    data-testid="reduced-motion-toggle"
-                  />
+                  <Switch checked={visualSettings.reducedMotion} onCheckedChange={(checked) => updateVisualSetting('reducedMotion', checked)} data-testid="reduced-motion-toggle" />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Gameplay Settings */}
             <Card className={`border-0 shadow-lg ${isDarkMode ? 'bg-slate-800' : 'bg-white/90 backdrop-blur-sm'}`}>
               <CardHeader>
                 <CardTitle className={`flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
@@ -518,23 +418,14 @@ const Settings = () => {
                     <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Quick-Mix Mode</div>
                     <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>Auto-start mixing when ingredients selected</div>
                   </div>
-                  <Switch
-                    checked={visualSettings.autoMix}
-                    onCheckedChange={(checked) => updateVisualSetting('autoMix', checked)}
-                    data-testid="auto-mix-toggle"
-                  />
+                  <Switch checked={visualSettings.autoMix} onCheckedChange={(checked) => updateVisualSetting('autoMix', checked)} data-testid="auto-mix-toggle" />
                 </div>
-                
                 <div className={`flex items-center justify-between p-4 rounded-xl ${isDarkMode ? 'bg-slate-700' : 'bg-slate-50'}`}>
                   <div>
                     <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Push Notifications</div>
                     <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>Get notified about events and features</div>
                   </div>
-                  <Switch
-                    checked={visualSettings.notifications}
-                    onCheckedChange={(checked) => updateVisualSetting('notifications', checked)}
-                    data-testid="notifications-toggle"
-                  />
+                  <Switch checked={visualSettings.notifications} onCheckedChange={(checked) => updateVisualSetting('notifications', checked)} data-testid="notifications-toggle" />
                 </div>
               </CardContent>
             </Card>
@@ -543,17 +434,9 @@ const Settings = () => {
           {/* Auto-Mixer Tab */}
           <TabsContent value="auto-mixer" className="space-y-6">
             {effectiveAddress ? (
-              <AutoMixerSubscription 
-                playerAddress={effectiveAddress}
-                playerNickname={playerData?.nickname}
-                isDarkMode={isDarkMode}
-              />
+              <AutoMixerSubscription playerAddress={effectiveAddress} playerNickname={playerData?.nickname} isDarkMode={isDarkMode} />
             ) : (
-              <AutoMixerSubscription 
-                playerAddress={null}
-                playerNickname={null}
-                isDarkMode={isDarkMode}
-              />
+              <AutoMixerSubscription playerAddress={null} playerNickname={null} isDarkMode={isDarkMode} />
             )}
           </TabsContent>
 
@@ -567,7 +450,6 @@ const Settings = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Music On/Off Toggle */}
                 <div className={`flex items-center justify-between p-4 rounded-xl border ${isDarkMode ? 'bg-purple-900/30 border-purple-700' : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'}`}>
                   <div className="flex items-center gap-3">
                     <Music className={`w-5 h-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
@@ -576,85 +458,62 @@ const Settings = () => {
                       <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>Play music when entering the game</div>
                     </div>
                   </div>
-                  <Switch
-                    data-testid="music-enabled-toggle"
-                    checked={musicEnabled}
-                    onCheckedChange={setMusicEnabled}
-                  />
+                  <Switch data-testid="music-enabled-toggle" checked={musicEnabled} onCheckedChange={setMusicEnabled} />
                 </div>
-                
                 <div className={`flex items-center justify-between p-4 rounded-xl ${isDarkMode ? 'bg-slate-700' : 'bg-slate-50'}`}>
                   <div>
                     <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Sound Effects</div>
                     <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>Enable all game sounds and music</div>
                   </div>
-                  <Switch
-                    checked={soundEnabled}
-                    onCheckedChange={handleSoundToggle}
-                    data-testid="sound-enabled-toggle"
-                  />
+                  <Switch checked={soundEnabled} onCheckedChange={handleSoundToggle} data-testid="sound-enabled-toggle" />
                 </div>
-                
                 <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-700' : 'bg-slate-50'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Background Music Volume</div>
                     <div className="flex items-center gap-2">
                       <span className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>{musicVolume}%</span>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleMusicToggle}
-                        disabled={!soundEnabled}
-                        className={isDarkMode ? 'border-slate-600 hover:bg-slate-600' : ''}
-                        data-testid="play-music-btn"
-                      >
+                      <Button variant="outline" size="sm" onClick={handleMusicToggle} disabled={!soundEnabled} className={isDarkMode ? 'border-slate-600 hover:bg-slate-600' : ''} data-testid="play-music-btn">
                         {isMusicPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                       </Button>
                     </div>
                   </div>
-                  <Slider
-                    value={[musicVolume]}
-                    onValueChange={handleMusicVolumeChange}
-                    max={100}
-                    step={5}
-                    disabled={!soundEnabled}
-                    className="w-full"
-                  />
+                  <Slider value={[musicVolume]} onValueChange={handleMusicVolumeChange} max={100} step={5} disabled={!soundEnabled} className="w-full" />
                 </div>
-                
                 <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-700' : 'bg-slate-50'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Effects Volume</div>
                     <div className="flex items-center gap-2">
                       <span className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>{effectsVolume}%</span>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={testEffectSound}
-                        disabled={!soundEnabled}
-                        className={isDarkMode ? 'border-slate-600 hover:bg-slate-600' : ''}
-                        data-testid="test-sound-btn"
-                      >
+                      <Button variant="outline" size="sm" onClick={testEffectSound} disabled={!soundEnabled} className={isDarkMode ? 'border-slate-600 hover:bg-slate-600' : ''} data-testid="test-sound-btn">
                         Test
                       </Button>
                     </div>
                   </div>
-                  <Slider
-                    value={[effectsVolume]}
-                    onValueChange={handleEffectsVolumeChange}
-                    max={100}
-                    step={5}
-                    disabled={!soundEnabled}
-                    className="w-full"
-                  />
+                  <Slider value={[effectsVolume]} onValueChange={handleEffectsVolumeChange} max={100} step={5} disabled={!soundEnabled} className="w-full" />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Referral Tab */}
+          <TabsContent value="referral" className="space-y-6">
+            {effectiveAddress ? (
+              <ReferralPanel playerAddress={effectiveAddress} />
+            ) : (
+              <Card className={`border-0 shadow-lg ${isDarkMode ? 'bg-slate-800' : 'bg-white/90 backdrop-blur-sm'}`}>
+                <CardContent className="p-8 text-center">
+                  <Gift className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+                  <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Connect to Access Referrals</h3>
+                  <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Connect your wallet or Telegram account to get your referral link and start earning 500 points per friend you invite.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
           {/* Account Tab */}
           <TabsContent value="account" className="space-y-6">
-            {/* Profile Card */}
             <Card className={`border-0 shadow-lg overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-white/90 backdrop-blur-sm'}`}>
               <div className={`h-24 ${isDarkMode ? 'bg-gradient-to-r from-slate-700 to-slate-600' : 'bg-gradient-to-r from-sky-500 to-blue-600'}`} />
               <CardContent className="relative pt-0">
@@ -663,53 +522,23 @@ const Settings = () => {
                     <User className="w-12 h-12 text-white" />
                   </div>
                   <div className="flex-1 pb-2">
-                    {/* Username Section */}
                     {isEditingUsername ? (
                       <div className="space-y-2">
                         <div className="flex gap-2">
-                          <Input
-                            value={newUsername}
-                            onChange={(e) => setNewUsername(e.target.value)}
-                            placeholder="Enter username"
-                            className={`flex-1 ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : ''}`}
-                            maxLength={20}
-                            data-testid="username-input"
-                          />
-                          <Button 
-                            size="sm" 
-                            onClick={handleSaveUsername}
-                            disabled={savingUsername}
-                            className="bg-emerald-500 hover:bg-emerald-600"
-                            data-testid="save-username-btn"
-                          >
+                          <Input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder="Enter username" className={`flex-1 ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : ''}`} maxLength={20} data-testid="username-input" />
+                          <Button size="sm" onClick={handleSaveUsername} disabled={savingUsername} className="bg-emerald-500 hover:bg-emerald-600" data-testid="save-username-btn">
                             {savingUsername ? '...' : <Check className="w-4 h-4" />}
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={cancelUsernameEdit}
-                            className={isDarkMode ? 'border-slate-600 hover:bg-slate-700' : ''}
-                            data-testid="cancel-username-btn"
-                          >
+                          <Button size="sm" variant="outline" onClick={cancelUsernameEdit} className={isDarkMode ? 'border-slate-600 hover:bg-slate-700' : ''} data-testid="cancel-username-btn">
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
-                        {usernameError && (
-                          <p className="text-red-500 text-xs">{usernameError}</p>
-                        )}
+                        {usernameError && <p className="text-red-500 text-xs">{usernameError}</p>}
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                          {playerData?.nickname || 'Anonymous Scientist'}
-                        </h2>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setIsEditingUsername(true)}
-                          className={isDarkMode ? 'hover:bg-slate-700' : ''}
-                          data-testid="edit-username-btn"
-                        >
+                        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{playerData?.nickname || 'Anonymous Scientist'}</h2>
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditingUsername(true)} className={isDarkMode ? 'hover:bg-slate-700' : ''} data-testid="edit-username-btn">
                           <Edit2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -722,7 +551,6 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Status Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className={`border-0 shadow-lg ${effectiveNFTStatus ? (isDarkMode ? 'bg-cyan-900/30' : 'bg-gradient-to-br from-cyan-50 to-sky-100') : (isDarkMode ? 'bg-slate-800' : 'bg-white/90')}`}>
                 <CardContent className="p-6">
@@ -755,10 +583,7 @@ const Settings = () => {
                     <div>
                       <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Account Type</h3>
                       <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {address ? 'Wallet Connected' : 
-                         isTelegram ? 'Telegram User' : 
-                         effectiveAddress?.startsWith('guest_') ? 'Guest Account' : 
-                         'Not Connected'}
+                        {address ? 'Wallet Connected' : isTelegram ? 'Telegram User' : effectiveAddress?.startsWith('guest_') ? 'Guest Account' : 'Not Connected'}
                       </p>
                     </div>
                   </div>
@@ -766,7 +591,6 @@ const Settings = () => {
               </Card>
             </div>
 
-            {/* Player Stats */}
             {playerData && (
               <Card className={`border-0 shadow-lg ${isDarkMode ? 'bg-slate-800' : 'bg-white/90 backdrop-blur-sm'}`}>
                 <CardHeader>
@@ -791,33 +615,15 @@ const Settings = () => {
               </Card>
             )}
 
-            {/* Actions */}
             <Card className={`border-0 shadow-lg ${isDarkMode ? 'bg-slate-800' : 'bg-white/90 backdrop-blur-sm'}`}>
               <CardContent className="p-6">
                 <div className="flex gap-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={playClick}
-                    className={isDarkMode ? 'border-slate-600 text-slate-300 hover:bg-slate-700' : ''}
-                    data-testid="export-data-btn"
-                  >
-                    Export Data
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={resetSettings}
-                    className={isDarkMode ? 'border-slate-600 text-slate-300 hover:bg-slate-700' : ''}
-                    data-testid="reset-settings-btn"
-                  >
-                    Reset Settings
-                  </Button>
+                  <Button variant="outline" size="sm" onClick={playClick} className={isDarkMode ? 'border-slate-600 text-slate-300 hover:bg-slate-700' : ''} data-testid="export-data-btn">Export Data</Button>
+                  <Button variant="outline" size="sm" onClick={resetSettings} className={isDarkMode ? 'border-slate-600 text-slate-300 hover:bg-slate-700' : ''} data-testid="reset-settings-btn">Reset Settings</Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Solana Wallet Linking - $DOGEONEWS Token Verification */}
             <Card className={`border-2 ${isDarkMode ? 'bg-gradient-to-br from-amber-900/30 to-yellow-900/20 border-amber-700' : 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200'}`}>
               <CardHeader>
                 <CardTitle className={`flex items-center gap-3 ${isDarkMode ? 'text-amber-300' : 'text-amber-800'}`}>
@@ -829,7 +635,6 @@ const Settings = () => {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Current Status */}
                 {playerData?.is_dogeonews_holder ? (
                   <div className={`p-4 rounded-xl border ${isDarkMode ? 'bg-emerald-900/30 border-emerald-700' : 'bg-emerald-50 border-emerald-200'}`}>
                     <div className="flex items-center gap-3">
@@ -837,12 +642,8 @@ const Settings = () => {
                         <Check className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h4 className={`font-semibold ${isDarkMode ? 'text-emerald-300' : 'text-emerald-800'}`}>
-                          Verified $DOGEONEWS Holder!
-                        </h4>
-                        <p className={`text-sm ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                          You are eligible for $LAB token claim at season end
-                        </p>
+                        <h4 className={`font-semibold ${isDarkMode ? 'text-emerald-300' : 'text-emerald-800'}`}>Verified $DOGEONEWS Holder!</h4>
+                        <p className={`text-sm ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>You are eligible for $LAB token claim at season end</p>
                         {playerData?.solana_address && (
                           <p className={`text-xs font-mono mt-1 ${isDarkMode ? 'text-emerald-500' : 'text-emerald-700'}`}>
                             Linked: {playerData.solana_address.slice(0, 8)}...{playerData.solana_address.slice(-6)}
@@ -853,55 +654,28 @@ const Settings = () => {
                   </div>
                 ) : (
                   <>
-                    {/* Info Box */}
                     <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-800/50' : 'bg-amber-100/50'}`}>
-                      <h4 className={`font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                        Requirements
-                      </h4>
+                      <h4 className={`font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Requirements</h4>
                       <ul className={`text-sm space-y-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                         <li>• Hold <strong>1,000,000+</strong> $DOGEONEWS tokens</li>
                         <li>• Token Contract: <code className="text-xs bg-black/10 px-1 rounded">GHoZwXK...Vdoge</code></li>
                         <li>• Network: Solana Mainnet</li>
                       </ul>
                     </div>
-
-                    {/* Input Section */}
                     <div className="space-y-3">
-                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                        Enter your Solana Wallet Address
-                      </label>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Enter your Solana Wallet Address</label>
                       <div className="flex gap-2">
-                        <Input
-                          value={solanaAddress}
-                          onChange={(e) => setSolanaAddress(e.target.value)}
-                          placeholder="e.g., DxDNkQ9sNZCCAexgbYJgxCdnVQkdm3ovCLzMbJgeFpHE"
-                          className={`flex-1 font-mono text-sm ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white placeholder:text-slate-500' : ''}`}
-                          data-testid="solana-address-input"
-                        />
+                        <Input value={solanaAddress} onChange={(e) => setSolanaAddress(e.target.value)} placeholder="e.g., DxDNkQ9sNZCCAexgbYJgxCdnVQkdm3ovCLzMbJgeFpHE" className={`flex-1 font-mono text-sm ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white placeholder:text-slate-500' : ''}`} data-testid="solana-address-input" />
                       </div>
-
                       <div className="flex gap-2">
-                        <Button
-                          onClick={checkSolanaBalance}
-                          disabled={solanaVerifying || !solanaAddress.trim()}
-                          variant="outline"
-                          className={`flex-1 ${isDarkMode ? 'border-amber-600 text-amber-300 hover:bg-amber-900/30' : 'border-amber-500 text-amber-700 hover:bg-amber-50'}`}
-                          data-testid="check-balance-btn"
-                        >
+                        <Button onClick={checkSolanaBalance} disabled={solanaVerifying || !solanaAddress.trim()} variant="outline" className={`flex-1 ${isDarkMode ? 'border-amber-600 text-amber-300 hover:bg-amber-900/30' : 'border-amber-500 text-amber-700 hover:bg-amber-50'}`} data-testid="check-balance-btn">
                           {solanaVerifying ? 'Checking...' : 'Check Balance'}
                         </Button>
-                        <Button
-                          onClick={verifySolanaWallet}
-                          disabled={solanaVerifying || !solanaAddress.trim() || !effectiveAddress}
-                          className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white"
-                          data-testid="link-wallet-btn"
-                        >
+                        <Button onClick={verifySolanaWallet} disabled={solanaVerifying || !solanaAddress.trim() || !effectiveAddress} className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white" data-testid="link-wallet-btn">
                           {solanaVerifying ? 'Verifying...' : 'Link & Verify'}
                         </Button>
                       </div>
                     </div>
-
-                    {/* Balance Display */}
                     {solanaBalance && (
                       <div className={`p-3 rounded-lg ${solanaBalance.is_eligible ? (isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-100 text-emerald-700') : (isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600')}`}>
                         <div className="flex items-center justify-between">
@@ -914,18 +688,8 @@ const Settings = () => {
                         </div>
                       </div>
                     )}
-
-                    {/* Error/Success Messages */}
-                    {solanaError && (
-                      <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-100 text-red-700'}`}>
-                        {solanaError}
-                      </div>
-                    )}
-                    {solanaSuccess && (
-                      <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
-                        {solanaSuccess}
-                      </div>
-                    )}
+                    {solanaError && <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-100 text-red-700'}`}>{solanaError}</div>}
+                    {solanaSuccess && <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-emerald-900/30 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>{solanaSuccess}</div>}
                   </>
                 )}
               </CardContent>
@@ -933,7 +697,6 @@ const Settings = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Footer */}
         <div className={`mt-8 text-center text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
           <p>DogeFood Lab v1.0.0 Beta • Built with love for the Dogecoin community</p>
         </div>
