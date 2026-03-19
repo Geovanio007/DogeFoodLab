@@ -12,10 +12,10 @@ import {
 } from '@rainbow-me/rainbowkit/wallets';
 import { defineChain } from 'viem';
 
-// Define DogeOS Chikyū Testnet chain
+// Define DogeOS ChikyÅ« Testnet chain
 export const dogeOSDevnet = defineChain({
   id: 6281971,
-  name: 'DogeOS Chikyū Testnet',
+  name: 'DogeOS ChikyÅ« Testnet',
   nativeCurrency: {
     decimals: 18,
     name: 'Dogecoin',
@@ -59,15 +59,19 @@ const detectTelegramEnvironment = () => {
 
 const isTelegramEnv = detectTelegramEnvironment();
 
+// Fixed OKX deep link wallet - only override mobile URI for Telegram,
+// keep QR code intact for desktop browser users
 const okxDeepLinkWallet = ({ projectId: wcProjectId, walletConnectParameters }) => {
   const baseWallet = okxWallet({ projectId: wcProjectId, walletConnectParameters });
 
+  // Only override mobile deep link, never remove qrCode
   return {
     ...baseWallet,
     mobile: {
+      ...baseWallet.mobile,
       getUri: (uri) => `okx://main/wc?uri=${encodeURIComponent(uri)}`,
     },
-    qrCode: undefined,
+    // Do NOT set qrCode: undefined â€” that breaks desktop connection
   };
 };
 
@@ -76,7 +80,7 @@ export const wagmiConfig = getDefaultConfig({
   projectId: projectId,
   chains: [dogeOSDevnet],
   ssr: false,
-  multiInjectedProviderDiscovery: false,
+  multiInjectedProviderDiscovery: true, // Re-enabled so injected OKX extension is detected
   wallets: [
     {
       groupName: 'Recommended',
@@ -85,7 +89,6 @@ export const wagmiConfig = getDefaultConfig({
         : [metaMaskWallet, okxDeepLinkWallet, coinbaseWallet, rainbowWallet, trustWallet, rabbyWallet, phantomWallet, walletConnectWallet, injectedWallet],
     },
   ],
-  // Enable WalletConnect for mobile
   walletConnectParameters: {
     projectId: projectId,
     metadata: {
