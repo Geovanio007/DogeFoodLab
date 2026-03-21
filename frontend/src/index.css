@@ -1016,3 +1016,11 @@ html body .character-selection-screen div {
   color: unset !important;
   -webkit-text-fill-color: unset !important;
 }
+.character-selection-screen h1,
+.character-selection-screen h2,
+.character-selection-screen h3,
+.character-selection-screen h4,
+.character-selection-screen h5,
+.character-selection-screen h6 {
+  color: #ffffff !important;
+     }
