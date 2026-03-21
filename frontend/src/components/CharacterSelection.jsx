@@ -42,14 +42,14 @@ const CharacterSelection = ({ onCharacterSelected }) => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0d1117 0%, #1a1f2e 50%, #0d1117 100%)',
-      padding: '24px 16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}>
+    <div className="character-selection-screen" style={{
+  minHeight: '100vh',
+  background: 'linear-gradient(135deg, #0d1117 0%, #1a1f2e 50%, #0d1117 100%)',
+  padding: '24px 16px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}}>
       <div style={{ maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
 
         {/* Header */}
