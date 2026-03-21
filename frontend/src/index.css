@@ -1020,12 +1020,14 @@ body.telegram-mobile .doge-button {
    CHARACTER SELECTION OVERRIDE
    ================================ */
 
-.character-selection-screen,
-.character-selection-screen p,
-.character-selection-screen h1,
-.character-selection-screen h2,
-.character-selection-screen h3,
-.character-selection-screen h4,
-.character-selection-screen span {
+html body .character-selection-screen,
+html body .character-selection-screen *,
+html body .character-selection-screen p,
+html body .character-selection-screen h1,
+html body .character-selection-screen h2,
+html body .character-selection-screen h3,
+html body .character-selection-screen span,
+html body .character-selection-screen div {
   color: unset !important;
+  -webkit-text-fill-color: unset !important;
 }
