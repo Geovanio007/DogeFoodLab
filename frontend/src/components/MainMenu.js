@@ -44,7 +44,7 @@ const SeasonCountdown = ({ compact }) => {
   if (compact) {
     return (
       <span className="text-xs font-mono text-yellow-400 tabular-nums">
-        {timeLeft.days}d {String(timeLeft.hours).padStart(2, '0')}h {String(timeLeft.minutes).padStart(2, '0')}m
+        {timeLeft.days}d {String(timeLeft.hours).padStart(2, '00')}h {String(timeLeft.minutes).padStart(2, '00')}m
       </span>
     );
   }
@@ -176,7 +176,6 @@ const LiveChat = ({ isLoggedIn, effectiveAddress, username }) => {
 
   return (
     <div className="flex flex-col h-full" data-testid="live-chat">
-      {/* Messages */}
       <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
         {messages.length === 0 && (
           <div className="text-center py-12">
@@ -225,7 +224,6 @@ const LiveChat = ({ isLoggedIn, effectiveAddress, username }) => {
         ))}
       </div>
 
-      {/* Input Area */}
       <div className="border-t border-white/[0.06] p-2">
         {replyTo && (
           <div className="flex items-center gap-1.5 mb-1.5 px-2 py-1 bg-sky-500/10 rounded-lg border border-sky-500/20">
@@ -397,10 +395,13 @@ const navItems = [
 ];
 
 // ─── Left Sidebar ────────────────────────────────────────────
-const Sidebar = ({ onAuthRequired }) => (
+const Sidebar = ({ onAuthRequired, onReferralClick }) => (
   <nav className="hidden lg:flex flex-col w-52 shrink-0 py-4" data-testid="menu-sidebar">
     {/* Share / Invite button */}
-    <button className="mx-3 mb-4 flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 transition-all text-white text-sm font-semibold shadow-lg shadow-sky-500/20">
+    <button
+      onClick={onReferralClick}
+      className="mx-3 mb-4 flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 transition-all text-white text-sm font-semibold shadow-lg shadow-sky-500/20"
+    >
       <Share2 className="w-4 h-4" />
       <span>Share & Earn</span>
     </button>
@@ -445,7 +446,6 @@ const Sidebar = ({ onAuthRequired }) => (
       </a>
     </div>
 
-    {/* Logo at bottom of sidebar */}
     <div className="px-3 mt-4 mb-2 flex flex-col items-center">
       <DogeFoodLogo size="medium" showText={false} showBeta={false} />
       <div className="text-[10px] text-white mt-2 text-center">Built with love for the Dogecoin community</div>
@@ -453,7 +453,7 @@ const Sidebar = ({ onAuthRequired }) => (
   </nav>
 );
 
-// ─── Mobile Navigation Strip (horizontal scrollable) ─────────
+// ─── Mobile Navigation Strip ─────────────────────────────────
 const MobileNavStrip = ({ onAuthRequired }) => (
   <div className="lg:hidden overflow-x-auto scrollbar-hide border-b border-white/[0.06] bg-[#0d1117]" data-testid="mobile-nav-strip">
     <div className="flex items-center gap-1 px-3 py-2 min-w-max">
@@ -486,7 +486,7 @@ const MobileNavStrip = ({ onAuthRequired }) => (
   </div>
 );
 
-// ─── Promotional Banner Card (3D Gamish) ─────────────────────
+// ─── Promotional Banner Card ──────────────────────────────────
 const PromoBanner = ({ icon: Icon, iconBg, title, subtitle, borderColor, gradientFrom, gradientTo, onClick, testId }) => (
   <button
     onClick={onClick}
@@ -494,7 +494,6 @@ const PromoBanner = ({ icon: Icon, iconBg, title, subtitle, borderColor, gradien
     style={{ boxShadow: '0 4px 15px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)' }}
     data-testid={testId}
   >
-    {/* Shine effect */}
     <div className="absolute inset-0 bg-gradient-to-br from-white/[0.07] to-transparent rounded-2xl pointer-events-none" />
     <div className="absolute -top-8 -right-8 w-24 h-24 bg-white/[0.04] rounded-full blur-2xl group-hover:bg-white/[0.08] transition-colors" />
     <div className="relative flex items-start gap-3">
@@ -514,12 +513,11 @@ const PromoBanner = ({ icon: Icon, iconBg, title, subtitle, borderColor, gradien
   </button>
 );
 
-// ─── Feature Card (3D Game-style) ────────────────────────────
+// ─── Feature Card ─────────────────────────────────────────────
 const FeatureCard = ({ icon: Icon, label, gradient, iconColor, borderColor, to, onClick, badge, testId }) => (
   <Link to={to} onClick={onClick} className="block group" data-testid={testId}>
     <div className={`relative overflow-hidden rounded-2xl border ${borderColor} bg-gradient-to-b ${gradient} p-4 sm:p-5 text-center hover:scale-[1.05] hover:-translate-y-1 transition-all duration-200`}
       style={{ boxShadow: '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)' }}>
-      {/* Top shine */}
       <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.05] to-transparent rounded-t-2xl pointer-events-none" />
       {badge && (
         <div className="absolute top-2 right-2 z-10">
@@ -548,7 +546,6 @@ const MainMenu = () => {
 
   useEffect(() => { showPlayer(); }, [showPlayer]);
 
-  // ─── Auth & User State ─────────────────────────────────────
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showGuestSignup, setShowGuestSignup] = useState(false);
   const [guestUsername, setGuestUsername] = useState('');
@@ -576,7 +573,11 @@ const MainMenu = () => {
   const effectivePoints = (isConnected && points) ? points : playerPoints;
   const isAuthenticated = isConnected || isTelegram || guestUser;
 
-  // ─── Data Loading ──────────────────────────────────────────
+  // Navigate to referral tab in settings
+  const handleReferralClick = () => {
+    navigate('/settings', { state: { tab: 'referral' } });
+  };
+
   const loadGuestProfile = async (playerId) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/player/${playerId}/profile`);
@@ -626,7 +627,6 @@ const MainMenu = () => {
     }
   }, [isConnected, address]);
 
-  // Load Telegram user profile
   useEffect(() => {
     if (isTelegram && telegramUser) {
       const tgAddress = `tg_${telegramUser.id}`;
@@ -667,7 +667,6 @@ const MainMenu = () => {
     }).catch(() => {});
   }, []);
 
-  // ─── Handlers ──────────────────────────────────────────────
   const handleLabAccess = (e) => { if (!isAuthenticated) { e.preventDefault(); setShowAuthModal(true); } };
 
   const handleProfileImageUpload = async (e) => {
@@ -710,22 +709,17 @@ const MainMenu = () => {
     } catch { setGuestSignupError('Network error'); setGuestSignupLoading(false); }
   };
 
-  // ═══════════════════════════════════════════════════════════
-  // RENDER
-  // ═══════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-[#0d1117]" data-testid="main-menu">
 
       {/* ─── Top Header ──────────────────────────────────── */}
       <header className="z-40 bg-[#0d1117] border-b border-white/[0.06]">
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 h-[56px] flex items-center justify-between gap-2">
-          {/* Left: Mobile logo */}
           <div className="flex items-center gap-3 lg:hidden">
             <DogeFoodLogo size="small" showText={false} showBeta={false} className="shrink-0" />
           </div>
           <div className="hidden lg:block" />
 
-          {/* Right: Stats + Wallet */}
           <div className="flex items-center gap-1.5 sm:gap-3">
             {gameStats && (
               <div className="hidden sm:flex items-center gap-3 bg-[#151b28] rounded-xl px-3 py-1.5 border border-white/[0.06]">
@@ -749,7 +743,6 @@ const MainMenu = () => {
               </div>
             )}
 
-            {/* Theme Toggle */}
             <ThemeToggle className="!p-1.5 !w-8 !h-8" />
 
             <ConnectButton.Custom>
@@ -759,30 +752,18 @@ const MainMenu = () => {
                 if (!ready) return <div style={{ opacity: 0, pointerEvents: 'none' }} />;
                 if (!connected) return (
                   <button
-                    onClick={() => {
-                      if (typeof openConnectModal === 'function') {
-                        openConnectModal();
-                      }
-                    }}
+                    onClick={() => { if (typeof openConnectModal === 'function') { openConnectModal(); } }}
                     className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold h-8 sm:h-9 px-3 sm:px-4 rounded-xl transition-colors"
                     data-testid="connect-wallet-btn"
-                    title={isTelegram ? 'Connect wallet' : 'Connect wallet'}
                   >
                     <Wallet className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Connect</span>
                   </button>
                 );
                 if (chain.unsupported) return (
                   <button
-                    onClick={() => {
-                      if (typeof openChainModal === 'function') {
-                        openChainModal();
-                      } else if (typeof openAccountModal === 'function') {
-                        openAccountModal();
-                      }
-                    }}
+                    onClick={() => { if (typeof openChainModal === 'function') { openChainModal(); } else if (typeof openAccountModal === 'function') { openAccountModal(); } }}
                     className="bg-red-500/20 text-red-400 text-xs font-semibold h-8 sm:h-9 px-3 rounded-xl border border-red-500/30"
                     data-testid="switch-network-btn"
-                    title="Switch to DogeOS Chikyū Testnet"
                   >
                     Switch Network
                   </button>
@@ -804,20 +785,21 @@ const MainMenu = () => {
         </div>
       </header>
 
-      {/* ─── Mobile Navigation Strip ─────────────────────── */}
       <MobileNavStrip onAuthRequired={handleLabAccess} />
 
-      {/* ─── Main Layout (3-column) ──────────────────────── */}
       <div className="max-w-[1600px] mx-auto flex">
 
-        <Sidebar onAuthRequired={handleLabAccess} />
+        <Sidebar onAuthRequired={handleLabAccess} onReferralClick={handleReferralClick} />
 
-        {/* CENTER CONTENT */}
         <main className="flex-1 min-w-0 px-3 sm:px-5 py-4 space-y-4 sm:space-y-5">
 
           {/* ── Mobile: Share & Earn + Quick Stats ── */}
           <div className="lg:hidden space-y-3">
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 transition-all text-white text-sm font-semibold shadow-lg shadow-sky-500/20" data-testid="mobile-share-earn">
+            <button
+              onClick={handleReferralClick}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 transition-all text-white text-sm font-semibold shadow-lg shadow-sky-500/20"
+              data-testid="mobile-share-earn"
+            >
               <Share2 className="w-4 h-4" />
               <span>Share & Earn</span>
             </button>
@@ -945,7 +927,7 @@ const MainMenu = () => {
               borderColor="border-emerald-600/20"
               gradientFrom="from-emerald-950/40"
               gradientTo="to-green-950/30"
-              onClick={() => navigate('/tournament')}
+              onClick={handleReferralClick}
               testId="promo-refer-earn"
             />
           </div>
@@ -985,11 +967,8 @@ const MainMenu = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent rounded-2xl pointer-events-none" />
               <div className="relative flex items-center gap-4">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
-                  happyHour?.active
-                    ? 'bg-gradient-to-br from-yellow-400 to-yellow-500'
-                    : 'bg-gradient-to-br from-slate-600 to-slate-700'
-                }`}
-                  style={{ boxShadow: happyHour?.active ? '0 8px 24px rgba(234,179,8,0.3)' : '0 4px 12px rgba(0,0,0,0.3)' }}>
+                  happyHour?.active ? 'bg-gradient-to-br from-yellow-400 to-yellow-500' : 'bg-gradient-to-br from-slate-600 to-slate-700'
+                }`} style={{ boxShadow: happyHour?.active ? '0 8px 24px rgba(234,179,8,0.3)' : '0 4px 12px rgba(0,0,0,0.3)' }}>
                   <Clock className={`w-8 h-8 ${happyHour?.active ? 'text-white' : 'text-slate-300'} drop-shadow-md`} />
                 </div>
                 <div>
@@ -1027,53 +1006,11 @@ const MainMenu = () => {
               </Link>
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
-              <FeatureCard
-                icon={Beaker}
-                label="Lab"
-                gradient="from-yellow-500/20 to-yellow-600/10"
-                iconColor="text-yellow-300"
-                borderColor="border-yellow-500/15"
-                to="/lab"
-                onClick={handleLabAccess}
-                testId="feature-lab"
-              />
-              <FeatureCard
-                icon={Settings}
-                label="Auto-Mix"
-                gradient="from-sky-500/20 to-indigo-600/10"
-                iconColor="text-sky-300"
-                borderColor="border-sky-500/15"
-                to="/auto-mixer"
-                badge="AI"
-                testId="feature-auto-mixer"
-              />
-              <FeatureCard
-                icon={Palette}
-                label="Treats"
-                gradient="from-purple-500/20 to-pink-600/10"
-                iconColor="text-purple-300"
-                borderColor="border-purple-500/15"
-                to="/nfts"
-                testId="feature-treats"
-              />
-              <FeatureCard
-                icon={Store}
-                label="Market"
-                gradient="from-sky-500/20 to-cyan-600/10"
-                iconColor="text-sky-300"
-                borderColor="border-sky-500/15"
-                to="/marketplace"
-                testId="feature-market"
-              />
-              <FeatureCard
-                icon={Crown}
-                label="Tourney"
-                gradient="from-yellow-500/20 to-yellow-600/10"
-                iconColor="text-yellow-300"
-                borderColor="border-yellow-500/15"
-                to="/tournament"
-                testId="feature-tournament"
-              />
+              <FeatureCard icon={Beaker} label="Lab" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/lab" onClick={handleLabAccess} testId="feature-lab" />
+              <FeatureCard icon={Settings} label="Auto-Mix" gradient="from-sky-500/20 to-indigo-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/auto-mixer" badge="AI" testId="feature-auto-mixer" />
+              <FeatureCard icon={Palette} label="Treats" gradient="from-purple-500/20 to-pink-600/10" iconColor="text-purple-300" borderColor="border-purple-500/15" to="/nfts" testId="feature-treats" />
+              <FeatureCard icon={Store} label="Market" gradient="from-sky-500/20 to-cyan-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/marketplace" testId="feature-market" />
+              <FeatureCard icon={Crown} label="Tourney" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/tournament" testId="feature-tournament" />
             </div>
           </div>
 
@@ -1084,14 +1021,9 @@ const MainMenu = () => {
                 { key: 'live', label: 'Live Activity', color: 'text-emerald-400' },
                 { key: 'stats', label: 'Game Stats', color: 'text-sky-400' },
               ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActivityTab(tab.key)}
-                  className={`px-4 py-3 text-xs font-semibold transition-colors relative ${
-                    activityTab === tab.key ? `${tab.color}` : 'text-slate-500 hover:text-slate-300'
-                  }`}
-                  data-testid={`activity-tab-${tab.key}`}
-                >
+                <button key={tab.key} onClick={() => setActivityTab(tab.key)}
+                  className={`px-4 py-3 text-xs font-semibold transition-colors relative ${activityTab === tab.key ? `${tab.color}` : 'text-slate-500 hover:text-slate-300'}`}
+                  data-testid={`activity-tab-${tab.key}`}>
                   <div className="flex items-center gap-1.5">
                     {tab.key === 'live' && (
                       <span className="relative flex h-1.5 w-1.5">
@@ -1107,7 +1039,6 @@ const MainMenu = () => {
                 </button>
               ))}
             </div>
-
             {activityTab === 'live' ? (
               <LiveActivityTable />
             ) : (
@@ -1142,9 +1073,8 @@ const MainMenu = () => {
             )}
           </div>
 
-          {/* ── Mobile Live Chat (inline, visible on mobile) ── */}
+          {/* ── Mobile Live Chat ── */}
           <div className="lg:hidden bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="mobile-inline-chat">
-            {/* Chat Header */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
               <MessageCircle className="w-4 h-4 text-emerald-400" />
               <span className="text-sm font-bold text-white flex-1">Live Chat</span>
@@ -1153,7 +1083,6 @@ const MainMenu = () => {
                 <span className="relative rounded-full h-2 w-2 bg-emerald-500" />
               </span>
             </div>
-            {/* Season Countdown */}
             <div className="mx-3 mt-3 p-2.5 rounded-xl bg-gradient-to-br from-indigo-900/30 to-purple-900/20 border border-indigo-500/15">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shrink-0">
@@ -1165,25 +1094,19 @@ const MainMenu = () => {
                 </div>
               </div>
             </div>
-            {/* Chat Messages */}
             <div className="h-[350px] overflow-hidden">
               <LiveChat isLoggedIn={isLoggedIn} effectiveAddress={effectiveAddress} username={username} />
             </div>
           </div>
 
-          {/* ── Mobile Logo ── */}
           <div className="lg:hidden py-4 flex flex-col items-center">
             <DogeFoodLogo size="medium" showText={false} showBeta={false} />
             <div className="text-[10px] text-white mt-2 text-center">Built with love for the Dogecoin community</div>
           </div>
 
-          {/* ── Powered By Footer ── */}
           <div className="text-center py-6">
             <div className="text-[10px] text-white uppercase tracking-widest mb-3">Powered by</div>
-            <img
-              src="https://customer-assets.emergentagent.com/job_dogefoodlab/artifacts/ckey490s_20250812_154617.jpg"
-              alt="DOGEOS" className="max-w-[220px] sm:max-w-[380px] mx-auto rounded-lg border border-white/10"
-            />
+            <img src="https://customer-assets.emergentagent.com/job_dogefoodlab/artifacts/ckey490s_20250812_154617.jpg" alt="DOGEOS" className="max-w-[220px] sm:max-w-[380px] mx-auto rounded-lg border border-white/10" />
           </div>
         </main>
 
@@ -1196,9 +1119,7 @@ const MainMenu = () => {
               <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            {gameStats && (
-              <span className="text-[10px] text-slate-500 ml-1">{gameStats.total_players} players</span>
-            )}
+            {gameStats && <span className="text-[10px] text-slate-500 ml-1">{gameStats.total_players} players</span>}
           </div>
           <div className="mx-3 mt-3 p-3 rounded-xl bg-gradient-to-br from-indigo-900/30 to-purple-900/20 border border-indigo-500/15">
             <div className="flex items-center gap-2.5">
@@ -1217,10 +1138,9 @@ const MainMenu = () => {
         </aside>
       </div>
 
-      {/* Mobile Nav */}
       <MusicPlayer />
 
-      {/* ─── Auth Modal ───────────────────────────────────── */}
+      {/* ─── Auth Modal ── */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" data-testid="auth-modal">
           <div className="bg-[#151b28] rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-white/[0.06] relative">
