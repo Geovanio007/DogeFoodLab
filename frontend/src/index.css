@@ -1015,3 +1015,17 @@ body.telegram-mobile .doge-button {
     justify-content: center;
   }
 }
+
+   /* ================================
+   CHARACTER SELECTION OVERRIDE
+   ================================ */
+
+.character-selection-screen,
+.character-selection-screen p,
+.character-selection-screen h1,
+.character-selection-screen h2,
+.character-selection-screen h3,
+.character-selection-screen h4,
+.character-selection-screen span {
+  color: unset !important;
+}
