@@ -489,21 +489,6 @@ label, .label {
   color: var(--text-primary);
 }
 
-.dark-mode p, .dark p {
-  color: var(--text-secondary);
-}
-
-.dark-mode .text-gray-600, .dark .text-gray-600,
-.dark-mode .text-gray-500, .dark .text-gray-500,
-.dark-mode .text-gray-400, .dark .text-gray-400 {
-  color: #cbd5e1 !important;
-}
-
-.dark-mode .text-gray-700, .dark .text-gray-700,
-.dark-mode .text-gray-800, .dark .text-gray-800 {
-  color: #f1f5f9 !important;
-}
-
 /* ================================
    LOADING SCREEN STYLES
    ================================ */
