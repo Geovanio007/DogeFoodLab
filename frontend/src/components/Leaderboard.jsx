@@ -11,7 +11,7 @@ import MusicPlayer from './MusicPlayer';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-const SEASON_1_END = new Date('2026-03-31T00:00:00Z').getTime();
+const SEASON_1_END = new Date('2026-04-31T00:00:00Z').getTime();
 
 const SeasonCountdown = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -360,13 +360,19 @@ const Leaderboard = () => {
                       </Badge>
                     </div>
 
-                    {/* Points */}
+                    {/* Points + mobile token reward */}
                     <div className="text-right flex-shrink-0">
                       <div className="font-black text-sm sm:text-base text-sky-400">{entry.points.toLocaleString()}</div>
                       <div className="text-[9px] text-slate-500">pts</div>
+                      {/* Token reward — visible on mobile only, hidden on sm+ where the dedicated column shows */}
+                      {rank <= 50 && (
+                        <div className="text-[10px] font-bold text-yellow-400 sm:hidden mt-0.5">
+                          {fmt(rewards.tokens)} $LAB
+                        </div>
+                      )}
                     </div>
 
-                    {/* Rewards */}
+                    {/* Rewards - desktop only */}
                     <div className="hidden sm:block text-right flex-shrink-0 min-w-[90px]">
                       <div className="text-xs font-bold text-yellow-400">
                         {rank <= 50 ? `${fmt(rewards.tokens)} $LAB` : '-'}
