@@ -476,14 +476,16 @@ const LiveActivityTable = () => {
   }, [fetchActivity]);
 
   const rarityColor = {
-    Common: 'text-slate-400', Uncommon: 'text-green-400', Rare: 'text-blue-400',
-    Epic: 'text-purple-400', Legendary: 'text-yellow-400', Mythic: 'text-pink-400'
-  };
+  Common: 'text-slate-400', Uncommon: 'text-green-400', Rare: 'text-blue-400',
+  Epic: 'text-purple-400', Legendary: 'text-yellow-400', Mythic: 'text-pink-400',
+  Spin: 'text-yellow-300'
+};
 
-  const rarityBg = {
-    Common: 'bg-slate-500/10', Uncommon: 'bg-green-500/10', Rare: 'bg-blue-500/10',
-    Epic: 'bg-purple-500/10', Legendary: 'bg-yellow-500/10', Mythic: 'bg-pink-500/10'
-  };
+const rarityBg = {
+  Common: 'bg-slate-500/10', Uncommon: 'bg-green-500/10', Rare: 'bg-blue-500/10',
+  Epic: 'bg-purple-500/10', Legendary: 'bg-yellow-500/10', Mythic: 'bg-pink-500/10',
+  Spin: 'bg-yellow-500/20'
+};
 
   const timeAgo = (iso) => {
     if (!iso) return '';
@@ -525,7 +527,9 @@ const LiveActivityTable = () => {
                     <div className={`w-7 h-7 rounded-lg ${rarityBg[item.rarity] || 'bg-slate-500/10'} flex items-center justify-center shrink-0`}>
                       <Beaker className={`w-3.5 h-3.5 ${rarityColor[item.rarity] || 'text-slate-400'}`} />
                     </div>
-                    <span className="text-xs text-white truncate max-w-[120px]">{item.treat_name || 'Unnamed'}</span>
+                    <span className="text-xs text-white truncate max-w-[120px]">
+  {item.activity_type === 'spin' ? '🎰 ' : ''}{item.treat_name || 'Unnamed'}
+</span>
                   </div>
                 </td>
                 <td className="px-4 py-2.5 hidden sm:table-cell">
