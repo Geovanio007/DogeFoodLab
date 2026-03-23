@@ -68,6 +68,182 @@ const SeasonCountdown = ({ compact }) => {
   );
 };
 
+// ─── Player Ticker Carousel ───────────────────────────────────
+const TICKER_SNAPSHOT_KEY = 'dogefood_ticker_snapshot';
+const TICKER_SNAPSHOT_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+
+const PlayerTickerCarousel = () => {
+  const [tickerItems, setTickerItems] = useState([]);
+  const trackRef = useRef(null);
+  const animRef = useRef(null);
+  const posRef = useRef(0);
+  const isPausedRef = useRef(false);
+
+  const buildTickerItems = useCallback(async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/leaderboard`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) return;
+
+      // Load or create 24h snapshot
+      let snapshot = {};
+      try {
+        const raw = localStorage.getItem(TICKER_SNAPSHOT_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // If snapshot is older than 24h, reset it (but keep old values for diff display)
+          if (Date.now() - parsed.timestamp < TICKER_SNAPSHOT_TTL) {
+            snapshot = parsed.data || {};
+          } else {
+            // Snapshot expired: save fresh snapshot and show 0% change
+            const fresh = {};
+            data.forEach(p => { fresh[p.address] = p.points; });
+            localStorage.setItem(TICKER_SNAPSHOT_KEY, JSON.stringify({ timestamp: Date.now(), data: fresh }));
+            snapshot = fresh;
+          }
+        } else {
+          // First load: save snapshot now, show 0% change until next cycle
+          const fresh = {};
+          data.forEach(p => { fresh[p.address] = p.points; });
+          localStorage.setItem(TICKER_SNAPSHOT_KEY, JSON.stringify({ timestamp: Date.now(), data: fresh }));
+          snapshot = fresh;
+        }
+      } catch {}
+
+      const items = data.slice(0, 20).map(player => {
+        const prev = snapshot[player.address];
+        let pct = 0;
+        if (prev != null && prev > 0) {
+          pct = ((player.points - prev) / prev) * 100;
+        } else if (prev === 0 && player.points > 0) {
+          pct = 100;
+        }
+        return {
+          address: player.address,
+          nickname: player.nickname || `Scientist #${player.rank}`,
+          points: player.points,
+          pct: Math.round(pct * 100) / 100,
+          rank: player.rank,
+        };
+      });
+
+      setTickerItems(items);
+    } catch (e) {
+      console.error('Ticker fetch error', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    buildTickerItems();
+    const iv = setInterval(buildTickerItems, 5 * 60 * 1000); // refresh every 5 min
+    return () => clearInterval(iv);
+  }, [buildTickerItems]);
+
+  // Smooth CSS animation ticker — no JS loop needed
+  // Duplicate items so the loop is seamless
+  const displayed = tickerItems.length > 0 ? [...tickerItems, ...tickerItems] : [];
+
+  if (tickerItems.length === 0) return null;
+
+  return (
+    <div
+      className="relative w-full overflow-hidden rounded-xl border border-white/[0.06] bg-[#0d1117]"
+      style={{ height: '36px' }}
+      onMouseEnter={() => {
+        if (trackRef.current) trackRef.current.style.animationPlayState = 'paused';
+      }}
+      onMouseLeave={() => {
+        if (trackRef.current) trackRef.current.style.animationPlayState = 'running';
+      }}
+    >
+      {/* Left fade */}
+      <div className="absolute left-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
+        style={{ background: 'linear-gradient(to right, #0d1117 0%, transparent 100%)' }} />
+
+      {/* Label pill */}
+      <div className="absolute left-0 top-0 bottom-0 z-20 flex items-center">
+        <div className="flex items-center gap-1.5 px-3 h-full bg-[#151b28] border-r border-white/[0.06]">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-500" />
+          </span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">24h</span>
+        </div>
+      </div>
+
+      {/* Scrolling track */}
+      <div
+        ref={trackRef}
+        className="flex items-center h-full"
+        style={{
+          paddingLeft: '90px',
+          width: 'max-content',
+          animation: `ticker-scroll ${tickerItems.length * 4}s linear infinite`,
+        }}
+      >
+        {displayed.map((item, i) => {
+          const isUp = item.pct > 0;
+          const isDown = item.pct < 0;
+          const sign = isUp ? '+' : '';
+          const pctColor = isUp ? '#34d399' : isDown ? '#f87171' : '#94a3b8';
+          const pctDisplay = `${sign}${item.pct.toFixed(2)}%`;
+
+          return (
+            <div
+              key={`${item.address}-${i}`}
+              className="flex items-center gap-2 px-4 border-r border-white/[0.04] h-full whitespace-nowrap flex-shrink-0"
+            >
+              {/* Rank dot */}
+              <span className="text-[10px] text-slate-600 tabular-nums">#{item.rank}</span>
+
+              {/* Nickname */}
+              <span className="text-[12px] font-semibold text-white">{item.nickname}</span>
+
+              {/* Points */}
+              <span className="text-[11px] text-slate-400 tabular-nums font-mono">
+                {item.points.toLocaleString()}
+              </span>
+
+              {/* % change */}
+              <span
+                className="text-[11px] font-bold tabular-nums font-mono"
+                style={{ color: pctColor }}
+              >
+                {pctDisplay}
+              </span>
+
+              {/* Arrow indicator */}
+              {isUp && (
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M5 8V2M5 2L2 5M5 2L8 5" stroke="#34d399" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+              {isDown && (
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M5 2V8M5 8L2 5M5 8L8 5" stroke="#f87171" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Right fade */}
+      <div className="absolute right-0 top-0 bottom-0 w-10 z-10 pointer-events-none"
+        style={{ background: 'linear-gradient(to left, #0d1117 0%, transparent 100%)' }} />
+
+      {/* Keyframe injection */}
+      <style>{`
+        @keyframes ticker-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
 // ─── Emoji Picker (simple) ───────────────────────────────────
 const QUICK_EMOJIS = ['😀','😂','🔥','❤️','👍','👏','🎉','💎','✨','🐶','🏆','💪','🤩','😎','🚀','⭐','💛','🎯','🪄','🎮'];
 
@@ -397,7 +573,6 @@ const navItems = [
 // ─── Left Sidebar ────────────────────────────────────────────
 const Sidebar = ({ onAuthRequired, onReferralClick }) => (
   <nav className="hidden lg:flex flex-col w-52 shrink-0 py-4" data-testid="menu-sidebar">
-    {/* Share / Invite button */}
     <button
       onClick={onReferralClick}
       className="mx-3 mb-4 flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 transition-all text-white text-sm font-semibold shadow-lg shadow-sky-500/20"
@@ -573,7 +748,6 @@ const MainMenu = () => {
   const effectivePoints = (isConnected && points) ? points : playerPoints;
   const isAuthenticated = isConnected || isTelegram || guestUser;
 
-  // Navigate to referral tab in settings
   const handleReferralClick = () => {
     navigate('/settings', { state: { tab: 'referral' } });
   };
@@ -792,6 +966,9 @@ const MainMenu = () => {
         <Sidebar onAuthRequired={handleLabAccess} onReferralClick={handleReferralClick} />
 
         <main className="flex-1 min-w-0 px-3 sm:px-5 py-4 space-y-4 sm:space-y-5">
+
+          {/* ── Player Points Ticker ── */}
+          <PlayerTickerCarousel />
 
           {/* ── Mobile: Share & Earn + Quick Stats ── */}
           <div className="lg:hidden space-y-3">
