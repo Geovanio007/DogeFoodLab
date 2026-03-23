@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const SEASON_1_END = new Date('2026-03-31T00:00:00Z').getTime();
+const SEASON_1_END = new Date('2026-04-31T00:00:00Z').getTime();
 
 // ─── Season Countdown ────────────────────────────────────────
 const SeasonCountdown = ({ compact }) => {
