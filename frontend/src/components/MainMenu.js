@@ -749,7 +749,9 @@ const MainMenu = () => {
   const isLoggedIn = isConnected || guestUser || (isTelegram && telegramUser);
   const effectiveAddress = address || guestUser?.guest_id || guestUser?.id || (telegramUser ? `tg_${telegramUser.id}` : null);
   const effectiveLevel = (isConnected && currentLevel) ? currentLevel : playerLevel;
-  const effectivePoints = (isConnected && points) ? points : playerPoints;
+  // Prefer playerPoints (fetched live from the profile API) when available,
+  // fall back to GameContext points only if playerPoints hasn't loaded yet.
+  const effectivePoints = playerPoints > 0 ? playerPoints : (points || 0);
   const isAuthenticated = isConnected || isTelegram || guestUser;
 
   const handleReferralClick = () => {
