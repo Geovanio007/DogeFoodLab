@@ -812,16 +812,19 @@ const MainMenu = () => {
         .then(r => r.ok ? r.json() : null)
         .then(p => {
           if (p) {
-            setUsername(p.nickname || p.telegram_first_name || telegramUser.first_name || '');
+            // Prefer the custom nickname stored in DB; only fall back to Telegram name
+            // if no custom username has ever been set
+            setUsername(p.nickname || '');
             setProfileImage(p.profile_image || null);
             setPlayerLevel(p.level || 1);
             setPlayerPoints(p.points || 0);
           } else {
-            setUsername(telegramUser.first_name || telegramUser.username || '');
+            // No DB record yet — show nothing so user is prompted to set a username
+            setUsername('');
           }
         })
         .catch(() => {
-          setUsername(telegramUser.first_name || telegramUser.username || '');
+          setUsername('');
         });
     }
   }, [isTelegram, telegramUser]);
@@ -864,7 +867,19 @@ const MainMenu = () => {
     setSavingUsername(true); setUsernameError('');
     try {
       const r = await fetch(`${BACKEND_URL}/api/player/${effectiveAddress}/update-username?username=${encodeURIComponent(usernameInput)}`, { method: 'POST' });
-      if (r.ok) { setUsername(usernameInput); setIsEditingUsername(false); }
+      if (r.ok) {
+        setUsername(usernameInput);
+        setIsEditingUsername(false);
+        // Re-fetch profile to keep points and level in sync
+        try {
+          const profileRes = await fetch(`${BACKEND_URL}/api/player/${effectiveAddress}/profile`);
+          if (profileRes.ok) {
+            const p = await profileRes.json();
+            setPlayerPoints(p.points || 0);
+            setPlayerLevel(p.level || 1);
+          }
+        } catch {}
+      }
       else { const d = await r.json(); setUsernameError(d.detail || 'Failed'); }
     } catch { setUsernameError('Failed to save'); }
     finally { setSavingUsername(false); }
@@ -1036,11 +1051,9 @@ const MainMenu = () => {
                   {!isEditingUsername ? (
                     <div className="flex items-center gap-1.5">
                       <span className="font-bold text-sm sm:text-base text-white truncate">{username || 'Set username'}</span>
-                      {!username && (
-                        <button onClick={() => { setUsernameInput(username); setIsEditingUsername(true); setUsernameError(''); }} className="p-0.5 hover:bg-white/10 rounded">
-                          <Edit2 className="w-3 h-3 text-sky-400/50" />
-                        </button>
-                      )}
+                      <button onClick={() => { setUsernameInput(username); setIsEditingUsername(true); setUsernameError(''); }} className="p-0.5 hover:bg-white/10 rounded" title="Edit username">
+                        <Edit2 className="w-3 h-3 text-sky-400/50" />
+                      </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1">
