@@ -175,9 +175,20 @@ const Settings = () => {
         headers: { 'Content-Type': 'application/json' }
       });
       if (response.ok) {
-        setPlayerData(prev => ({ ...prev, nickname: newUsername.trim() }));
+        const trimmed = newUsername.trim();
+        setPlayerData(prev => ({ ...prev, nickname: trimmed }));
         setIsEditingUsername(false);
         playSuccess();
+        // Sync guest localStorage so MainMenu card picks up the new username immediately
+        try {
+          const stored = localStorage.getItem('dogefood_player');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            parsed.username = trimmed;
+            localStorage.setItem('dogefood_player', JSON.stringify(parsed));
+            window.dispatchEvent(new Event('dogefood_player_registered'));
+          }
+        } catch {}
       } else {
         const errorData = await response.json();
         setUsernameError(errorData.detail || 'Failed to update username');
