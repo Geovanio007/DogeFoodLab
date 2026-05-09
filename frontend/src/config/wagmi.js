@@ -40,6 +40,7 @@ export const dogeOSDevnet = defineChain({
 });
 
 const projectId = process.env.REACT_APP_WALLETCONNECT_PROJECT_ID;
+const dogeOSClientId = process.env.REACT_APP_DOGEOS_CLIENT_ID;
 const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://dogefoodlab.vercel.app';
 
 const detectTelegramEnvironment = () => {
