@@ -1028,24 +1028,29 @@ html body .character-selection-screen div {
 /* ================================
    DOGEOS / HEROUI MODAL OVERRIDE
    ================================
-   The DogeOS SDK wraps its portal in a `.light` themed scope and relies on
-   HeroUI design tokens (`--heroui-foreground`, etc.) for text/colors.
+   The DogeOS SDK renders its connect modal inside a `.light` themed portal
+   (`#modal-container > .light`) with a white card background, relying on
+   HeroUI design tokens (`--heroui-foreground`, etc.) for text colors.
    Our host app forces `<html class="dark dark-mode">` and sets aggressive
    global rules (`body { color: var(--text-primary) }` etc.) that bleed
    white text into the modal — producing white-on-white invisibility.
-   Scope text colors and headings INSIDE `.light` back to HeroUI tokens so
-   the modal renders correctly regardless of the host's dark mode. */
-.dark .light, .dark-mode .light,
-html.dark .light, html.dark-mode .light {
+   Scope the override STRICTLY to the modal portal so it doesn't disturb
+   the host's dark-mode styles elsewhere (the SDK also wraps the *whole
+   app* in a `.light` div for utility-token purposes — we don't want to
+   touch that). */
+#modal-container [role="dialog"],
+#modal-container [role="dialog"] * {
   color: hsl(var(--heroui-foreground, 240 40% 11.76%) / 1) !important;
   -webkit-text-fill-color: hsl(var(--heroui-foreground, 240 40% 11.76%) / 1) !important;
 }
-.dark .light h1, .dark .light h2, .dark .light h3,
-.dark .light h4, .dark .light h5, .dark .light h6,
-.dark-mode .light h1, .dark-mode .light h2, .dark-mode .light h3,
-.dark-mode .light h4, .dark-mode .light h5, .dark-mode .light h6 {
-  color: inherit !important;
-}
-.dark .light *, .dark-mode .light * {
+/* Let the SDK's own muted/utility classes override the broad reset above
+   so secondary text (legal copy, "or continue with", etc.) keeps its
+   intended gray. We allow inheritance so SDK utilities win on children. */
+#modal-container [role="dialog"] [class*="text-default"],
+#modal-container [role="dialog"] [class*="text-foreground"],
+#modal-container [role="dialog"] [class*="text-content"],
+#modal-container [role="dialog"] a,
+#modal-container [role="dialog"] [class*="text-t"] {
+  color: inherit;
   -webkit-text-fill-color: inherit;
 }

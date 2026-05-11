@@ -12,9 +12,12 @@ The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-con
 
 ### DogeOS Modal Text-Visibility Fix  ✅ (Feb 11, 2026)
 - **Bug:** Modal text ("Log in or sign up", "Or connect a wallet", Twitter/Google labels, Continue button, legal text, Powered by) was rendering nearly invisible (white-on-white).
-- **Root cause:** The host app forces `<html class="dark dark-mode">` and applies `body { color: var(--text-primary) }` = `#f1f5f9` (slate-100). The DogeOS SDK's modal renders inside a `.light` portal wrapper with a white card background and relies on HeroUI tokens (`--heroui-foreground: 240 40% 11.76%`) for text — but the host's white inherited color was overriding HeroUI's intended dark text.
-- **Fix:** Added scoped CSS in `frontend/src/index.css` that resets text-color inside any `.light` descendant of `.dark`/`.dark-mode` to `hsl(var(--heroui-foreground) / 1)`, with `!important` to beat the host's `body`/heading rules. Children inherit by default so SDK utility classes like `text-default-500` continue to override correctly.
-- **Verified live:** modal text now `rgb(18, 18, 42)` (dark navy), confirmed legible via screenshot + AI analysis.
+- **Root cause:** The host app forces `<html class="dark dark-mode">` and applies `body { color: var(--text-primary) }` = `#f1f5f9` (slate-100). The DogeOS SDK's modal renders inside a white-card portal and relies on HeroUI tokens (`--heroui-foreground: 240 40% 11.76%`) for text — but the host's white inherited color was overriding HeroUI's intended dark text.
+- **Fix:** Added a CSS rule in `frontend/src/index.css` scoped **strictly to `#modal-container [role="dialog"]`** (the SDK's portal root, NOT the SDK's outer `.light` wrapper that contains the whole app) that resets `color` and `-webkit-text-fill-color` to `hsl(var(--heroui-foreground) / 1)` with `!important`. A secondary rule allows the SDK's own muted-text utility classes (`text-default-*`, `text-foreground-*`, `text-content-*`, anchors, `text-t*`) to inherit so legal/secondary text keeps its intended gray.
+- **Regression fixed:** An initial broader selector (`.dark .light *`) inadvertently matched the SDK's app-wide `<div class="light">` wrapper (TomoUIProvider injects it around all WalletConnectProvider children), which turned the entire dark-mode UI dark navy. Narrowed to `#modal-container` only.
+- **Verified live:**  
+  • Welcome screen body color = `rgb(241, 245, 249)` (original dark-mode white) ✓  
+  • Modal text color = `rgb(18, 18, 42)` (dark navy on white card) ✓
 
 ### What's New Toast — MyDoge Wallet V3 Rollout  ✅ (Feb 11, 2026)
 - `frontend/src/components/WhatsNewToast.jsx` — themed first-visit toast that surfaces the new MyDoge Wallet V3 rollout.
