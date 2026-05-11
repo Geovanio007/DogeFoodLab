@@ -61,11 +61,11 @@ const WhatsNewToast = () => {
   return (
     <div
       data-testid="whats-new-toast"
-      className={`fixed z-[10000] left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 sm:left-auto sm:translate-x-0 sm:right-6 w-[92vw] max-w-sm pointer-events-auto ${
+      className={`fixed z-[10000] bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 sm:w-auto sm:max-w-sm pointer-events-auto ${
         closing ? 'whats-new-leave' : 'whats-new-enter'
       }`}
     >
-      <div className="relative rounded-2xl overflow-hidden border-2 border-yellow-300/70 bg-gradient-to-br from-blue-600/95 via-blue-700/95 to-indigo-800/95 backdrop-blur-md shadow-[0_20px_60px_-10px_rgba(56,189,248,0.45)]">
+      <div className="relative mx-auto sm:mx-0 w-full sm:w-auto sm:max-w-sm rounded-2xl overflow-hidden border-2 border-yellow-300/70 bg-gradient-to-br from-blue-600/95 via-blue-700/95 to-indigo-800/95 backdrop-blur-md shadow-[0_20px_60px_-10px_rgba(56,189,248,0.45)]">
         {/* sheen */}
         <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/15 to-transparent pointer-events-none" />
 
