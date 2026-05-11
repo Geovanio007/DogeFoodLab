@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: dogefoodlab-frontend
-    env: static
-    buildCommand: cd frontend && yarn install --no-frozen-lockfile && yarn build
-    staticPublishPath: frontend/build
-    pullRequestPreviewsEnabled: false
