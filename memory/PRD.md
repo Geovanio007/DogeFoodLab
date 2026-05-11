@@ -10,10 +10,12 @@ The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-con
 
 ## Implemented (Feb 2026)
 
-### What's New Toast — Wallet Connect Rollout  ✅ (Feb 11, 2026)
-- `frontend/src/components/WhatsNewToast.jsx` — themed first-visit toast that surfaces the new DogeOS wallet-connect rollout.
+### What's New Toast — MyDoge Wallet V3 Rollout  ✅ (Feb 11, 2026)
+- `frontend/src/components/WhatsNewToast.jsx` — themed first-visit toast that surfaces the new MyDoge Wallet V3 rollout.
+- Title: **"Cheers! MyDoge Wallet V3 is here"** (no sparkle emoji).
 - Visual: custom illustration of two scientist Shiba Inus in lab coats clinking glowing chemistry beakers (cyan + gold) — generated via Gemini Nano Banana (`gemini-3.1-flash-image-preview`), saved to `frontend/public/shibas-toasting.png`.
-- Behavior: appears 1.4s after the welcome screen mounts, dismissible via close button or "Got it" CTA, gated by `localStorage['dogefood_whats_new_seen'] === 'wallet-connect-1'` so it shows only once per browser. Bumping `WHATS_NEW_VERSION` in the component re-surfaces it for future updates.
+- **CTA "Connect Wallet" opens the DogeOS wallet-connect modal directly** via the SDK's `useWalletConnect().openModal()` and dismisses the toast.
+- Behavior: appears 1.4s after the welcome screen mounts, also dismissible via close button, gated by `localStorage['dogefood_whats_new_seen'] === 'mydoge-wallet-v3'` so it shows only once per browser. Bumping `WHATS_NEW_VERSION` in the component re-surfaces it for future updates.
 - Theme: matches app palette (blue→indigo glass gradient, yellow-300 accent ring, Fredoka heading font, kawaii doge image), `prefers-reduced-motion` respected, fixed bottom-center on mobile / bottom-right on desktop.
 - Mounted inside `WelcomeScreen.jsx` so it only shows pre-auth.
 

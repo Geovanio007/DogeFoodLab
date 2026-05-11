@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from 'react';
+import { useWalletConnect } from '@dogeos/dogeos-sdk';
 
 /**
  * "What's New" toast — appears on first visit to celebrate the new
- * DogeOS wallet-connect rollout. Features two scientist Shiba Inus
+ * MyDoge Wallet V3 rollout. Features two scientist Shiba Inus
  * clinking lab beakers in a celebratory toast.
+ *
+ * The CTA opens the DogeOS wallet-connect modal directly.
  *
  * Visibility is gated by localStorage so it only shows once per
  * browser/version. Bump WHATS_NEW_VERSION to re-surface it for an
  * existing audience after a future update.
  */
-const WHATS_NEW_VERSION = 'wallet-connect-1';
+const WHATS_NEW_VERSION = 'mydoge-wallet-v3';
 const STORAGE_KEY = 'dogefood_whats_new_seen';
 
 const WhatsNewToast = () => {
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
+  const { openModal } = useWalletConnect() || {};
 
   useEffect(() => {
     try {
@@ -27,13 +31,28 @@ const WhatsNewToast = () => {
     return () => clearTimeout(t);
   }, []);
 
-  const dismiss = () => {
-    setClosing(true);
+  const markSeen = () => {
     try {
       localStorage.setItem(STORAGE_KEY, WHATS_NEW_VERSION);
     } catch (_) {
       /* ignore */
     }
+  };
+
+  const dismiss = () => {
+    setClosing(true);
+    markSeen();
+    setTimeout(() => setVisible(false), 280);
+  };
+
+  const handleConnect = () => {
+    markSeen();
+    try {
+      openModal?.();
+    } catch (e) {
+      console.error('DogeOS openModal failed from WhatsNewToast:', e);
+    }
+    setClosing(true);
     setTimeout(() => setVisible(false), 280);
   };
 
@@ -75,23 +94,22 @@ const WhatsNewToast = () => {
               <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-yellow-400/95 text-blue-900">
                 What's New
               </span>
-              <span className="text-yellow-300 text-sm">✨</span>
             </div>
             <h3
               className="text-white font-bold text-base sm:text-lg leading-tight"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
-              Cheers! Wallet Connect is here
+              Cheers! MyDoge Wallet V3 is here
             </h3>
             <p className="text-white/90 text-xs sm:text-sm mt-1 leading-snug">
               Plug in your wallet via DogeOS to claim $LAB, mint treats and join VIP scientists.
             </p>
             <button
-              data-testid="whats-new-dismiss-btn"
-              onClick={dismiss}
+              data-testid="whats-new-connect-btn"
+              onClick={handleConnect}
               className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-yellow-400 hover:bg-yellow-300 text-blue-900 text-xs font-bold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
             >
-              Got it
+              Connect Wallet
               <span aria-hidden>→</span>
             </button>
           </div>
