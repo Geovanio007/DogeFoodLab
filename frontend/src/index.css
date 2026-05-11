@@ -1024,3 +1024,28 @@ html body .character-selection-screen div {
 .character-selection-screen h6 {
   color: #ffffff !important;
      }
+
+/* ================================
+   DOGEOS / HEROUI MODAL OVERRIDE
+   ================================
+   The DogeOS SDK wraps its portal in a `.light` themed scope and relies on
+   HeroUI design tokens (`--heroui-foreground`, etc.) for text/colors.
+   Our host app forces `<html class="dark dark-mode">` and sets aggressive
+   global rules (`body { color: var(--text-primary) }` etc.) that bleed
+   white text into the modal — producing white-on-white invisibility.
+   Scope text colors and headings INSIDE `.light` back to HeroUI tokens so
+   the modal renders correctly regardless of the host's dark mode. */
+.dark .light, .dark-mode .light,
+html.dark .light, html.dark-mode .light {
+  color: hsl(var(--heroui-foreground, 240 40% 11.76%) / 1) !important;
+  -webkit-text-fill-color: hsl(var(--heroui-foreground, 240 40% 11.76%) / 1) !important;
+}
+.dark .light h1, .dark .light h2, .dark .light h3,
+.dark .light h4, .dark .light h5, .dark .light h6,
+.dark-mode .light h1, .dark-mode .light h2, .dark-mode .light h3,
+.dark-mode .light h4, .dark-mode .light h5, .dark-mode .light h6 {
+  color: inherit !important;
+}
+.dark .light *, .dark-mode .light * {
+  -webkit-text-fill-color: inherit;
+}

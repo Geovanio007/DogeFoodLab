@@ -10,6 +10,12 @@ The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-con
 
 ## Implemented (Feb 2026)
 
+### DogeOS Modal Text-Visibility Fix  ✅ (Feb 11, 2026)
+- **Bug:** Modal text ("Log in or sign up", "Or connect a wallet", Twitter/Google labels, Continue button, legal text, Powered by) was rendering nearly invisible (white-on-white).
+- **Root cause:** The host app forces `<html class="dark dark-mode">` and applies `body { color: var(--text-primary) }` = `#f1f5f9` (slate-100). The DogeOS SDK's modal renders inside a `.light` portal wrapper with a white card background and relies on HeroUI tokens (`--heroui-foreground: 240 40% 11.76%`) for text — but the host's white inherited color was overriding HeroUI's intended dark text.
+- **Fix:** Added scoped CSS in `frontend/src/index.css` that resets text-color inside any `.light` descendant of `.dark`/`.dark-mode` to `hsl(var(--heroui-foreground) / 1)`, with `!important` to beat the host's `body`/heading rules. Children inherit by default so SDK utility classes like `text-default-500` continue to override correctly.
+- **Verified live:** modal text now `rgb(18, 18, 42)` (dark navy), confirmed legible via screenshot + AI analysis.
+
 ### What's New Toast — MyDoge Wallet V3 Rollout  ✅ (Feb 11, 2026)
 - `frontend/src/components/WhatsNewToast.jsx` — themed first-visit toast that surfaces the new MyDoge Wallet V3 rollout.
 - Title: **"Cheers! MyDoge Wallet V3 is here"** (no sparkle emoji).
