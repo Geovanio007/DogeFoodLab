@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useWalletConnect } from '@dogeos/dogeos-sdk';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
@@ -179,6 +179,7 @@ const FallbackMixingStation = ({ isActive, ingredients, onMix, timeRemaining }) 
 
 const GameLab = () => {
   const { isConnected, address } = useAccount();
+  const { openModal, isConnecting } = useWalletConnect();
   const {
     currentLevel,
     xpProgress,
@@ -483,7 +484,13 @@ const GameLab = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <ConnectButton />
+                  <Button
+                    onClick={() => openModal?.()}
+                    disabled={isConnecting}
+                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition hover:scale-105 w-full"
+                  >
+                    {isConnecting ? 'Connecting...' : '🔗 Connect Wallet'}
+                  </Button>
                   
                   <div className="text-white/60 text-sm">or</div>
                   

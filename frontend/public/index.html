@@ -27,6 +27,25 @@
     <title>DogeFood Lab</title>
     <!-- Telegram WebApp Script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Stubs for optional wallet adapters pulled in transitively by DogeOS SDK.
+         These globals are normally provided by host pages that ship the
+         respective wallet bundles. We stub them out so the SDK's adapter
+         registration code doesn't crash at module evaluation time. -->
+    <script>
+      (function () {
+        try {
+          var g = (typeof globalThis !== 'undefined') ? globalThis : window;
+          if (!g.TronWebProto) {
+            g.TronWebProto = {
+              Transaction: function () {},
+              transaction: { Transaction: function () {} },
+              Raw: function () {},
+              Contract: function () {},
+            };
+          }
+        } catch (e) { /* no-op */ }
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

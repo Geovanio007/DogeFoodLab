@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useWalletConnect } from '@dogeos/dogeos-sdk';
 
 const WalletRegistration = ({ onRegistrationComplete, registeredPlayers = [] }) => {
   const { address, isConnected } = useAccount();
+  const { openModal, isConnecting } = useWalletConnect();
   const [nickname, setNickname] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationStep, setRegistrationStep] = useState('connect'); // 'connect', 'nickname', 'complete'
@@ -118,7 +119,14 @@ const WalletRegistration = ({ onRegistrationComplete, registeredPlayers = [] }) 
             </div>
             
             <div className="connect-button-container">
-              <ConnectButton />
+              <button
+                type="button"
+                onClick={() => openModal?.()}
+                disabled={isConnecting}
+                className="connect-button"
+              >
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+              </button>
             </div>
             
             <div className="benefits-list">

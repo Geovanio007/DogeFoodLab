@@ -1,19 +1,44 @@
-import '@rainbow-me/rainbowkit/styles.css';
+import React from 'react';
+import { WagmiProvider, createConfig, http } from 'wagmi';
+import { injected } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider } from 'wagmi';
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { wagmiConfig } from '../config/wagmi';
+import { WalletConnectProvider } from '@dogeos/dogeos-sdk';
+import '@dogeos/dogeos-sdk/style.css';
+import { dogeosConfig, dogeOSChikyuTestnet } from '../config/dogeos';
+
+/**
+ * Wallet provider stack for the app.
+ *
+ * Stack (outside → inside):
+ *   QueryClientProvider      ← required by wagmi v2
+ *     WagmiProvider          ← supplies wagmi React context (useAccount, etc.)
+ *       WalletConnectProvider← supplies the DogeOS SDK context (modal, etc.)
+ *
+ * The DogeOS SDK manages its own internal multi-chain wallet state, but the
+ * rest of the app already uses wagmi v2 hooks (`useAccount`, `useSignMessage`,
+ * `useChainId`, `useSwitchChain`, ...), so we keep a thin wagmi setup wired
+ * to the DogeOS Chikyū Testnet for EVM read calls.
+ */
+
+const wagmiConfig = createConfig({
+  chains: [dogeOSChikyuTestnet],
+  connectors: [injected()],
+  transports: {
+    [dogeOSChikyuTestnet.id]: http(),
+  },
+  ssr: false,
+});
 
 const queryClient = new QueryClient();
 
 export function Web3Provider({ children }) {
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider modalSize="compact">
+    <QueryClientProvider client={queryClient}>
+      <WagmiProvider config={wagmiConfig}>
+        <WalletConnectProvider config={dogeosConfig}>
           {children}
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+        </WalletConnectProvider>
+      </WagmiProvider>
+    </QueryClientProvider>
   );
 }

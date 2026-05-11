@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import DogeConnectButton from './DogeConnectButton';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useGame } from '../contexts/GameContext';
@@ -940,7 +940,7 @@ const MainMenu = () => {
 
             <ThemeToggle className="!p-1.5 !w-8 !h-8" />
 
-            <ConnectButton.Custom>
+            <DogeConnectButton>
               {({ account, chain, openAccountModal, openConnectModal, openChainModal, mounted, authenticationStatus }) => {
                 const ready = mounted && authenticationStatus !== 'loading';
                 const connected = ready && account && chain && (!authenticationStatus || authenticationStatus === 'authenticated');
@@ -975,7 +975,7 @@ const MainMenu = () => {
                   </button>
                 );
               }}
-            </ConnectButton.Custom>
+            </DogeConnectButton>
           </div>
         </div>
       </header>
@@ -1349,13 +1349,13 @@ const MainMenu = () => {
                 <h3 className="text-lg font-bold text-white text-center mb-1">Join the Lab!</h3>
                 <p className="text-slate-400 text-xs text-center mb-5">Connect wallet or sign up to start mixing</p>
                 <div className="space-y-3">
-                  <ConnectButton.Custom>
+                  <DogeConnectButton>
                     {({ openConnectModal }) => (
                       <button onClick={() => { setShowAuthModal(false); openConnectModal(); }} className="w-full py-2.5 px-4 rounded-xl bg-sky-600 text-white font-semibold hover:bg-sky-500 transition-colors flex items-center justify-center gap-2 text-sm" data-testid="auth-connect-wallet">
                         <Wallet className="w-4 h-4" /> Connect Wallet
                       </button>
                     )}
-                  </ConnectButton.Custom>
+                  </DogeConnectButton>
                   <div className="flex items-center gap-3"><div className="flex-1 h-px bg-white/10" /><span className="text-slate-500 text-xs">or</span><div className="flex-1 h-px bg-white/10" /></div>
                   <button onClick={() => setShowGuestSignup(true)} className="w-full py-2.5 px-4 rounded-xl bg-[#0d1117] text-white font-semibold hover:bg-white/[0.06] transition-colors flex items-center justify-center gap-2 text-sm border border-white/[0.06]" data-testid="auth-guest-signup">
                     <UserPlus className="w-4 h-4" /> Sign Up as Guest

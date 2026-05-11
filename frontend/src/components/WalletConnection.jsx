@@ -1,15 +1,25 @@
 import React, { useState } from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useWalletConnect, useAccount as useDogeAccount } from '@dogeos/dogeos-sdk';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useWeb3 } from '../hooks/useWeb3';
 import { useGame } from '../contexts/GameContext';
-import { AlertTriangle, CheckCircle, Wifi } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Wifi, Wallet, LogOut } from 'lucide-react';
+
+const shortAddress = (addr) =>
+  addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
 
 const WalletConnection = () => {
   const { address, isConnected, isCorrectNetwork, switchToDogeOS } = useWeb3();
   const { user, isNFTHolder, currentLevel, points } = useGame();
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const { openModal, disconnect, isConnecting } = useWalletConnect();
+  // Pull address from DogeOS as a fallback in case the wagmi shim
+  // hasn't propagated yet on first render.
+  const { address: dogeAddress } = useDogeAccount();
+  const [isAuthenticating] = useState(false);
+
+  const effectiveAddress = address || dogeAddress;
+  const effectiveConnected = isConnected || Boolean(dogeAddress);
 
   const handleNetworkSwitch = async () => {
     try {
@@ -19,10 +29,26 @@ const WalletConnection = () => {
     }
   };
 
+  const handleConnect = () => {
+    try {
+      openModal?.();
+    } catch (error) {
+      console.error('Failed to open DogeOS wallet modal:', error);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      await disconnect?.();
+    } catch (error) {
+      console.error('Failed to disconnect:', error);
+    }
+  };
+
   return (
     <div className="flex items-center gap-4">
       {/* Network Status Indicator */}
-      {isConnected && (
+      {effectiveConnected && (
         <div className="flex items-center gap-2">
           {isCorrectNetwork ? (
             <Badge className="bg-green-500 text-white flex items-center gap-1">
@@ -30,7 +56,7 @@ const WalletConnection = () => {
               DogeOS Chikyū
             </Badge>
           ) : (
-            <Button 
+            <Button
               onClick={handleNetworkSwitch}
               className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-1 text-sm px-3 py-1 h-auto"
             >
@@ -42,12 +68,10 @@ const WalletConnection = () => {
       )}
 
       {/* User Stats (if connected and authenticated) */}
-      {isConnected && user && isCorrectNetwork && (
+      {effectiveConnected && user && isCorrectNetwork && (
         <div className="flex items-center gap-2">
           {isNFTHolder && (
-            <Badge className="vip-badge">
-              VIP Scientist 👨‍🔬
-            </Badge>
+            <Badge className="vip-badge">VIP Scientist 👨‍🔬</Badge>
           )}
           <div className="glass-panel p-2 text-sm">
             <div className="text-xs text-gray-600">Level {currentLevel}</div>
@@ -62,15 +86,31 @@ const WalletConnection = () => {
         BETA
       </Badge>
 
-      {/* Rainbow Kit Connect Button */}
-      <ConnectButton 
-        showBalance={false}
-        chainStatus="icon"
-        accountStatus={{
-          smallScreen: 'avatar',
-          largeScreen: 'full',
-        }}
-      />
+      {/* DogeOS Connect / Disconnect */}
+      {effectiveConnected ? (
+        <div className="flex items-center gap-2">
+          <Badge className="bg-slate-800 text-white px-3 py-1 font-mono">
+            {shortAddress(effectiveAddress)}
+          </Badge>
+          <Button
+            onClick={handleDisconnect}
+            variant="outline"
+            className="text-sm px-3 py-1 h-auto flex items-center gap-1"
+          >
+            <LogOut size={12} />
+            Disconnect
+          </Button>
+        </div>
+      ) : (
+        <Button
+          onClick={handleConnect}
+          disabled={isConnecting || isAuthenticating}
+          className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white flex items-center gap-2 px-4 py-2 h-auto font-semibold"
+        >
+          <Wallet size={16} />
+          {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+        </Button>
+      )}
     </div>
   );
 };
