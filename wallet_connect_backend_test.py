@@ -4,7 +4,7 @@ Backend Test for Wallet Connect Incident Fix Validation
 Testing DogeFood Lab Game Backend APIs - Focused on leaderboard smoke test
 
 Test Requirements from Review Request:
-- URL: https://gamelab-polish.preview.emergentagent.com
+- URL: https://doge-build-test.preview.emergentagent.com
 - Confirm PLAY NOW -> main menu -> connect-wallet-btn works (Frontend testing - NOT covered here)
 - Confirm wallet modal lists MetaMask, Coinbase Wallet, WalletConnect (Frontend testing - NOT covered here) 
 - Confirm no forced page reload during service worker activation (Frontend testing - NOT covered here)
@@ -20,7 +20,7 @@ import sys
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://gamelab-polish.preview.emergentagent.com/api"
+BASE_URL = "https://doge-build-test.preview.emergentagent.com/api"
 
 class BackendTestRunner:
     def __init__(self):

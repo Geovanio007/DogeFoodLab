@@ -267,7 +267,7 @@ The previous Mixkit external URL issues have been completely resolved by switchi
 
 ### ✅ FOCUSED REGRESSION TEST - ALL PASSED
 **Test Date:** March 6, 2025  
-**Test URL:** https://gamelab-polish.preview.emergentagent.com  
+**Test URL:** https://doge-build-test.preview.emergentagent.com  
 **Tester:** Testing Agent  
 
 ### Test Scope:
@@ -350,7 +350,7 @@ The wallet connection flow is working flawlessly on both desktop and mobile view
 
 ### ✅ WALLET CONNECT INCIDENT FIX - BACKEND SMOKE TEST
 **Test Date:** March 6, 2025  
-**Test URL:** https://gamelab-polish.preview.emergentagent.com/api  
+**Test URL:** https://doge-build-test.preview.emergentagent.com/api  
 **Tester:** Testing Agent  
 
 ### Test Scope:
@@ -359,7 +359,7 @@ Backend API smoke testing to verify backend connectivity and core leaderboard fu
 ### Test Results Summary:
 
 #### ✅ TEST 1: Backend Connectivity - PASSED
-- **URL:** https://gamelab-polish.preview.emergentagent.com/api
+- **URL:** https://doge-build-test.preview.emergentagent.com/api
 - **Status:** ✅ Backend is reachable and responding
 - **Response Time:** < 1 second
 - **Connection Status:** Stable

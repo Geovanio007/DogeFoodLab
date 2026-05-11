@@ -16,7 +16,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://gamelab-polish.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://doge-build-test.preview.emergentagent.com').rstrip('/')
 
 # Test player address
 TEST_PLAYER_ADDRESS = "tg_7438800063"
