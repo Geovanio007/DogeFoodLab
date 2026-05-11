@@ -12,6 +12,7 @@
  * and utility classes intact so the DogeOS connect modal still looks right.
  */
 module.exports = function stripBaseLayer(source) {
+  console.log('[strip-dogeos-base-loader] invoked, source length:', typeof source === 'string' ? source.length : 'NOT STRING');
   if (typeof source !== 'string') return source;
 
   // Remove the entire `@layer base { ... }` block.
@@ -44,5 +45,6 @@ module.exports = function stripBaseLayer(source) {
 
   let out = stripLayer(source, 'base');
   out = stripLayer(out, 'properties');
+  console.log('[strip-dogeos-base-loader] output length:', out.length, 'still has @layer base?', out.includes('@layer base{'));
   return out;
 };

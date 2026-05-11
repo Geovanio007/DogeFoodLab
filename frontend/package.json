@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "scripts": {
     "start": "craco start",
-    "prebuild": "node scripts/update-version.js",
+    "postinstall": "node scripts/patch-dogeos-sdk.js",
+    "prebuild": "node scripts/update-version.js && node scripts/patch-dogeos-sdk.js",
     "build": "craco build",
-    "render-build": "node scripts/update-version.js && craco build",
+    "render-build": "node scripts/update-version.js && node scripts/patch-dogeos-sdk.js && craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
   },
