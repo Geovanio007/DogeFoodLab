@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import DogeFoodLogo from './DogeFoodLogo';
 import AuthModal from './AuthModal';
+import WhatsNewToast from './WhatsNewToast';
 
 const WelcomeScreen = ({ onPlayNow }) => {
   const { isDarkMode } = useTheme();
@@ -156,6 +157,9 @@ const WelcomeScreen = ({ onPlayNow }) => {
           BETA v1.0
         </div>
       </div>
+
+      {/* What's New Toast — wallet connect rollout */}
+      <WhatsNewToast />
     </div>
   );
 };

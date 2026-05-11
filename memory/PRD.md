@@ -10,6 +10,13 @@ The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-con
 
 ## Implemented (Feb 2026)
 
+### What's New Toast — Wallet Connect Rollout  ✅ (Feb 11, 2026)
+- `frontend/src/components/WhatsNewToast.jsx` — themed first-visit toast that surfaces the new DogeOS wallet-connect rollout.
+- Visual: custom illustration of two scientist Shiba Inus in lab coats clinking glowing chemistry beakers (cyan + gold) — generated via Gemini Nano Banana (`gemini-3.1-flash-image-preview`), saved to `frontend/public/shibas-toasting.png`.
+- Behavior: appears 1.4s after the welcome screen mounts, dismissible via close button or "Got it" CTA, gated by `localStorage['dogefood_whats_new_seen'] === 'wallet-connect-1'` so it shows only once per browser. Bumping `WHATS_NEW_VERSION` in the component re-surfaces it for future updates.
+- Theme: matches app palette (blue→indigo glass gradient, yellow-300 accent ring, Fredoka heading font, kawaii doge image), `prefers-reduced-motion` respected, fixed bottom-center on mobile / bottom-right on desktop.
+- Mounted inside `WelcomeScreen.jsx` so it only shows pre-auth.
+
 ### DogeOS SDK Integration  ✅
 - `frontend/.npmrc` with `legacy-peer-deps=true` to bypass React peer-dep conflicts on Render builds.
 - `frontend/craco.config.js` with Webpack 5 polyfills, `NormalModuleReplacementPlugin` for unused chain SDKs (Sui, Tron, Solana, Cosmos…), `ProvidePlugin` for Buffer/process, and a dedicated CSS pipeline that bypasses Tailwind/PostCSS for the SDK's prebuilt stylesheet.
