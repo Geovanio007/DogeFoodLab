@@ -6,11 +6,12 @@
     "start": "react-scripts start",
     "prebuild": "node scripts/update-version.js",
     "build": "react-scripts build",
-    "vercel-build": "node scripts/update-version.js && react-scripts build",
+    "render-build": "node scripts/update-version.js && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "@dogeos/dogeos-sdk": "latest",
     "@headlessui/react": "^2.2.7",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-avatar": "^1.1.10",
