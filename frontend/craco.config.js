@@ -97,7 +97,15 @@ module.exports = {
             require.resolve('style-loader'),
             {
               loader: require.resolve('css-loader'),
-              options: { sourceMap: false, importLoaders: 0 },
+              options: { sourceMap: false, importLoaders: 1 },
+            },
+            // Strip Tailwind-v4 Preflight `@layer base` / `@layer properties`
+            // global resets so they don't override the host app's styles.
+            {
+              loader: path.resolve(
+                __dirname,
+                'scripts/strip-dogeos-base-loader.js'
+              ),
             },
           ],
         });
