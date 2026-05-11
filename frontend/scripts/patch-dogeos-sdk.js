@@ -31,7 +31,7 @@ const SDK_DIR = path.resolve(
   'dist'
 );
 
-const STRIP_MARKER = '/* dogefood-stripped-base-v1 */';
+const STRIP_MARKER = '/* dogefood-stripped-base-v2 */';
 
 /** Strip @layer <name>{...} blocks from source using brace counting. */
 function stripLayer(input, layerName) {
@@ -65,6 +65,17 @@ function patchFile(filePath) {
   }
   let out = stripLayer(src, 'base');
   out = stripLayer(out, 'properties');
+
+  // Strip Tailwind v4 `@property --tw-*` registrations. These declare
+  // strict syntax types (e.g. `<color>`) for variables that Tailwind v3
+  // (used by the host app) sets with composite "color + position" values.
+  // The strict typing causes v3's values to be rejected and reset to the
+  // transparent `initial-value`, which wipes out gradients across the app.
+  out = out.replace(
+    /@property\s+--tw-[a-zA-Z0-9-]+\s*\{[^}]*\}/g,
+    ''
+  );
+
   if (out === src) {
     return { file: filePath, status: 'no-change' };
   }

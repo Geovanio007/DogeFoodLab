@@ -45,6 +45,26 @@ module.exports = function stripBaseLayer(source) {
 
   let out = stripLayer(source, 'base');
   out = stripLayer(out, 'properties');
-  console.log('[strip-dogeos-base-loader] output length:', out.length, 'still has @layer base?', out.includes('@layer base{'));
+
+  // Strip Tailwind v4 `@property` declarations for shared CSS custom
+  // properties (gradients, transforms, filters, etc.).
+  //
+  // The SDK declares these with strict `syntax: "<color>"` / `<length>` and
+  // `initial-value: #0000`, which causes the host app's Tailwind v3 utility
+  // classes (e.g. `from-purple-500` setting
+  //   --tw-gradient-from: #a855f7 var(--tw-gradient-from-position)
+  // ) to be parse-rejected as invalid <color> and revert to the transparent
+  // initial value — washing out every gradient/transform in the app.
+  //
+  // Removing the @property registrations leaves the variables un-typed
+  // (untyped custom props accept any value), which is exactly what v3
+  // expects. The SDK's own utility classes still set these vars
+  // explicitly so its modal continues to render correctly.
+  out = out.replace(
+    /@property\s+--tw-[a-zA-Z0-9-]+\s*\{[^}]*\}/g,
+    ''
+  );
+
+  console.log('[strip-dogeos-base-loader] output length:', out.length, 'still has @layer base?', out.includes('@layer base{'), 'still has @property --tw-?', /@property\s+--tw-/.test(out));
   return out;
 };

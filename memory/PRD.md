@@ -1,122 +1,48 @@
-# DogeFood Lab - Product Requirements Document
+# DogeFood Lab — PRD & Project Memory
 
 ## Original Problem Statement
-Build a Web3-based game called "DogeFood Lab" where players mix ingredients to create "Dogetreats", compete on leaderboards, and earn rewards. Features include DOGE-based payments for subscriptions and extra lives.
+The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-connect on the frontend, replacing the previous `wagmi` / RainbowKit setup. Deployment on Render was failing with an `ERESOLVE` peer-dep conflict (React 18 vs React 19 required by `@react-three/fiber`). The user provided a Client ID and asked to remove wagmi/RainbowKit entirely.
 
-## What's Been Implemented
+## Architecture
+- **Frontend**: React (CRA + CRACO), Tailwind CSS v3, DogeOS SDK for wallet connect.
+- **Backend**: FastAPI + MongoDB (untouched in this session).
+- **Build system switched from `react-scripts` to `@craco/craco`** so we can inject Webpack 5 polyfills (crypto, stream, buffer…) required by the SDK and module-replace unused non-EVM chain adapters.
 
-### Core Game Features
-- Treat mixing system with ingredients, rarity-based outcomes, XP/leveling, streak bonuses, leaderboards
-- Dark mode by default
+## Implemented (Feb 2026)
 
-### NFT Holder Verification System (Feb 22, 2026) - FIXED
-- Batch verification endpoint, server-side blockchain fallback
+### DogeOS SDK Integration  ✅
+- `frontend/.npmrc` with `legacy-peer-deps=true` to bypass React peer-dep conflicts on Render builds.
+- `frontend/craco.config.js` with Webpack 5 polyfills, `NormalModuleReplacementPlugin` for unused chain SDKs (Sui, Tron, Solana, Cosmos…), `ProvidePlugin` for Buffer/process, and a dedicated CSS pipeline that bypasses Tailwind/PostCSS for the SDK's prebuilt stylesheet.
+- `frontend/src/empty-chain-stub.js` no-op stub for non-EVM chain adapters.
+- `frontend/src/config/dogeos.js` — `WalletConnectKitConfig` with user's Client ID.
+- `frontend/src/components/DogeConnectButton.jsx` — render-prop wrapper replacing the old RainbowKit `ConnectButton.Custom`.
+- `frontend/src/components/Web3Provider.js` and `WalletConnection.jsx` updated to use DogeOS SDK.
 
-### Player Count Alignment (Feb 22, 2026) - FIXED
-- Aligned `/api/stats`, `/api/player/{address}/profile`, and `/api/leaderboard` to use identical filter
+### Tailwind v3 ↔ Tailwind v4 SDK CSS Conflict  ✅ (Feb 11, 2026)
+- The SDK ships its CSS as Tailwind v4 — including `@property --tw-gradient-from { syntax: "<color>"; initial-value: #0000 }`. The strict typing caused the host app's Tailwind v3 utility values (e.g. `--tw-gradient-from: #a855f7 var(--tw-gradient-from-position)` — composite "color + position") to be parse-rejected and reset to the transparent initial value, washing out every `from-*` / `to-*` gradient in the app (VIP, Leaderboard, Share & Earn icons, etc.).
+- `frontend/scripts/strip-dogeos-base-loader.js` (webpack loader) and `frontend/scripts/patch-dogeos-sdk.js` (postinstall) now:
+  1. Strip `@layer base { … }` (Preflight global resets)
+  2. Strip `@layer properties { … }`
+  3. **Strip every `@property --tw-… { … }` registration** ← the actual fix for the transparency regression.
+- Postinstall marker bumped to `v2` to force re-patch on existing installs.
+- Verified live on preview: `getComputedStyle()` on a synthetic `.bg-gradient-to-br.from-purple-500.to-pink-500` returns proper purple→pink `linear-gradient(...)`.
 
-### Happy Hour Feature (Feb 21, 2026) - COMPLETE
-- Daily at 15:00 UTC for 1 hour, +25% bonus points on treats collected
+## Files of Reference
+- `/app/frontend/.npmrc`
+- `/app/frontend/craco.config.js`
+- `/app/frontend/scripts/patch-dogeos-sdk.js`
+- `/app/frontend/scripts/strip-dogeos-base-loader.js`
+- `/app/frontend/src/config/dogeos.js`
+- `/app/frontend/src/components/DogeConnectButton.jsx`
+- `/app/frontend/src/components/Web3Provider.js`
+- `/app/frontend/src/components/WalletConnection.jsx`
+- `/app/frontend/src/empty-chain-stub.js`
+- `/app/frontend/src/index.css`
 
-### Main Menu Redesign (Feb 24, 2026) - COMPLETE
-- Professional dark theme, 3-column layout, live chat, responsive mobile
+## Pending / Backlog
+- **User verification** — please load the preview and confirm the VIP / Leaderboard / Share & Earn icon gradients and all other Tailwind gradients look identical to https://dogefoodlab.xyz/.
+- After approval: **Save to GitHub** for Render deployment.
+- (Optional/Backlog) Add a CI lint step that fails if `@property --tw-` slips back into the SDK files post-install.
 
-### Timestamp Fix (Feb 26, 2026) - FIXED
-- All datetime.utcnow() replaced with datetime.now(timezone.utc)
-
-### Happy Hour Bonus UI Feedback (Feb 26, 2026) - FIXED
-
-### Kernel of Wow Selection Fix (Feb 26, 2026) - FIXED
-
-### Leaderboard Redesign (Feb 26, 2026) - COMPLETE
-- Dark navy theme, 3D card effects, sky blue accents, mobile responsive
-
-### Routing Fixes (Feb 26, 2026) - FIXED
-
-### Performance Optimization v1 (Feb 26, 2026) - COMPLETE
-- Leaderboard: 32s -> 0.5s, Chat: 52s -> 0.2s, DB indexes, asyncio parallelization
-
-### P0 Verification & Stability Patch (Feb 26, 2026) - COMPLETE
-
-### Performance Optimization v2 (Feb 27, 2026) - COMPLETE
-- Treat creation: 15+ sequential DB queries -> ~5 parallel
-- Frontend: React.lazy route splitting, debounced recipe validation
-
-### Auto-Mixer Subscription Expiry Fix (Mar 2, 2026) - COMPLETE
-- Fixed naive/aware datetime comparison bug causing expired subscriptions to still auto-mix
-- Auto-expiry: expired subscriptions bulk-updated to `status: "expired"`
-- Added `expiring_soon` (≤5 days) notification on both AutoMixer and GameLab pages
-
-### Spin the Wheel Feature (Mar 2, 2026) - COMPLETE
-- **New feature**: Fun spin-the-wheel game on the Lab page
-- **Design**: Colorful canvas-based wheel with 9 prize segments, gold border, amber pointer, confetti celebration
-- **Prizes**: 100/150/200/300/500 Points, 2/4 Extra Lives, Mythic Ingredient (24h), 2x Next Treat — weighted random selection
-- **Cooldown**: 1 free spin every 24 hours, enforced on backend with 429 rate limit
-- **UI**: Minimized floating button (bounces when free spin available) → Modal with animated wheel
-- **Backend**: `GET /api/spin-wheel/status/{address}`, `POST /api/spin-wheel/spin`
-- **Rewards applied**: Points added to player.points, extra lives to player.extra_treats_balance, mythic ingredient and 2x buffs stored in spin_wheel_buffs collection
-- **Verified**: 9/9 backend tests passed, all frontend elements confirmed (iteration_17)
-
-### P0 Gameplay Bug Fixes (Mar 6, 2026) - FIXED
-- **Ingredient unlock race condition fixed**: `GameLabRedesign` now fetches player level first, then loads ingredients with the resolved level (no more default Level 1 ingredient lock on initial load)
-- **Spin prize mismatch fixed**: backend now returns deterministic spin metadata (`prize_index`, `landing_angle_degrees`, `full_spins`) and frontend rotation uses that server-provided landing angle
-- **Verification**: testing report `iteration_18.json` confirms both P0 issues fixed (11/11 backend tests passed + frontend UI validation)
-
-### Wallet Connection Reliability Patch (Mar 6, 2026) - FIXED
-- **Network switch UX fix**: main header wrong-network action now uses `openChainModal()` (with fallback to account modal) so users can switch to DogeOS correctly.
-- **Service worker stability fix**: removed forced auto-reload on `SW_ACTIVATED`, reduced update polling aggressiveness, and switched static asset strategy to network-first to avoid stale wallet-connect bundles.
-- **Wallet metadata hardening**: WalletConnect metadata URL now uses dynamic `window.location.origin`; project ID is sourced directly from env.
-- **Verification**: `iteration_19.json` + frontend test agent confirmed connect modal reliability on desktop/mobile and no forced reload interruption during wallet flow.
-
-### Leaderboard + Wallet Modal Reliability Fix (Mar 8, 2026) - FIXED
-- **`/api/points/leaderboard` 500 fixed**: patched `get_points_leaderboard()` with null-safe defaults for missing player fields (`points`, `level`, `is_nft_holder`) and safe weekly points summation.
-- **Parity fix applied** in both `backend/services/points_system.py` and `render-backend/services/points_system.py`.
-- **Wallet options loading issue fixed**: switched RainbowKit to explicit static wallet list and compact modal, disabled dynamic multi-injected discovery to prevent skeleton/blank wallet options on mobile/Telegram-like conditions.
-- **Verification**: `iteration_20.json` confirms backend 8/8 tests passing and wallet modal working on desktop + mobile with MetaMask/Coinbase/Rainbow/WalletConnect/Browser Wallet visible.
-
-### Wallet Options Expansion (Mar 8, 2026) - FIXED
-- Added **OKX Wallet** as a default top-level wallet option in the connect modal (positioned right after MetaMask).
-- Expanded explicit wallet list to improve immediate availability without remote explorer dependency: MetaMask, OKX, Coinbase Wallet, Rainbow, Trust Wallet, Rabby, Phantom, WalletConnect (+ injected fallback).
-- **Verification**: `iteration_21.json` confirms no skeleton placeholders and all wallet options render on desktop and mobile; `/api/points/leaderboard` remains 200.
-
-### OKX Trigger Reliability (Mar 8, 2026) - FIXED
-- Reworked wallet config to keep OKX in top recommended options while improving extension detection path (`multiInjectedProviderDiscovery: true`).
-- Added **Telegram wallet deep-link bridge** to force OKX/WalletConnect URI handling via `Telegram.WebApp.openLink()` fallback (prevents no-op behavior in Telegram webview when custom URI handling is blocked).
-- Added OKX mobile deeplink override (`okx://main/wc?uri=...`) via `okxDeepLinkWallet` wrapper for stronger mobile app handoff.
-- **Verification**: `iteration_22.json` confirms OKX appears on desktop/mobile and clicking OKX transitions to connect flow (QR/details) instead of no-op; leaderboard API remains 200.
-
-### Telegram Wallet Crash/No-op Mitigation (Mar 8, 2026) - FIXED
-- Added **Telegram Safe Connect Mode** in `MainMenu`: when inside Telegram, wallet connect now opens a helper modal instead of immediately launching unstable extension-first flows.
-- Telegram helper modal includes explicit actions: Open in MetaMask app, Open in OKX app, Use WalletConnect, Open in external browser.
-- Updated `wagmi` config to use Telegram-specific wallet set (`OKX + WalletConnect + Coinbase`) and disable injected wallet discovery in Telegram to avoid MetaMask crash/no-op behavior.
-- **Verification**: `iteration_23.json` confirms code-path correctness for Telegram mode and non-Telegram regression safety; backend leaderboard API still 200.
-
-### Direct Wallet-Logo Trigger Restoration (Mar 8, 2026) - FIXED
-- Removed the temporary Telegram helper modal path and restored direct `openConnectModal()` behavior from wallet logo click.
-- Reconfigured OKX connector to prioritize direct opening flow (`okxDeepLinkWallet` with mobile deep-link + `qrCode: undefined`) so clicking OKX transitions immediately into “Opening OKX Wallet…” instead of appearing as no-op.
-- Strengthened Telegram environment detection in wallet config and kept deep-link bridge support in Telegram utilities.
-- **Verification**: `iteration_24.json` confirms OKX click now transitions state correctly, connect modal opens directly, wallet list renders, and `/api/points/leaderboard` remains 200.
-
-## Deployment Info
-- **Frontend**: https://dogefoodlab.vercel.app (LIVE)
-- **Backend**: https://dogefood-lab-api.onrender.com (LIVE)
-- **GitHub**: Geovanio007/DogeFoodLab + Geovanio007/dogefood-lab-backend
-- **render-backend/**: Synced copy of backend for Render deployment
-
-## Pending Issues
-1. Invisible grey text on Telegram (P2 - needs user details/screenshot)
-
-## Upcoming Tasks
-1. (P1) Implement referral program system ("Refer & Earn" card exists on main menu)
-
-## Future Tasks
-1. Refactor monolithic `backend/server.py` into route-based modules
-2. Break down large `GameLabRedesign.jsx` (1600+ lines) and `MainMenu.js` (1200+ lines)
-
-## Tech Stack
-- Frontend: React, Tailwind CSS, shadcn/ui, Lucide React, html2canvas, wagmi (Web3)
-- Backend: Python, FastAPI, MongoDB (Motor async), httpx
-- Deploy: Vercel (frontend), Render (backend)
-
-## Last Updated
-March 8, 2026 - Direct OKX wallet trigger behavior restored and verified.
+## Test Credentials
+None required for verification — visual check on welcome screen + main menu after PLAY NOW.
