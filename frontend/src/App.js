@@ -260,8 +260,9 @@ const InnerApp = () => {
           </Router>
         )}
 
-        {/* Notification Permission Prompt - Hide for Telegram users */}
-        {showNotificationPrompt && !isTelegram && (
+        {/* Notification Permission Prompt - DISABLED for now (Feb 2026).
+            Toggle the `false &&` below to re-enable. */}
+        {false && showNotificationPrompt && !isTelegram && (
           <NotificationPrompt onClose={() => setShowNotificationPrompt(false)} />
         )}
       </div>
