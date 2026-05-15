@@ -9,6 +9,7 @@ import { MusicProvider } from './contexts/MusicContext';
 import { VersionProvider } from './contexts/VersionContext';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import { Web3Provider } from './components/Web3Provider';
+import WalletErrorBoundary from './components/WalletErrorBoundary';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -278,12 +279,14 @@ function App() {
         <AudioProvider>
           <MusicProvider>
             <TelegramProvider>
-              <Web3Provider>
-                <NotificationProvider>
-                  <InnerApp />
-                  <UpdateNotification />
-                </NotificationProvider>
-              </Web3Provider>
+              <WalletErrorBoundary>
+                <Web3Provider>
+                  <NotificationProvider>
+                    <InnerApp />
+                    <UpdateNotification />
+                  </NotificationProvider>
+                </Web3Provider>
+              </WalletErrorBoundary>
             </TelegramProvider>
           </MusicProvider>
         </AudioProvider>
