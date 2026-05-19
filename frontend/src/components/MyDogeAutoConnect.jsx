@@ -1,82 +1,56 @@
 import { useEffect, useRef } from 'react';
 import { useAccount, useConnect } from 'wagmi';
+import { detectMyDogeWallet } from '../lib/detectMyDoge';
 
 /**
  * MyDogeAutoConnect
  *
- * The game is native on the MyDoge wallet — when a visitor opens the app
- * inside the MyDoge in-app browser (iOS / Android) or has the MyDoge
- * Chrome extension installed on desktop, MyDoge injects a provider on
- * `window.mydoge.ethereum` (and usually mirrors it on `window.ethereum`).
+ * Silent reconnect ONLY when the user has previously approved this dApp.
  *
- * This component auto-detects that provider on mount and triggers a
- * silent wagmi connection so the user lands in the menu already
- * connected, without any modal popup.
+ * We do NOT call `eth_requestAccounts` on mount — that requires a user
+ * gesture in most mobile webviews (including MyDoge / WKWebView), and
+ * invoking it from a useEffect can crash or hang the page. Instead we
+ * call `eth_accounts` (a passive read) — if it returns a non-empty list,
+ * the wallet has already approved this origin and it's safe to fire
+ * wagmi's `connect()` to wire the address into the app state.
  *
- * It does nothing in environments where MyDoge isn't present (graceful
- * fallback to manual connect via the "Connect Wallet" CTA).
- *
- * Idempotent: runs at most once per page load, no-ops after first
- * successful connect.
+ * Returning-user UX: lands on menu already connected, no popup.
+ * First-time UX: this component is a no-op; the `MyDogeConnectBanner`
+ * on the welcome screen prompts an explicit tap.
  */
-
-function detectMyDogeProvider() {
-  if (typeof window === 'undefined') return null;
-  // Direct namespace injected by MyDoge mobile / extension.
-  if (window.mydoge?.ethereum) return window.mydoge.ethereum;
-  // Some installs only mirror onto window.ethereum and tag the provider.
-  const eth = window.ethereum;
-  if (!eth) return null;
-  if (eth.isMyDoge) return eth;
-  if (Array.isArray(eth.providers)) {
-    const md = eth.providers.find((p) => p && p.isMyDoge);
-    if (md) return md;
-  }
-  return null;
-}
-
-function detectMyDogeWebview() {
-  if (typeof navigator === 'undefined') return false;
-  const ua = navigator.userAgent || '';
-  return /MyDoge|mydoge/i.test(ua);
-}
-
 const MyDogeAutoConnect = () => {
   const { isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const attempted = useRef(false);
 
   useEffect(() => {
-    if (attempted.current) return;
-    if (isConnected) return;
+    if (attempted.current || isConnected) return;
 
-    const provider = detectMyDogeProvider();
-    const inWebview = detectMyDogeWebview();
-    if (!provider && !inWebview) return;
+    const { present, provider } = detectMyDogeWallet();
+    if (!present || !provider) return;
 
     attempted.current = true;
 
-    // Prefer the injected wagmi connector (which uses window.ethereum).
-    const injectedConn =
-      connectors.find((c) => c.id === 'injected') || connectors[0];
-    if (!injectedConn) return;
-
-    // First, ask MyDoge to expose accounts so wagmi's injected connector
-    // picks them up. Some webviews require an explicit `eth_requestAccounts`
-    // before any auto-connect attempt succeeds.
     (async () => {
+      let accounts = [];
       try {
-        if (provider?.request) {
-          await provider.request({ method: 'eth_requestAccounts' });
-        }
+        // Passive read — does NOT prompt the user.
+        accounts = await provider.request({ method: 'eth_accounts' });
       } catch (e) {
-        // User rejected or provider unavailable — fall through to manual.
-        console.warn('[MyDogeAutoConnect] eth_requestAccounts failed:', e?.message || e);
+        console.warn('[MyDogeAutoConnect] eth_accounts failed:', e?.message || e);
         return;
       }
+      if (!Array.isArray(accounts) || accounts.length === 0) {
+        // No previously-approved session — the banner will handle the
+        // first-time consent flow.
+        return;
+      }
+      const injectedConn =
+        connectors.find((c) => c.id === 'injected') || connectors[0];
+      if (!injectedConn) return;
       try {
         connect({ connector: injectedConn });
-        console.info('[MyDogeAutoConnect] connect() dispatched on injected connector');
+        console.info('[MyDogeAutoConnect] silent reconnect dispatched');
       } catch (e) {
         console.warn('[MyDogeAutoConnect] connect() threw:', e?.message || e);
       }

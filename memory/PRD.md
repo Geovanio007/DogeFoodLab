@@ -11,18 +11,18 @@ The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-con
 ## Implemented (Feb 2026)
 
 ### MyDoge Native Auto-Connect + Menu Crash Safety  ✅ (Feb 12, 2026)
-- **Goal:** The game is native on the MyDoge wallet. When a user opens the app inside the MyDoge in-app browser (or has the MyDoge extension on desktop), they should land in the menu already connected, no modal popup required.
-- **`frontend/src/components/MyDogeAutoConnect.jsx`** (new): mounts inside the wagmi/Web3 tree. On mount, detects the MyDoge provider via three signals:
-  1. `window.mydoge.ethereum`
-  2. `window.ethereum.isMyDoge` (or any `providers[]` entry with that flag)
-  3. `MyDoge` in `navigator.userAgent` (in-app webview)
-  When any signal hits, it calls `eth_requestAccounts` on the provider, then dispatches wagmi's `useConnect` with the `injected()` connector — the rest of the app then receives the address via `useAccount()` and the existing player-fetch effect in `MainMenu.js` auto-registers/loads the player. Idempotent (runs at most once). Silent no-op when MyDoge isn't present.
-- **`frontend/src/components/MenuErrorBoundary.jsx`** (new): wraps the `/` route's `<MainMenu />` so any synchronous render error inside the menu (e.g. transient wallet-state desync on real mobile devices) shows a friendly "Lab hiccup" fallback with a Reload CTA instead of a blank screen.
-- **Backend dependency restore (Feb 12):** During this work the preview backend was returning 502s on every `/api/*` call because `python-telegram-bot`, `pycryptodome`, and other deps were missing from the pod's Python environment. Reinstalled via `pip install -r backend/requirements.txt` (the requirements file itself was already correct). All 6 endpoints used by `MainMenu` (`/api/stats`, `/api/happy-hour/status`, `/api/leaderboard`, `/api/chat/messages`, `/api/activity/recent`, `/api/special-ingredient/current`) now return HTTP 200.
-- **Verified:**
-  - Simulated MyDoge in-app webview (UA + injected provider): `[MyDogeAutoConnect] connect() dispatched on injected connector`, zero page errors.
-  - Plain desktop browser: zero auto-connect logs (silent), welcome page renders normally, zero errors.
-  - All `MainMenu` API endpoints return HTTP 200 from the public preview URL.
+- **Critical fix (Feb 12 v2):** The original silent auto-connect called `eth_requestAccounts` on mount — which requires a user gesture in MyDoge's webview / WKWebView and **was the root cause of the in-MyDoge-browser crash**. Split into two pieces with the right activation model:
+  - **`MyDogeAutoConnect.jsx` (rewritten)** — silent reconnect ONLY when `eth_accounts` (a passive read, no prompt) returns a non-empty list, meaning the user already approved this dApp in a previous session. Returning users → land on menu connected, zero prompts.
+  - **`MyDogeConnectBanner.jsx` (new)** — fixed banner pinned to top of welcome screen when running inside MyDoge browser AND not yet connected. Shows a yellow "Connect" CTA (`eth_requestAccounts` fires inside the user-gesture handler, which is what mobile webviews require) plus a discreet "Not now" dismiss link (sticky via localStorage). Matches the "connect on landing" UX of other MyDoge-native apps.
+- **`frontend/src/lib/detectMyDoge.js` (new)** — single source of truth for MyDoge detection. Checks `window.mydoge.ethereum`, `window.ethereum.isMyDoge`, `providers[].isMyDoge`, and falls back to `MyDoge` in user-agent.
+- **`MenuErrorBoundary.jsx` (new)** — wraps the `/` route's `<MainMenu />`. Any synchronous render error inside the menu shows a friendly "Lab hiccup → Reload" fallback instead of a blank screen.
+- **`DebugOverlay.jsx` (new)** — append `?debug=1` to any URL to pin an on-screen panel that captures every JS error, unhandled rejection, and console error/warning. Persists across reloads via localStorage. Lets us diagnose real-device crashes without DevTools.
+- **Verified (simulated MyDoge in-app webview, 390×844 iPhone UA):**
+  - First-time user → banner appears at top, 0 page errors, no auto-prompt; tap "Connect" → `eth_requestAccounts` fires inside gesture → wagmi `connect()` succeeds → banner hides.
+  - Returning user (`eth_accounts` returns approved address) → `[MyDogeAutoConnect] silent reconnect dispatched`, no banner, no popup, no errors.
+  - Normal mobile browser (no MyDoge) → banner never appears, no auto-connect logs.
+- **Backend dependency restore (Feb 12):** Preview pod was returning 502s on every `/api/*` call because `python-telegram-bot`, `pycryptodome`, and others were missing from the running container's Python env. Reinstalled via `pip install -r backend/requirements.txt`. Production isn't affected — Render reinstalls deps on every deploy.
+- **Backend repo diff (Feb 12):** Fetched `Geovanio007/dogefood-lab-backend` and confirmed `requirements.txt` is identical to local; `server.py` has 118 logic diffs (mostly extra auto-create-player paths and cleanup) — `/app/backend` is therefore drifted relative to prod. No backend changes were needed in this work, so nothing needs porting upstream.
 
 ### ORB Audio Block Fix  ✅ (Feb 12, 2026)
 - **Bug:** `ERR_BLOCKED_BY_ORB` on cross-origin Mixkit audio files. The Mixkit CDN now responds with `Content-Type: application/xml` (error page) for the legacy IDs we were using, which trips Chrome's Opaque Resource Blocking and floods the console with errors.

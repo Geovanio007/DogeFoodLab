@@ -12,6 +12,7 @@ import { Web3Provider } from './components/Web3Provider';
 import WalletErrorBoundary from './components/WalletErrorBoundary';
 import MyDogeMobileHelper from './components/MyDogeMobileHelper';
 import MyDogeAutoConnect from './components/MyDogeAutoConnect';
+import MyDogeConnectBanner from './components/MyDogeConnectBanner';
 import MenuErrorBoundary from './components/MenuErrorBoundary';
 import DebugOverlay from './components/DebugOverlay';
 import { Button } from './components/ui/button';
@@ -291,6 +292,7 @@ function App() {
                     <InnerApp />
                     <UpdateNotification />
                     <MyDogeAutoConnect />
+                    <MyDogeConnectBanner />
                     <MyDogeMobileHelper />
                   </NotificationProvider>
                 </Web3Provider>
