@@ -2,14 +2,17 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 
 const AudioContext = createContext(null);
 
-// Use hosted sound URLs for reliable playback
+// Use locally-hosted sound assets. Mixkit's CDN was returning
+// `Content-Type: application/xml` (error response) for these IDs, which
+// triggers Chrome's `ERR_BLOCKED_BY_ORB` protection. The .wav files are
+// already shipped in `/public/sounds/` so we just point at them.
 const SOUND_URLS = {
-  click: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
-  brewing: 'https://customer-assets.emergentagent.com/job_audiorank-verify/artifacts/rndhcfwa_cauldron-boiling-173607.mp3',
-  success: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
-  rare: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',
-  collect: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3',
-  levelUp: 'https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3',
+  click: '/sounds/click.wav',
+  brewing: '/sounds/brewing.wav',
+  success: '/sounds/success.wav',
+  rare: '/sounds/rare.wav',
+  collect: '/sounds/collect.wav',
+  levelUp: '/sounds/levelup.wav',
 };
 
 // Lab ambient music

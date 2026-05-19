@@ -10,6 +10,7 @@ import { VersionProvider } from './contexts/VersionContext';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import { Web3Provider } from './components/Web3Provider';
 import WalletErrorBoundary from './components/WalletErrorBoundary';
+import MyDogeMobileHelper from './components/MyDogeMobileHelper';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -284,6 +285,7 @@ function App() {
                   <NotificationProvider>
                     <InnerApp />
                     <UpdateNotification />
+                    <MyDogeMobileHelper />
                   </NotificationProvider>
                 </Web3Provider>
               </WalletErrorBoundary>

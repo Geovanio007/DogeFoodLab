@@ -10,6 +10,23 @@ The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-con
 
 ## Implemented (Feb 2026)
 
+### ORB Audio Block Fix  ✅ (Feb 12, 2026)
+- **Bug:** `ERR_BLOCKED_BY_ORB` on cross-origin Mixkit audio files. The Mixkit CDN now responds with `Content-Type: application/xml` (error page) for the legacy IDs we were using, which trips Chrome's Opaque Resource Blocking and floods the console with errors.
+- **Fix:** `frontend/src/contexts/AudioContext.jsx` now uses the locally-shipped `/public/sounds/*.wav` files (already present in the repo). Zero cross-origin audio fetches → no ORB blocks. Verified live: 0 ORB-blocked requests after fresh page load.
+
+### MyDoge Mobile Helper  ✅ (Feb 12, 2026)
+- **Context:** The Tomo wallet registry lists "MyDoge" as a Chrome-extension-only entry (namespace `mydoge.ethereum`). It has no mobile deep-link, no WalletConnect, no `ios_install`/`android_install`, so `connectMobile()` in `@tomo-inc/wallet-adaptor-base` throws `Error: MyDoge not supported` on iOS/Android — which previously crashed the page on real devices.
+- **However:** the SDK's embedded "DogeOS Social Wallet" IS the official MyDoge-branded mobile wallet (logo `web3-assets.tomo.inc/assets/wallets/mydoge/wallet.svg`), reachable via the modal's Email / Google / X login. That flow works perfectly on mobile.
+- **Fix:** `frontend/src/components/MyDogeMobileHelper.jsx` installs a capture-phase document click listener that intercepts taps on the "MyDoge" wallet button inside the DogeOS modal. On mobile-class devices (`pointer: coarse` or mobile UA) it:
+  1. Prevents the SDK's broken `connectMobile` from running.
+  2. Opens an on-brand helper sheet ("MyDoge on mobile") that explains the situation.
+  3. Offers a primary yellow CTA "Use Email / Google" — clicking it programmatically clicks the Google button in the SDK modal so the user immediately starts the working flow.
+  4. Offers a secondary install link (App Store on iOS, Play Store on Android, mydoge.com otherwise).
+  5. Offers "Pick a different wallet" to dismiss without action.
+- Desktop users are not affected (helper only activates on `pointer: coarse` or mobile UA).
+- Mounted inside the existing `WalletErrorBoundary > Web3Provider` tree in `App.js`.
+- Verified live on iPhone UA (390×844): MyDoge tap → helper appears → "Use Email / Google" CTA opens Google login flow inside the SDK modal. Zero page errors. App stays interactive.
+
 ### DogeOS Modal Text-Visibility Fix  ✅ (Feb 11, 2026)
 - **Bug:** Modal text ("Log in or sign up", "Or connect a wallet", Twitter/Google labels, Continue button, legal text, Powered by) was rendering nearly invisible (white-on-white).
 - **Root cause:** The host app forces `<html class="dark dark-mode">` and applies `body { color: var(--text-primary) }` = `#f1f5f9` (slate-100). The DogeOS SDK's modal renders inside a white-card portal and relies on HeroUI tokens (`--heroui-foreground: 240 40% 11.76%`) for text — but the host's white inherited color was overriding HeroUI's intended dark text.
