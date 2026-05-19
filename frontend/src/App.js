@@ -13,6 +13,7 @@ import WalletErrorBoundary from './components/WalletErrorBoundary';
 import MyDogeMobileHelper from './components/MyDogeMobileHelper';
 import MyDogeAutoConnect from './components/MyDogeAutoConnect';
 import MenuErrorBoundary from './components/MenuErrorBoundary';
+import DebugOverlay from './components/DebugOverlay';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -277,7 +278,9 @@ const InnerApp = () => {
 // Main App component that wraps with providers
 function App() {
   return (
-    <ThemeProvider>
+    <>
+      <DebugOverlay />
+      <ThemeProvider>
       <VersionProvider>
         <AudioProvider>
           <MusicProvider>
@@ -296,7 +299,8 @@ function App() {
           </MusicProvider>
         </AudioProvider>
       </VersionProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </>
   );
 }
 
