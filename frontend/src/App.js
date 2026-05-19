@@ -11,6 +11,8 @@ import { NotificationProvider, useNotifications } from './contexts/NotificationC
 import { Web3Provider } from './components/Web3Provider';
 import WalletErrorBoundary from './components/WalletErrorBoundary';
 import MyDogeMobileHelper from './components/MyDogeMobileHelper';
+import MyDogeAutoConnect from './components/MyDogeAutoConnect';
+import MenuErrorBoundary from './components/MenuErrorBoundary';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -245,7 +247,7 @@ const InnerApp = () => {
             {/* Always show main routes after loading - authentication is optional */}
             <Suspense fallback={<LoadingScreen />}>
             <Routes>
-              <Route path="/" element={<MainMenu />} />
+              <Route path="/" element={<MenuErrorBoundary><MainMenu /></MenuErrorBoundary>} />
               <Route path="/lab" element={<GameLabRedesign playerAddress={effectiveAddress || 'GUEST_USER'} />} />
               <Route path="/nfts" element={<MyTreats />} />
               <Route path="/dashboard" element={<GameLabRedesign playerAddress={effectiveAddress || 'GUEST_USER'} />} />
@@ -285,6 +287,7 @@ function App() {
                   <NotificationProvider>
                     <InnerApp />
                     <UpdateNotification />
+                    <MyDogeAutoConnect />
                     <MyDogeMobileHelper />
                   </NotificationProvider>
                 </Web3Provider>

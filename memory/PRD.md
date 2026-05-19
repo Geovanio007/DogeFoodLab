@@ -10,6 +10,20 @@ The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-con
 
 ## Implemented (Feb 2026)
 
+### MyDoge Native Auto-Connect + Menu Crash Safety  ✅ (Feb 12, 2026)
+- **Goal:** The game is native on the MyDoge wallet. When a user opens the app inside the MyDoge in-app browser (or has the MyDoge extension on desktop), they should land in the menu already connected, no modal popup required.
+- **`frontend/src/components/MyDogeAutoConnect.jsx`** (new): mounts inside the wagmi/Web3 tree. On mount, detects the MyDoge provider via three signals:
+  1. `window.mydoge.ethereum`
+  2. `window.ethereum.isMyDoge` (or any `providers[]` entry with that flag)
+  3. `MyDoge` in `navigator.userAgent` (in-app webview)
+  When any signal hits, it calls `eth_requestAccounts` on the provider, then dispatches wagmi's `useConnect` with the `injected()` connector — the rest of the app then receives the address via `useAccount()` and the existing player-fetch effect in `MainMenu.js` auto-registers/loads the player. Idempotent (runs at most once). Silent no-op when MyDoge isn't present.
+- **`frontend/src/components/MenuErrorBoundary.jsx`** (new): wraps the `/` route's `<MainMenu />` so any synchronous render error inside the menu (e.g. transient wallet-state desync on real mobile devices) shows a friendly "Lab hiccup" fallback with a Reload CTA instead of a blank screen.
+- **Backend dependency restore (Feb 12):** During this work the preview backend was returning 502s on every `/api/*` call because `python-telegram-bot`, `pycryptodome`, and other deps were missing from the pod's Python environment. Reinstalled via `pip install -r backend/requirements.txt` (the requirements file itself was already correct). All 6 endpoints used by `MainMenu` (`/api/stats`, `/api/happy-hour/status`, `/api/leaderboard`, `/api/chat/messages`, `/api/activity/recent`, `/api/special-ingredient/current`) now return HTTP 200.
+- **Verified:**
+  - Simulated MyDoge in-app webview (UA + injected provider): `[MyDogeAutoConnect] connect() dispatched on injected connector`, zero page errors.
+  - Plain desktop browser: zero auto-connect logs (silent), welcome page renders normally, zero errors.
+  - All `MainMenu` API endpoints return HTTP 200 from the public preview URL.
+
 ### ORB Audio Block Fix  ✅ (Feb 12, 2026)
 - **Bug:** `ERR_BLOCKED_BY_ORB` on cross-origin Mixkit audio files. The Mixkit CDN now responds with `Content-Type: application/xml` (error page) for the legacy IDs we were using, which trips Chrome's Opaque Resource Blocking and floods the console with errors.
 - **Fix:** `frontend/src/contexts/AudioContext.jsx` now uses the locally-shipped `/public/sounds/*.wav` files (already present in the repo). Zero cross-origin audio fetches → no ORB blocks. Verified live: 0 ORB-blocked requests after fresh page load.
