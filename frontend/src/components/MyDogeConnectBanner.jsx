@@ -41,8 +41,11 @@ const MyDogeConnectBanner = () => {
     } catch (_) { /* ignore */ }
     const { inMyDoge } = detectMyDogeWallet();
     if (!inMyDoge) return;
-    // Show after a beat so it animates in over the welcome screen.
-    const t = setTimeout(() => setVisible(true), 350);
+    // Wait longer than the auto-connect's expected resolution time so
+    // we don't double-prompt — the banner is purely a fallback for when
+    // the user rejected MyDoge's native sheet or the auto-trigger
+    // didn't fire (e.g. provider injected late).
+    const t = setTimeout(() => setVisible(true), 1800);
     return () => clearTimeout(t);
   }, [isConnected]);
 
