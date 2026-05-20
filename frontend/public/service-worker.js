@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'dogefood-lab-v3-dogeos';
+const CACHE_NAME = 'dogefood-lab-v4-mydoge';
 
 // Assets to precache
 const PRECACHE_ASSETS = [

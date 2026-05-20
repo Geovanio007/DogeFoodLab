@@ -16,7 +16,10 @@ The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-con
 - **Banner fallback:** `MyDogeConnectBanner.jsx` now waits 1.8s before showing — long enough for the auto-trigger to resolve. If the user approves the native sheet, the banner never appears. If the user rejects, the banner stays visible as a one-tap retry CTA.
 - **`frontend/src/lib/detectMyDoge.js`** — single source of truth for MyDoge detection (window.mydoge.ethereum / window.ethereum.isMyDoge / providers[].isMyDoge / UA fallback).
 - **`MenuErrorBoundary.jsx`** — wraps the `/` route's `<MainMenu />`. Any synchronous render error inside the menu shows a friendly "Lab hiccup → Reload" fallback instead of a blank screen.
-- **`DebugOverlay.jsx`** — `?debug=1` URL flag pins an on-screen panel that captures every JS error / unhandled rejection / console error so we can diagnose real-device crashes without DevTools.
+- **`DebugOverlay.jsx`** — captures every JS error / unhandled rejection / console.error. Two reveal paths so it works in webviews without a URL bar (MyDoge):
+  - **Auto-reveal**: stays hidden until the FIRST error fires, then auto-appears with the message pinned. Zero UI footprint until something breaks.
+  - **Manual reveal**: tap the invisible 28×28 zone in the bottom-right corner **5 times within 3 seconds** to force-enable + reload (sets `localStorage.dogefood_debug=1`). Also still accepts `?debug=1` on browsers with URL bars.
+- **Service-worker cache bumped** from `dogefood-lab-v3-dogeos` to `dogefood-lab-v4-mydoge` so existing users' cached SW purges the stale `main.*.js` shell and pulls the new MyDoge auto-connect code on first refresh after deploy.
 - **Verified (simulated MyDoge in-app webview, 390×844 iPhone UA):**
   - **Approve path:** provider calls = `eth_accounts → eth_requestAccounts → wallet_requestPermissions → eth_requestAccounts → eth_chainId` (matches MyDoge's expected flow); `[MyDogeAutoConnect] connect() dispatched for 0x…d09e`; banner NEVER appears; 0 page errors.
   - **Reject path:** `eth_requestAccounts` throws → caught defensively; banner appears as fallback CTA; 0 page errors.

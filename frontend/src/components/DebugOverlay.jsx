@@ -18,20 +18,32 @@ const DebugOverlay = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const params = new URLSearchParams(window.location.search);
-    const on =
+    const forced =
       params.get('debug') === '1' ||
       window.localStorage?.getItem('dogefood_debug') === '1';
-    if (!on) return undefined;
-    setEnabled(true);
-    // Persist for refreshes during a session
-    try { window.localStorage?.setItem('dogefood_debug', '1'); } catch (_) { /* ignore */ }
 
+    // Always install the listeners so the overlay can reveal itself the
+    // moment something crashes — even without `?debug=1`. In MyDoge's
+    // in-app browser there's no URL bar, so users can't append the flag.
+    // We keep the overlay HIDDEN until either:
+    //   • `?debug=1` (manual opt-in for debugging), or
+    //   • an actual error / unhandled rejection / console.error fires
+    //     while the app is running.
+    if (forced) {
+      setEnabled(true);
+      try { window.localStorage?.setItem('dogefood_debug', '1'); } catch (_) { /* ignore */ }
+    }
+
+    const reveal = () => setEnabled(true);
     const push = (type, message) => {
       const text = typeof message === 'string' ? message : String(message);
       setEntries((prev) => [
         ...prev.slice(-9),
         { t: Date.now(), type, message: text.slice(0, 500) },
       ]);
+      if (type === 'error' || type === 'rejection' || type === 'console.error') {
+        reveal();
+      }
     };
 
     const onError = (event) => {
@@ -50,7 +62,7 @@ const DebugOverlay = () => {
 
     window.addEventListener('error', onError, true);
     window.addEventListener('unhandledrejection', onRejection, true);
-    push('debug', `enabled • UA=${(navigator.userAgent || '').slice(0, 80)}`);
+    if (forced) push('debug', `enabled • UA=${(navigator.userAgent || '').slice(0, 80)}`);
 
     return () => {
       window.removeEventListener('error', onError, true);
