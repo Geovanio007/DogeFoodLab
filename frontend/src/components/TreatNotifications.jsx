@@ -16,7 +16,17 @@ const TreatNotifications = () => {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/treats/${address}/brewing`);
         
         if (response.ok) {
-          const brewingTreats = await response.json();
+          const data = await response.json();
+          // Backend may return either a bare array or { treats: [...] }
+          // or a stray object on error — normalize defensively so we
+          // never call .forEach on a non-array (which crashed the
+          // notification loop on MyDoge browser for fresh wallet
+          // addresses that have no player record yet).
+          const brewingTreats = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.treats)
+              ? data.treats
+              : [];
           const currentTime = Date.now();
           
           brewingTreats.forEach(treat => {
