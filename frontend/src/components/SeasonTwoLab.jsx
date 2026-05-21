@@ -945,7 +945,6 @@ const ComboDiscoveryHint = ({ ingredients, selected }) => {
   return (
     <div className="rounded-2xl border border-purple-400/30 bg-gradient-to-br from-purple-500/10 via-fuchsia-500/5 to-transparent p-3" data-testid="combo-discovery">
       <div className="flex items-center gap-2 mb-1.5">
-        <Sparkles className="w-4 h-4 text-fuchsia-300" />
         <span className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300">Combo Discovery</span>
       </div>
       <p className="text-xs text-white/75 leading-snug">
