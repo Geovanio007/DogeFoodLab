@@ -188,7 +188,6 @@ const SeasonTwoLab = ({ playerAddress }) => {
     } finally {
       setSelectingCharacter(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerAddress, loadPlayerData]);
 
   const loadIngredients = useCallback(async (lvl) => {
