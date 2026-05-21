@@ -31,6 +31,7 @@ import './App.css';
 
 // Lazy-load heavy route components for faster initial page load
 const GameLabRedesign = lazy(() => import('./components/GameLabRedesign'));
+const SeasonTwoLab = lazy(() => import('./components/SeasonTwoLab'));
 const MyTreats = lazy(() => import('./components/MyTreats'));
 const Leaderboard = lazy(() => import('./components/Leaderboard'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -250,9 +251,10 @@ const InnerApp = () => {
             <Suspense fallback={<LoadingScreen />}>
             <Routes>
               <Route path="/" element={<MenuErrorBoundary><MainMenu /></MenuErrorBoundary>} />
-              <Route path="/lab" element={<GameLabRedesign playerAddress={effectiveAddress || 'GUEST_USER'} />} />
+              <Route path="/lab" element={<SeasonTwoLab playerAddress={effectiveAddress || 'GUEST_USER'} />} />
+              <Route path="/lab/legacy" element={<GameLabRedesign playerAddress={effectiveAddress || 'GUEST_USER'} />} />
               <Route path="/nfts" element={<MyTreats />} />
-              <Route path="/dashboard" element={<GameLabRedesign playerAddress={effectiveAddress || 'GUEST_USER'} />} />
+              <Route path="/dashboard" element={<SeasonTwoLab playerAddress={effectiveAddress || 'GUEST_USER'} />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<AdminDashboard />} />
