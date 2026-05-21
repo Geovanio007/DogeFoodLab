@@ -5,6 +5,8 @@ import INGREDIENT_ICONS from '../config/ingredientIcons';
 import { useAudio } from '../contexts/AudioContext';
 import { useMusic } from '../contexts/MusicContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import HappyHourBanner from './HappyHourBanner';
+import SpinWheel from './SpinWheel';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -52,6 +54,41 @@ const SHIBA_LINES = [
   "Reactor humming nicely. Smells like Doge.",
 ];
 
+// =========== CHARACTERS ===========
+
+const CHARACTERS = [
+  {
+    id: 'max',
+    name: 'Shiba Scientist Max',
+    description: 'The clever and curious one',
+    personality: 'Methodical and analytical, Max loves to understand the science behind every reaction.',
+    image: 'https://customer-assets.emergentagent.com/job_50ed16dc-caaa-4db1-ad7d-d26be77125c0/artifacts/5thty2tp_20250921_1510_Doge%20Scientist%20Trio_simple_compose_01k5p68s01e1p8f81hk4dvm5tm.png',
+    traits: ['Analytical', 'Precise', 'Studious'],
+    bonus: '+10% Experience from treats',
+    accent: '#22d3ee',
+  },
+  {
+    id: 'rex',
+    name: 'Shiba Scientist Rex',
+    description: 'The mischievous genius',
+    personality: 'Bold and experimental, Rex loves to try wild combinations.',
+    image: 'https://customer-assets.emergentagent.com/job_50ed16dc-caaa-4db1-ad7d-d26be77125c0/artifacts/w3y5oh69_assets_task_01k5p6sq20fh68gb4hjbs9271e_1758460753_img_0.webp',
+    traits: ['Creative', 'Risk-taker', 'Playful'],
+    bonus: '+15% Rare treat chance',
+    accent: '#fb923c',
+  },
+  {
+    id: 'luna',
+    name: 'Shiba Scientist Luna',
+    description: 'The smart and fearless female scientist',
+    personality: 'Confident and innovative, Luna excels at optimization.',
+    image: 'https://customer-assets.emergentagent.com/job_50ed16dc-caaa-4db1-ad7d-d26be77125c0/artifacts/m1k3hm3c_assets_task_01k5p7arcvf6jt34pk82yke1sh_1758461571_img_0.webp',
+    traits: ['Fearless', 'Efficient', 'Innovative'],
+    bonus: '+20% Points from treats',
+    accent: '#a855f7',
+  },
+];
+
 // =========== HELPERS ===========
 
 function rarityFor(treat) {
@@ -76,6 +113,12 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const [labBalance, setLabBalance] = useState(0);
   const [nickname, setNickname] = useState('Scientist');
 
+  // --- character ---
+  const [showCharacterSelection, setShowCharacterSelection] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [pendingCharacter, setPendingCharacter] = useState(null);
+  const [selectingCharacter, setSelectingCharacter] = useState(false);
+
   const [ingredients, setIngredients] = useState([]);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -96,7 +139,11 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const loadPlayerData = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/player/${playerAddress}`);
-      if (!res.ok) return 1;
+      if (!res.ok) {
+        // New player — show character gate
+        setShowCharacterSelection(true);
+        return 1;
+      }
       const data = await res.json();
       setPlayerLevel(data.level || 1);
       setPlayerXP(data.experience ?? data.xp ?? 0);
@@ -104,12 +151,45 @@ const SeasonTwoLab = ({ playerAddress }) => {
       setPlayerPoints(data.points ?? 0);
       setLabBalance(data.lab_balance ?? data.tokens ?? 0);
       setNickname(data.nickname || 'Scientist');
+      if (data.selected_character) {
+        const char = CHARACTERS.find((c) => c.id === data.selected_character);
+        setSelectedCharacter(char || null);
+        setShowCharacterSelection(false);
+      } else {
+        setShowCharacterSelection(true);
+      }
       return data.level || 1;
     } catch (e) {
       console.warn('[SeasonTwoLab] loadPlayer failed:', e?.message || e);
+      setShowCharacterSelection(true);
       return 1;
     }
   }, [playerAddress]);
+
+  const handleCharacterSelect = useCallback(async (character) => {
+    setSelectingCharacter(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/player/${playerAddress}/select-character?character_id=${character.id}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+      );
+      if (res.ok || res.status === 400) {
+        // 400 = already selected, treat as success
+        setSelectedCharacter(character);
+        setShowCharacterSelection(false);
+        const lvl = await loadPlayerData();
+        await loadIngredients(lvl);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setError(err.detail || 'Could not save character — please try again.');
+      }
+    } catch (e) {
+      setError(e?.message || 'Character selection failed');
+    } finally {
+      setSelectingCharacter(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerAddress, loadPlayerData]);
 
   const loadIngredients = useCallback(async (lvl) => {
     try {
@@ -247,6 +327,20 @@ const SeasonTwoLab = ({ playerAddress }) => {
   };
 
   // ============= RENDER =============
+  // Character selection gate — same flow as legacy
+  if (showCharacterSelection) {
+    return (
+      <CharacterSelectionScreen
+        characters={CHARACTERS}
+        pending={pendingCharacter}
+        onPick={setPendingCharacter}
+        onConfirm={handleCharacterSelect}
+        selecting={selectingCharacter}
+        onBack={() => navigate('/')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#05030d] text-white" data-testid="season-two-lab">
       <LabBackdrop />
@@ -264,10 +358,14 @@ const SeasonTwoLab = ({ playerAddress }) => {
         soundEnabled={soundEnabled}
         toggleSound={toggleSound}
         onBack={() => navigate('/')}
+        character={selectedCharacter}
       />
 
       <div className="relative z-10 max-w-6xl mx-auto px-3 sm:px-4 pt-3 pb-32 sm:pb-36 grid gap-4 lg:grid-cols-[1fr_320px]">
         <main className="space-y-4">
+          {/* Happy Hour banner from legacy flow */}
+          <HappyHourBanner />
+
           <ReactorChamber
             selectedIngredients={selectedIngredients}
             ingredients={ingredients}
@@ -327,6 +425,16 @@ const SeasonTwoLab = ({ playerAddress }) => {
         </div>
       )}
 
+      {/* Spin the Wheel — floating button, prizes refresh player data */}
+      <SpinWheel
+        playerAddress={playerAddress}
+        onPrizeWon={async () => {
+          const lvl = await loadPlayerData();
+          await loadIngredients(lvl);
+          await loadMarketFeed();
+        }}
+      />
+
       <LabStyles />
     </div>
   );
@@ -338,7 +446,7 @@ export default SeasonTwoLab;
    SUB-COMPONENTS
    ============================================================ */
 
-const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stability, soundEnabled, toggleSound, onBack }) => (
+const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stability, soundEnabled, toggleSound, onBack, character }) => (
   <header className="relative z-30 px-3 sm:px-4 pt-3" data-testid="lab-top-bar">
     <div className="rounded-2xl border border-cyan-400/30 bg-gradient-to-r from-[#0a0820]/90 via-[#0d0a2a]/90 to-[#0a0820]/90 backdrop-blur-md shadow-[0_8px_30px_-10px_rgba(56,189,248,0.4)]">
       <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3">
@@ -351,10 +459,29 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
           <ChevronLeft className="w-5 h-5 text-cyan-300" />
         </button>
 
+        {/* Character avatar — shows the player's selected scientist */}
+        {character && (
+          <div
+            data-testid="lab-character-avatar"
+            className="shrink-0 w-11 h-11 rounded-full overflow-hidden border-2 shadow-lg"
+            style={{ borderColor: character.accent || '#22d3ee', boxShadow: `0 0 14px ${(character.accent || '#22d3ee')}55` }}
+            title={character.name}
+          >
+            <img
+              src={character.image}
+              alt={character.name}
+              className="w-full h-full object-cover"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </div>
+        )}
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-[10px] sm:text-xs">
             <span className="text-cyan-300/80 font-mono uppercase tracking-widest">Dr.</span>
-            <span data-testid="lab-nickname" className="font-bold text-white truncate">{nickname}</span>
+            <span data-testid="lab-nickname" className="font-bold text-white truncate">
+              {character?.name?.split(' ')[2] || nickname}
+            </span>
             <span className="text-cyan-200/50">•</span>
             <span data-testid="lab-level" className="text-amber-300 font-bold">LVL {level}</span>
           </div>
@@ -858,6 +985,133 @@ const LiveMarketFeed = ({ items }) => (
         ))}
       </ul>
     )}
+  </div>
+);
+
+/* ----- Character Selection ----- */
+
+const CharacterSelectionScreen = ({ characters, pending, onPick, onConfirm, selecting, onBack }) => (
+  <div
+    data-testid="character-selection-screen"
+    className="min-h-screen relative bg-[#05030d] text-white overflow-auto"
+  >
+    <LabBackdrop />
+    <div className="relative z-10 max-w-5xl mx-auto px-4 py-8 sm:py-12">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-cyan-200/80 hover:text-white text-sm font-semibold mb-6 transition-colors"
+      >
+        <ChevronLeft className="w-4 h-4" /> Back to Menu
+      </button>
+
+      <div className="text-center mb-8">
+        <div className="text-[10px] tracking-[0.3em] text-cyan-300/80 font-mono uppercase">Initiate Protocol</div>
+        <h1
+          className="text-3xl sm:text-5xl font-extrabold mt-1 bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-amber-300 bg-clip-text text-transparent"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
+          Choose Your Scientist
+        </h1>
+        <p className="text-sm sm:text-base text-white/70 mt-2">
+          Select your character to begin your DogeFood Lab adventure
+        </p>
+        <p className="text-xs text-amber-300/90 font-semibold mt-1">
+          ⚠ This choice is permanent
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-8">
+        {characters.map((c) => {
+          const active = pending?.id === c.id;
+          return (
+            <button
+              key={c.id}
+              data-testid={`character-card-${c.id}`}
+              onClick={() => onPick(c)}
+              className={classNames(
+                'relative text-left rounded-3xl border-2 p-4 sm:p-5 transition-all',
+                'bg-gradient-to-b from-white/[0.04] to-white/[0.01] backdrop-blur',
+                active ? '-translate-y-1' : 'hover:-translate-y-0.5'
+              )}
+              style={{
+                borderColor: active ? c.accent : 'rgba(255,255,255,0.1)',
+                boxShadow: active
+                  ? `0 30px 60px -10px ${c.accent}66, 0 0 0 4px ${c.accent}22`
+                  : '0 12px 30px -10px rgba(0,0,0,0.4)',
+              }}
+            >
+              <div
+                className="w-28 h-28 mx-auto rounded-full overflow-hidden border-4 shadow-lg"
+                style={{ borderColor: c.accent, boxShadow: `0 0 18px ${c.accent}66` }}
+              >
+                <img
+                  src={c.image}
+                  alt={c.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              </div>
+              <h3 className="mt-3 text-center text-lg font-extrabold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
+                {c.name}
+              </h3>
+              <p className="text-center text-xs font-semibold mt-0.5" style={{ color: c.accent }}>
+                {c.description}
+              </p>
+              <p className="mt-2 text-xs text-white/70 leading-snug text-center">{c.personality}</p>
+
+              <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                {c.traits.map((t, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                    style={{ background: `${c.accent}1a`, borderColor: `${c.accent}55`, color: c.accent }}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+
+              <div
+                className="mt-3 rounded-xl px-3 py-2 text-center text-[11px] font-bold"
+                style={{ background: `${c.accent}1f`, border: `1px solid ${c.accent}55`, color: '#fff' }}
+              >
+                ★ {c.bonus}
+              </div>
+
+              {active && (
+                <div
+                  className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-black font-bold shadow"
+                  style={{ background: c.accent }}
+                >
+                  ✓
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="text-center">
+        <button
+          data-testid="character-confirm-btn"
+          onClick={() => pending && onConfirm(pending)}
+          disabled={!pending || selecting}
+          className={classNames(
+            'inline-flex items-center justify-center px-6 sm:px-10 py-3 sm:py-4 rounded-2xl text-sm sm:text-base font-extrabold uppercase tracking-wider transition-all',
+            pending && !selecting
+              ? 'text-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-400 shadow-[0_15px_40px_-10px_rgba(245,158,11,0.7)] hover:-translate-y-0.5'
+              : 'text-white/40 bg-white/5 border border-white/10 cursor-not-allowed'
+          )}
+        >
+          {selecting
+            ? 'Selecting…'
+            : pending
+              ? `Start Adventure with ${pending.name.split(' ')[2]}`
+              : 'Please select a character'}
+        </button>
+      </div>
+    </div>
+    <LabStyles />
   </div>
 );
 
