@@ -90,11 +90,27 @@ The user is integrating the **DogeOS SDK** (`@dogeos/dogeos-sdk`) for wallet-con
 - `/app/frontend/src/components/WalletConnection.jsx`
 - `/app/frontend/src/empty-chain-stub.js`
 - `/app/frontend/src/index.css`
+- `/app/frontend/src/components/SeasonTwoLab.jsx` — Season 2 lab UI (PNG ingredient rendering)
+- `/app/frontend/src/config/ingredientIcons.js` — Season 2 icon map (S2_001…S2_050)
+- `/app/frontend/public/images/ingredients/*.png` — 50 Season 2 ingredient PNGs
+- `/app/backend/services/ingredient_system.py` — Season 2 catalog (5 tiers × 10 levels)
+- `/app/memory/season2/` — drop-in package for the separate prod backend repo
+
+### Season 2 Ingredient System  ✅ (Feb 25, 2026)
+- **Replaced** all 25 legacy ingredients (ING001/ING101/ING201/ING301/ING401) with 50 new Season 2 ingredients (IDs `S2_001`–`S2_050`) across 5 tiers: Starter (L1–10), Rare (L11–20), Epic (L21–30), Legendary (L31–40), Mythic (L41–50).
+- 50 PNG icons extracted from user-supplied `.rar` packs and placed in `/app/frontend/public/images/ingredients/{slug}.png` (served by the frontend at `/images/ingredients/...`).
+- `IngredientCategory` enum redefined to `STARTER / RARE / EPIC / LEGENDARY / MYTHIC`. Rarity weights scale 1.0 → 3.5 across tiers. Mythic tier ingredients all carry `MYTHIC_REQUIRED` so they enable Mythic-rarity treat crafting per the existing engine rules.
+- **Crafting engine, anti-cheat, treat APIs, points system, season manager — all untouched.** Only the catalog data + the `unlocked/{level}` response (added a flat `ingredients[]` array for the Season 2 Lab UI) changed.
+- `KERNEL_BONUS_COMBOS` in `server.py` refreshed to use the new S2_xxx IDs.
+- `SeasonTwoLab.jsx` updated: tray + reactor slots render PNG icons (with emoji fallback); category tints map to the 5 new tiers.
+- **Prod backend delivery**: identical updated file copied to `/app/memory/season2/ingredient_system.py` with a `README.md` walkthrough — user can drop it into their separate `Dogefood-lab-backend` GitHub repo.
+- Verified: `/api/ingredients/catalog` returns 50 ingredients; `/api/ingredients/unlocked/50` returns 50 with flat array; `/api/ingredients/validate-recipe` returns correct rarity gating (Mythic catalyst detected, weights summed correctly); `/lab` preview shows new PNG icons in tray & reactor slot.
 
 ## Pending / Backlog
-- **User verification** — please load the preview and confirm the VIP / Leaderboard / Share & Earn icon gradients and all other Tailwind gradients look identical to https://dogefoodlab.xyz/.
-- After approval: **Save to GitHub** for Render deployment.
+- **User**: drop `/app/memory/season2/ingredient_system.py` into your `Dogefood-lab-backend` repo (overwrite `backend/services/ingredient_system.py`) and apply the `KERNEL_BONUS_COMBOS` + `/api/ingredients/unlocked/{level}` flat-array patches shown in `/app/memory/season2/README.md`. Then **Save to GitHub** the frontend for Render deployment.
+- (Optional) Migration script for historic player data that references legacy ING0xx IDs — happy to generate if needed.
+- (Optional/Backlog) MyDoge V3 server-side wallet signature verification once the public dApp-connect deeplink protocol ships.
 - (Optional/Backlog) Add a CI lint step that fails if `@property --tw-` slips back into the SDK files post-install.
 
 ## Test Credentials
-None required for verification — visual check on welcome screen + main menu after PLAY NOW.
+None required for verification — visual check on welcome screen + main menu after PLAY NOW, and load `/lab` to verify Season 2 ingredient PNGs render.

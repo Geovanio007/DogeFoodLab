@@ -276,10 +276,10 @@ class TestPlayerDataFlow:
     def test_ingredient_unlock_sequence(self):
         """Verify ingredients unlock in correct sequence by level"""
         expected_unlocks = {
-            1: ["ING001", "ING002", "ING003"],  # First 3 Core
-            3: ["ING005"],  # Crunchy Kibble at level 3
-            6: ["ING101", "ING104"],  # Elonverse starts
-            10: ["ING106"],  # Mars Regolith at level 10
+            1: ["S2_001"],   # Pupcorn Bits at level 1
+            3: ["S2_001", "S2_002", "S2_003"],  # First 3 Starter unlocked
+            6: ["S2_006"],   # Rocket Ramen Strands at level 6
+            10: ["S2_010"],  # Pupperoni Slices at level 10
         }
         
         for level, expected_ids in expected_unlocks.items():

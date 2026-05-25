@@ -28,8 +28,7 @@ const RARITY = {
 };
 
 const CATEGORY_TINT = {
-  Core: '#f59e0b', Elonverse: '#06b6d4', Space: '#a855f7', Lab: '#10b981',
-  Mystery: '#ef4444', Premium: '#ec4899', Special: '#facc15', Doge: '#fb923c',
+  Starter: '#f59e0b', Rare: '#3b82f6', Epic: '#a855f7', Legendary: '#fbbf24', Mythic: '#ec4899',
 };
 
 function tintFor(category, fallback = '#38bdf8') {
@@ -642,9 +641,14 @@ const ReactorChamber = ({ selectedIngredients, ingredients, overload, stability,
                 style={ing ? { borderColor: tint + 'bb', boxShadow: `0 0 14px ${tint}66, inset 0 0 14px ${tint}33` } : undefined}
                 aria-label={ing ? `Remove ${ingredientMeta(ing.id, ing.name).name}` : 'Empty slot'}
               >
-                {ing ? (
-                  <span>{ingredientMeta(ing.id, ing.name).emoji}</span>
-                ) : (
+                {ing ? (() => {
+                  const m = ingredientMeta(ing.id, ing.name);
+                  return m.icon ? (
+                    <img src={m.icon} alt={m.name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" loading="lazy" />
+                  ) : (
+                    <span>{m.emoji}</span>
+                  );
+                })() : (
                   <span className="text-white/20 text-xs font-mono">+</span>
                 )}
                 {ing && (
@@ -750,8 +754,18 @@ const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading }) =
               boxShadow: isPicked ? 'none' : `0 0 18px ${rar.glow}, inset 0 0 12px ${tint}22`,
             }}
           >
-            <span className="text-3xl sm:text-4xl drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
-              {meta.emoji}
+            <span className="text-3xl sm:text-4xl drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] flex items-center justify-center">
+              {meta.icon ? (
+                <img
+                  src={meta.icon}
+                  alt={meta.name}
+                  className="w-10 h-10 sm:w-12 sm:h-12 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.45)]"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.textContent = meta.emoji; }}
+                  loading="lazy"
+                />
+              ) : (
+                meta.emoji
+              )}
             </span>
             <span className="mt-1 text-[10px] sm:text-[11px] font-bold text-white truncate w-full">
               {meta.name}

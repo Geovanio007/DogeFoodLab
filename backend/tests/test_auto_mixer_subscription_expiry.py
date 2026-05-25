@@ -282,7 +282,7 @@ class TestTreatCreationNoRegression:
         """POST /api/treats/enhanced - should still work correctly"""
         payload = {
             "creator_address": TEST_PLAYER_ADDRESS,
-            "ingredients": ["ING001", "ING002"],
+            "ingredients": ["S2_001", "S2_002"],
             "player_level": 1
         }
         

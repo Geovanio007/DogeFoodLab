@@ -281,7 +281,7 @@ class TestRegressionChecks:
             f"{BASE_URL}/api/treats/enhanced",
             json={
                 "creator_address": unique_address,
-                "ingredients": ["ING001", "ING002"],  # Need 2+ ingredients
+                "ingredients": ["S2_001", "S2_002"],  # Need 2+ ingredients
                 "player_level": 1
             }
         )

@@ -1,148 +1,71 @@
 /**
- * DogeFood Lab - Ingredient Icons Configuration
- * All 3D game item icons for ingredients
+ * DogeFood Lab — Season 2 Ingredient Icons
+ * 50 ingredients across 5 tiers (Starter / Rare / Epic / Legendary / Mythic)
+ * Icons are served locally from /images/ingredients/{slug}.png
  */
 
+const ICON = (slug) => `/images/ingredients/${slug}.png`;
+
 export const INGREDIENT_ICONS = {
-  // CORE INGREDIENTS (Level 1-5)
-  'ING001': {
-    name: 'Golden Bone Dust',
-    emoji: '◉',
-    icon: 'https://i.ibb.co/hJnhLxKD/Chat-GPT-Image-Dec-29-2025-03-34-58-PM.png'
-  },
-  'ING002': {
-    name: 'Meme Meat Cubes',
-    emoji: '🥩',
-    icon: 'https://i.ibb.co/N6k24F30/Chat-GPT-Image-Dec-29-2025-03-38-01-PM.png'
-  },
-  'ING003': {
-    name: 'Shiba Crunch Flakes',
-    emoji: '🥣',
-    icon: 'https://i.ibb.co/gM0STr7K/Chat-GPT-Image-Dec-29-2025-03-38-54-PM.png'
-  },
-  'ING004': {
-    name: 'Woof Whey Powder',
-    emoji: '💪',
-    icon: 'https://i.ibb.co/jPyM954x/Chat-GPT-Image-Dec-29-2025-03-40-20-PM.png'
-  },
-  'ING005': {
-    name: 'Crunchy Kibble',
-    emoji: '🦴',
-    icon: 'https://i.ibb.co/KpfGWYZ4/Chat-GPT-Image-Dec-29-2025-05-13-37-PM.png'
-  },
+  // ============ STARTER (Level 1–10) ============
+  'S2_001': { name: 'Pupcorn Bits',          emoji: '🍿', icon: ICON('pupcorn-bits') },
+  'S2_002': { name: 'Dogeberry Syrup',       emoji: '🫐', icon: ICON('dogeberry-syrup') },
+  'S2_003': { name: 'Bark Biscuit Crumbs',   emoji: '🍪', icon: ICON('bark-biscuit-crumbs') },
+  'S2_004': { name: 'Meme Milk Capsules',    emoji: '🥛', icon: ICON('meme-milk-capsules') },
+  'S2_005': { name: 'Cheddar Woof Chips',    emoji: '🧀', icon: ICON('cheddar-woof-chips') },
+  'S2_006': { name: 'Rocket Ramen Strands',  emoji: '🍜', icon: ICON('rocket-ramen-strands') },
+  'S2_007': { name: 'Frosted Paw Sugar',     emoji: '❄️', icon: ICON('frosted-paw-sugar') },
+  'S2_008': { name: 'Moonbone Jelly',        emoji: '🌙', icon: ICON('moonbone-jelly') },
+  'S2_009': { name: 'Turbo Tail Spice',      emoji: '🌶️', icon: ICON('turbo-tail-spice') },
+  'S2_010': { name: 'Pupperoni Slices',      emoji: '🍕', icon: ICON('pupperoni-slices') },
 
-  // ELONVERSE INGREDIENTS (Level 6-10)
-  'ING101': {
-    name: 'Rocket Fuel Syrup',
-    emoji: '🚀',
-    icon: 'https://i.ibb.co/p6FwwqCz/Chat-GPT-Image-Dec-29-2025-05-14-36-PM.png'
-  },
-  'ING102': {
-    name: 'Neural Dust',
-    emoji: '🧠',
-    icon: 'https://i.ibb.co/C3DmPjvX/Chat-GPT-Image-Dec-29-2025-05-14-51-PM.png'
-  },
-  'ING103': {
-    name: 'Starship Alloy Shavings',
-    emoji: '⚙️',
-    icon: 'https://i.ibb.co/tp0ZQWZG/Chat-GPT-Image-Dec-29-2025-05-15-03-PM.png'
-  },
-  'ING104': {
-    name: 'Solar Charge Crystals',
-    emoji: '☀️',
-    icon: 'https://i.ibb.co/Jj39z1mz/Chat-GPT-Image-Dec-29-2025-05-27-05-PM.png'
-  },
-  'ING105': {
-    name: 'X-Signal Spice',
-    emoji: '📡',
-    icon: 'https://i.ibb.co/WvsBkW0r/Chat-GPT-Image-Dec-29-2025-05-27-28-PM.png'
-  },
-  'ING106': {
-    name: 'Mars Regolith Powder',
-    emoji: '🔴',
-    icon: 'https://i.ibb.co/YTRHfSGM/Chat-GPT-Image-Dec-29-2025-05-27-46-PM.png'
-  },
+  // ============ RARE (Level 11–20) ============
+  'S2_011': { name: 'Galaxy Kibble',         emoji: '🌌', icon: ICON('galaxy-kibble') },
+  'S2_012': { name: 'Neon Nuggies',          emoji: '🟦', icon: ICON('neon-nuggies') },
+  'S2_013': { name: 'Alpha Bacon Strips',    emoji: '🥓', icon: ICON('alpha-bacon-strips') },
+  'S2_014': { name: 'Lunar Marshmallows',    emoji: '☁️', icon: ICON('lunar-marshmallows') },
+  'S2_015': { name: 'Boneblast Seasoning',   emoji: '💥', icon: ICON('boneblast-seasoning') },
+  'S2_016': { name: 'Crypto Caramel Drizzle',emoji: '🍯', icon: ICON('crypto-caramel-drizzle') },
+  'S2_017': { name: 'Shiba Spice Cubes',     emoji: '🌶️', icon: ICON('shiba-spice-cubes') },
+  'S2_018': { name: 'Plasma Peanut Butter',  emoji: '🥜', icon: ICON('plasma-peanut-butter') },
+  'S2_019': { name: 'Byte-sized Sausages',   emoji: '🌭', icon: ICON('byte-sized-sausages') },
+  'S2_020': { name: 'Doge Dust Crunch',      emoji: '✨', icon: ICON('doge-dust-crunch') },
 
-  // SPACE INGREDIENTS (Level 11-15)
-  'ING201': {
-    name: 'Moon Cheese',
-    emoji: '🌙',
-    icon: 'https://i.ibb.co/N2YdDKTK/Chat-GPT-Image-Dec-29-2025-05-35-53-PM.png'
-  },
-  'ING202': {
-    name: 'Cosmic Ice Cubes',
-    emoji: '🧊',
-    icon: 'https://i.ibb.co/bnKrW6z/Chat-GPT-Image-Dec-29-2025-05-36-42-PM.png'
-  },
-  'ING203': {
-    name: 'Asteroid Protein',
-    emoji: '☄️',
-    icon: 'https://i.ibb.co/QF5t8Twh/Chat-GPT-Image-Dec-29-2025-05-36-57-PM.png'
-  },
-  'ING204': {
-    name: 'Dark Matter Sprinkles',
-    emoji: '🌌',
-    icon: 'https://i.ibb.co/G4Xp1fHf/Chat-GPT-Image-Dec-29-2025-05-46-51-PM.png'
-  },
-  'ING205': {
-    name: 'Plasma Sugar',
-    emoji: '⚡',
-    icon: 'https://i.ibb.co/67c4cpzW/Chat-GPT-Image-Dec-29-2025-05-47-22-PM.png'
-  },
-  'ING206': {
-    name: 'Zero-G Gel',
-    emoji: '🫧',
-    icon: 'https://i.ibb.co/DHtQZCDg/Chat-GPT-Image-Dec-29-2025-05-47-37-PM.png'
-  },
+  // ============ EPIC (Level 21–30) ============
+  'S2_021': { name: 'Cyber Corn Nuggets',    emoji: '🌽', icon: ICON('cyber-corn-nuggets') },
+  'S2_022': { name: 'Quantum Treat Flakes',  emoji: '🥣', icon: ICON('quantum-treat-flakes') },
+  'S2_023': { name: 'Mega Moo Protein Gel',  emoji: '🥤', icon: ICON('mega-moo-protein-gel') },
+  'S2_024': { name: 'Astro Syrup Drops',     emoji: '💧', icon: ICON('astro-syrup-drops') },
+  'S2_025': { name: 'Hyper Bone Broth',      emoji: '🍲', icon: ICON('hyper-bone-broth') },
+  'S2_026': { name: 'Electric Biscuit Chunks', emoji: '⚡', icon: ICON('electric-biscuit-chunks') },
+  'S2_027': { name: 'Meme Pepper Sprinkles', emoji: '🌶️', icon: ICON('meme-pepper-sprinkles') },
+  'S2_028': { name: 'Infinity Ice Cream Bits', emoji: '🍨', icon: ICON('infinity-ice-cream-bits') },
+  'S2_029': { name: 'Darkmatter Donut Crumbs', emoji: '🍩', icon: ICON('darkmatter-donut-crumbs') },
+  'S2_030': { name: 'Stellar Steak Cubes',   emoji: '🥩', icon: ICON('stellar-steak-cubes') },
 
-  // LAB INGREDIENTS (Level 11-15)
-  'ING301': {
-    name: 'Radioactive Carrots',
-    emoji: '🥕',
-    icon: 'https://i.ibb.co/jP4ZB78c/Chat-GPT-Image-Dec-29-2025-05-56-01-PM.png'
-  },
-  'ING302': {
-    name: 'Quantum Sauce',
-    emoji: '🧪',
-    icon: 'https://i.ibb.co/NngCmPyv/Chat-GPT-Image-Dec-29-2025-05-57-02-PM.png'
-  },
-  'ING303': {
-    name: 'Time-Warp Yeast',
-    emoji: '⏰',
-    icon: 'https://i.ibb.co/2Y7x1VCL/Chat-GPT-Image-Dec-29-2025-05-57-23-PM.png'
-  },
-  'ING304': {
-    name: 'Glitch Spice',
-    emoji: '👾',
-    icon: 'https://i.ibb.co/vxnphvHf/Chat-GPT-Image-Dec-29-2025-05-57-40-PM.png'
-  },
-  'ING305': {
-    name: 'Nano Vitamins',
-    emoji: '💊',
-    icon: 'https://i.ibb.co/23f7fwgz/Chat-GPT-Image-Dec-29-2025-05-57-54-PM.png'
-  },
+  // ============ LEGENDARY (Level 31–40) ============
+  'S2_031': { name: 'Golden Tail Granules',  emoji: '🌟', icon: ICON('golden-tail-granules') },
+  'S2_032': { name: 'Nebula Nacho Dust',     emoji: '🌠', icon: ICON('nebula-nacho-dust') },
+  'S2_033': { name: 'Titanium Taffy Chunks', emoji: '🔱', icon: ICON('titanium-taffy-chunks') },
+  'S2_034': { name: 'Omega Bacon Powder',    emoji: '🥓', icon: ICON('omega-bacon-powder') },
+  'S2_035': { name: 'Celestial Cheese Melt', emoji: '🧀', icon: ICON('celestial-cheese-melt') },
+  'S2_036': { name: 'Frostfang Yogurt Drops',emoji: '🧊', icon: ICON('frostfang-yogurt-drops') },
+  'S2_037': { name: 'Meteor Meat Flakes',    emoji: '☄️', icon: ICON('meteor-meat-flakes') },
+  'S2_038': { name: 'Shiba Stardust Syrup',  emoji: '💫', icon: ICON('shiba-stardust-syrup') },
+  'S2_039': { name: 'Royal Rocket Crunch',   emoji: '🚀', icon: ICON('royal-rocket-crunch') },
+  'S2_040': { name: 'Mythic Paw Crystals',   emoji: '🐾', icon: ICON('mythic-paw-crystals') },
 
-  // MYTHIC INGREDIENTS (Level 16+) - ULTRA RARE
-  'ING401': {
-    name: 'Doge Relic Fragment',
-    emoji: '🏺',
-    icon: 'https://i.ibb.co/b5J2fdK8/Chat-GPT-Image-Dec-29-2025-06-05-41-PM.png'
-  },
-  'ING402': {
-    name: 'Genesis Biscuit',
-    emoji: '🍪',
-    icon: 'https://i.ibb.co/4wxwLrjg/Chat-GPT-Image-Dec-29-2025-06-06-10-PM.png'
-  },
-  'ING403': {
-    name: 'Cosmic Shiba Hair',
-    emoji: '🐕',
-    icon: 'https://i.ibb.co/qLLBcjDJ/Chat-GPT-Image-Dec-29-2025-06-06-25-PM.png'
-  },
-  'ING404': {
-    name: 'Singularity Syrup',
-    emoji: '🌀',
-    icon: 'https://i.ibb.co/GLKn4m5/Chat-GPT-Image-Dec-29-2025-06-06-37-PM.png'
-  }
+  // ============ MYTHIC (Level 41–50) ============
+  'S2_041': { name: 'Infinity Bone Essence', emoji: '♾️', icon: ICON('infinity-bone-essence') },
+  'S2_042': { name: 'Galactic Gravy Cubes',  emoji: '🌀', icon: ICON('galactic-gravy-cubes') },
+  'S2_043': { name: 'Ultra Woof Extract',    emoji: '🧪', icon: ICON('ultra-woof-extract') },
+  'S2_044': { name: 'Eclipse Energy Flakes', emoji: '🌑', icon: ICON('eclipse-energy-flakes') },
+  'S2_045': { name: 'Phoenix Pepper Oil',    emoji: '🔥', icon: ICON('phoenix-pepper-oil') },
+  'S2_046': { name: 'Cosmic Kibble Core',    emoji: '🪐', icon: ICON('cosmic-kibble-core') },
+  'S2_047': { name: 'Dragon Tail Protein',   emoji: '🐉', icon: ICON('dragon-tail-protein') },
+  'S2_048': { name: 'Meme Core Crystals',    emoji: '💎', icon: ICON('meme-core-crystals') },
+  'S2_049': { name: 'Supernova Snack Dust',  emoji: '🌟', icon: ICON('supernova-snack-dust') },
+  'S2_050': { name: 'Godtier Shiba Serum',   emoji: '👑', icon: ICON('godtier-shiba-serum') },
 };
 
 // Helper function to get icon URL or fallback to emoji
