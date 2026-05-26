@@ -68,8 +68,8 @@ const WelcomeScreen = ({ onPlayNow }) => {
       <CinematicBackground />
 
       {/* ─── Top bar: brand + sneak-peek card ─── */}
-      <header className="relative z-20 flex items-start justify-between px-4 sm:px-8 pt-4 sm:pt-6">
-        <div className="flex items-center gap-2 sm:gap-3">
+      <header className="relative z-20 flex items-start justify-between px-3 sm:px-8 pt-3 sm:pt-6 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <DogeFoodLogo size="sm" showText={false} showBeta={false} className="w-10 h-10 sm:w-12 sm:h-12" />
           <div className="hidden sm:block">
             <div className="text-[10px] tracking-[0.3em] font-mono text-cyan-300/70">DOGEFOOD LAB</div>
@@ -81,18 +81,18 @@ const WelcomeScreen = ({ onPlayNow }) => {
       </header>
 
       {/* ─── Main hero ─── */}
-      <main className="relative z-10 flex flex-col items-center justify-center px-4 sm:px-6 pt-6 sm:pt-12 pb-8">
+      <main className="relative z-10 flex flex-col items-center justify-center px-3 sm:px-6 pt-4 sm:pt-12 pb-6 sm:pb-8 w-full">
         {/* Reactor glow halo behind logo */}
-        <div className="relative flex flex-col items-center">
+        <div className="relative flex flex-col items-center w-full max-w-[28rem] sm:max-w-none">
           <div className="absolute inset-0 -z-10 pointer-events-none">
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] h-[28rem] sm:w-[40rem] sm:h-[40rem] rounded-full opacity-60"
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[24rem] h-[24rem] sm:w-[40rem] sm:h-[40rem] rounded-full opacity-60"
                  style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.35), rgba(168,85,247,0.18) 40%, transparent 70%)', filter: 'blur(40px)' }} />
           </div>
 
           {/* Title wordmark */}
-          <div className="relative mb-2 sm:mb-3 flex items-center gap-2 sm:gap-4">
+          <div className="relative mb-1.5 sm:mb-3 flex items-center gap-2 sm:gap-4">
             <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-r from-transparent to-cyan-400/70" />
-            <span data-testid="hero-eyebrow" className="text-[10px] sm:text-xs tracking-[0.45em] font-mono text-cyan-300/80 uppercase">
+            <span data-testid="hero-eyebrow" className="text-[9px] sm:text-xs tracking-[0.4em] sm:tracking-[0.45em] font-mono text-cyan-300/80 uppercase">
               The Meme Mixer Reactor
             </span>
             <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-l from-transparent to-cyan-400/70" />
@@ -102,7 +102,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
             data-testid="hero-title"
             className="hero-title relative text-center select-none"
             style={{
-              fontSize: 'clamp(3.5rem, 12vw, 9.5rem)',
+              fontSize: 'clamp(4rem, 17vw, 9.5rem)',
               fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
               letterSpacing: '0.005em',
               lineHeight: 0.88,
@@ -110,26 +110,24 @@ const WelcomeScreen = ({ onPlayNow }) => {
             }}
           >
             <span
-              className="block hero-word hero-word-blue"
+              className="block hero-word hero-word-blue hero-tilt-1"
               data-text="DogeFood"
-              style={{ transform: 'rotate(-2.5deg)', display: 'inline-block' }}
             >
               DogeFood
             </span>
             <span
-              className="block hero-word hero-word-yellow mt-1 sm:mt-2"
+              className="block hero-word hero-word-yellow hero-tilt-2 mt-1 sm:mt-2"
               data-text="Lab"
-              style={{ transform: 'rotate(1.5deg)', display: 'inline-block' }}
             >
               Lab
             </span>
           </h1>
 
           {/* Season 2 incoming badge */}
-          <div className="mt-5 sm:mt-7 flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full border-2 border-yellow-400/70 bg-yellow-400/10 backdrop-blur shadow-[0_4px_0_rgba(0,0,0,0.25),0_0_20px_rgba(250,204,21,0.4)]">
+          <div className="mt-4 sm:mt-7 flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full border-2 border-yellow-400/70 bg-yellow-400/10 backdrop-blur shadow-[0_4px_0_rgba(0,0,0,0.25),0_0_20px_rgba(250,204,21,0.4)]">
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
             <span
-              className="text-[11px] sm:text-sm tracking-[0.3em] font-bold text-yellow-200 uppercase"
+              className="text-[10px] sm:text-sm tracking-[0.3em] font-bold text-yellow-200 uppercase"
               style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}
             >
               {cd.finished ? 'Season 2 is LIVE' : 'Season 2 incoming'}
@@ -139,7 +137,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
 
           {/* Countdown */}
           {!cd.finished && (
-            <div data-testid="season2-countdown" className="mt-5 sm:mt-7 flex items-center gap-2 sm:gap-3">
+            <div data-testid="season2-countdown" className="mt-4 sm:mt-7 flex items-stretch gap-1.5 sm:gap-3 w-full max-w-[26rem] sm:max-w-[28rem] px-1 sm:px-0">
               <CountdownDigit value={cd.days}    label="DAYS" />
               <Colon />
               <CountdownDigit value={cd.hours}   label="HRS"  pad={2} />
@@ -154,7 +152,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
           <button
             data-testid="play-now-btn"
             onClick={onPlayNow}
-            className="play-cta group relative mt-8 sm:mt-10 inline-flex items-center justify-center cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none"
+            className="play-cta group relative mt-6 sm:mt-10 inline-flex items-center justify-center cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none w-full max-w-[22rem] sm:max-w-none sm:w-auto"
             style={{ zIndex: 50, perspective: '600px' }}
           >
             {/* 3D bottom shadow layer (the "extruded base" of the button) */}
@@ -162,13 +160,13 @@ const WelcomeScreen = ({ onPlayNow }) => {
             {/* Halo */}
             <span aria-hidden className="play-cta-halo" />
             {/* Main top face */}
-            <span className="play-cta-top relative z-10 px-5 sm:px-12 py-3.5 sm:py-5 flex items-center gap-2.5 sm:gap-5 whitespace-nowrap">
+            <span className="play-cta-top relative z-10 w-full sm:w-auto px-5 sm:px-12 py-4 sm:py-5 flex items-center justify-center gap-3 sm:gap-5 whitespace-nowrap">
               {/* Inner gloss highlight */}
               <span aria-hidden className="play-cta-gloss" />
               <img
                 src={LAB_TOKEN}
                 alt="LAB Token"
-                className="relative w-8 h-8 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[-12deg] transition-transform duration-300"
+                className="relative w-9 h-9 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[-12deg] transition-transform duration-300 shrink-0"
               />
               <span
                 className="relative play-cta-text"
@@ -183,7 +181,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
               <img
                 src={LAB_TOKEN}
                 alt="LAB Token"
-                className="relative w-8 h-8 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[12deg] transition-transform duration-300 animate-coin-bounce"
+                className="relative w-9 h-9 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[12deg] transition-transform duration-300 animate-coin-bounce shrink-0"
               />
             </span>
           </button>
@@ -191,9 +189,10 @@ const WelcomeScreen = ({ onPlayNow }) => {
           {/* Tagline */}
           <p
             data-testid="hero-tagline"
-            className="mt-5 sm:mt-7 text-center text-sm sm:text-lg text-sky-100/90 max-w-xl px-4 leading-relaxed"
+            className="mt-4 sm:mt-7 text-center text-[13px] sm:text-lg text-sky-100/90 max-w-xl px-2 sm:px-4 leading-relaxed"
           >
-            Mix legendary memes. Mint mythical treats.<br className="hidden sm:block" />
+            Mix legendary memes. Mint mythical treats.
+            <br />
             Forge your reputation across <span className="text-yellow-300 font-bold">50 new ingredients</span> in Season 2.
           </p>
 
@@ -201,7 +200,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
           <button
             data-testid="guest-cta-btn"
             onClick={() => setShowAuthModal(true)}
-            className="mt-4 text-xs sm:text-sm text-cyan-200/70 hover:text-cyan-100 underline-offset-4 hover:underline transition-colors"
+            className="mt-3 sm:mt-4 text-[11px] sm:text-sm text-cyan-200/70 hover:text-cyan-100 underline-offset-4 hover:underline transition-colors text-center px-3"
           >
             New here? Sign up as guest, with email or Google
           </button>
@@ -215,8 +214,8 @@ const WelcomeScreen = ({ onPlayNow }) => {
       <IngredientMarquee />
 
       {/* ─── Footer tagline ─── */}
-      <footer className="relative z-10 px-4 pb-4 sm:pb-6 mt-6">
-        <div className="flex items-center justify-center gap-3 sm:gap-6 text-[10px] sm:text-xs tracking-[0.25em] font-mono text-cyan-300/40 uppercase">
+      <footer className="relative z-10 px-3 pb-3 sm:pb-6 mt-3 sm:mt-6">
+        <div className="flex items-center justify-center gap-2 sm:gap-6 text-[9px] sm:text-xs tracking-[0.2em] sm:tracking-[0.25em] font-mono text-cyan-300/40 uppercase">
           <span>Web3 Gaming</span>
           <span className="w-1 h-1 rounded-full bg-cyan-300/40" />
           <span>Mythic NFTs</span>
@@ -226,8 +225,8 @@ const WelcomeScreen = ({ onPlayNow }) => {
       </footer>
 
       {/* Beta badge — kept, smaller */}
-      <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-20">
-        <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-mono font-bold tracking-[0.25em] bg-white/5 border border-white/15 text-white/70 uppercase">
+      <div className="absolute bottom-2 right-2 sm:bottom-4 sm:left-4 sm:right-auto z-20">
+        <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-mono font-bold tracking-[0.2em] sm:tracking-[0.25em] bg-white/5 border border-white/15 text-white/70 uppercase">
           v2.0 · BETA
         </span>
       </div>
@@ -305,14 +304,14 @@ const CountdownDigit = ({ value, label, pad = 2, pulse = false }) => {
   return (
     <div
       data-testid={`cd-${label.toLowerCase()}`}
-      className="flex flex-col items-center w-[3.75rem] sm:w-[5.25rem]"
+      className="flex flex-col items-center flex-1 min-w-0 max-w-[5.5rem]"
     >
-      <div className={`relative w-full rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#0a0820]/95 to-[#06041a]/95 border border-cyan-400/30 px-2 py-2.5 sm:py-3.5 shadow-[0_10px_30px_-10px_rgba(56,189,248,0.5),inset_0_0_25px_rgba(56,189,248,0.12)] ${pulse ? 'animate-cd-pulse' : ''}`}>
+      <div className={`relative w-full rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#0a0820]/95 to-[#06041a]/95 border border-cyan-400/30 px-1 py-2.5 sm:py-3.5 shadow-[0_10px_30px_-10px_rgba(56,189,248,0.5),inset_0_0_25px_rgba(56,189,248,0.12)] ${pulse ? 'animate-cd-pulse' : ''}`}>
         <span className="absolute left-1/2 top-0 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent" />
         <div
           className="text-center font-bold tabular-nums leading-none"
           style={{
-            fontSize: 'clamp(1.75rem, 5.5vw, 3rem)',
+            fontSize: 'clamp(1.5rem, 7vw, 3rem)',
             color: '#ffffff',
             textShadow: '0 0 14px rgba(56,189,248,0.85), 0 2px 4px rgba(0,0,0,0.4)',
             fontFamily: "'JetBrains Mono', 'Courier New', monospace",
@@ -321,7 +320,7 @@ const CountdownDigit = ({ value, label, pad = 2, pulse = false }) => {
           {display}
         </div>
       </div>
-      <span className="mt-1.5 text-[9px] sm:text-[10px] tracking-[0.35em] font-mono text-cyan-300/60 font-bold">
+      <span className="mt-1.5 text-[9px] sm:text-[10px] tracking-[0.3em] sm:tracking-[0.35em] font-mono text-cyan-300/60 font-bold">
         {label}
       </span>
     </div>
@@ -331,7 +330,7 @@ const CountdownDigit = ({ value, label, pad = 2, pulse = false }) => {
 const Colon = () => (
   <span
     aria-hidden
-    className="text-2xl sm:text-4xl font-black text-cyan-300/50 -translate-y-2.5 sm:-translate-y-3.5 select-none"
+    className="text-xl sm:text-4xl font-black text-cyan-300/50 self-center -mt-3 sm:-mt-4 select-none shrink-0"
     style={{ textShadow: '0 0 10px rgba(56,189,248,0.4)' }}
   >
     :
@@ -345,20 +344,20 @@ const SneakPeekCard = () => {
   return (
     <div
       data-testid="sneak-peek-card"
-      className="relative max-w-[12rem] sm:max-w-[15rem] rounded-2xl overflow-hidden border-2 border-yellow-400/50 bg-gradient-to-br from-sky-900/90 to-[#06112e]/90 backdrop-blur-md shadow-[0_8px_0_rgba(0,0,0,0.35),0_15px_40px_-10px_rgba(250,204,21,0.5)] hover:-translate-y-0.5 transition-transform"
+      className="relative max-w-[9.5rem] sm:max-w-[15rem] rounded-xl sm:rounded-2xl overflow-hidden border-2 border-yellow-400/50 bg-gradient-to-br from-sky-900/90 to-[#06112e]/90 backdrop-blur-md shadow-[0_5px_0_rgba(0,0,0,0.3),0_10px_30px_-8px_rgba(250,204,21,0.5)] sm:shadow-[0_8px_0_rgba(0,0,0,0.35),0_15px_40px_-10px_rgba(250,204,21,0.5)] hover:-translate-y-0.5 transition-transform shrink-0"
     >
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-300/60 to-transparent" />
-      <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3">
-        <div className="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-xl bg-gradient-to-br from-yellow-400/20 via-yellow-300/10 to-sky-500/20 border-2 border-yellow-300/40 flex items-center justify-center overflow-hidden">
+      <div className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-3">
+        <div className="relative w-10 h-10 sm:w-16 sm:h-16 shrink-0 rounded-lg sm:rounded-xl bg-gradient-to-br from-yellow-400/20 via-yellow-300/10 to-sky-500/20 border-2 border-yellow-300/40 flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 animate-spin-slow opacity-60" style={{ background: 'conic-gradient(from 0deg, rgba(250,204,21,0.5), transparent 40%, rgba(56,189,248,0.5), transparent 80%)' }} />
-          <img src={meta?.icon} alt={meta?.name} className="relative w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+          <img src={meta?.icon} alt={meta?.name} className="relative w-7 h-7 sm:w-12 sm:h-12 object-contain drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
         </div>
         <div className="min-w-0">
-          <div className="text-[8px] sm:text-[9px] tracking-[0.3em] font-bold text-yellow-300 uppercase" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
-            Mythic Reveal
+          <div className="text-[8px] sm:text-[9px] tracking-[0.25em] sm:tracking-[0.3em] font-bold text-yellow-300 uppercase truncate" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
+            Mythic Drop
           </div>
-          <div className="text-xs sm:text-sm font-bold text-white truncate">{meta?.name}</div>
-          <div className="text-[10px] sm:text-[11px] text-sky-200/80">Drops in Season 2</div>
+          <div className="text-[11px] sm:text-sm font-bold text-white truncate leading-tight">{meta?.name}</div>
+          <div className="hidden sm:block text-[10px] sm:text-[11px] text-sky-200/80">Drops in Season 2</div>
         </div>
       </div>
     </div>
@@ -409,27 +408,27 @@ const IngredientMarquee = () => {
   return (
     <section
       data-testid="ingredient-marquee"
-      className="relative z-10 mt-2 sm:mt-4 py-3 sm:py-4 border-y border-cyan-400/15 bg-gradient-to-r from-transparent via-cyan-500/[0.04] to-transparent overflow-hidden"
+      className="relative z-10 mt-1 sm:mt-4 py-2.5 sm:py-4 border-y border-cyan-400/15 bg-gradient-to-r from-transparent via-cyan-500/[0.04] to-transparent overflow-hidden"
     >
-      <div className="flex items-center justify-between px-4 sm:px-8 mb-2">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-[10px] sm:text-xs tracking-[0.35em] font-mono font-bold text-cyan-300/80 uppercase">
-            Season 2 · 50 New Ingredients
+      <div className="flex items-center justify-between px-3 sm:px-8 mb-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+          <span className="text-[9px] sm:text-xs tracking-[0.25em] sm:tracking-[0.35em] font-mono font-bold text-cyan-300/80 uppercase truncate">
+            Season 2 · 50 Ingredients
           </span>
         </div>
-        <span className="text-[10px] sm:text-xs font-mono text-cyan-300/40">
+        <span className="hidden sm:inline text-[10px] sm:text-xs font-mono text-cyan-300/40 shrink-0">
           Starter → Mythic
         </span>
       </div>
       <div className="relative">
-        <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 z-10 pointer-events-none bg-gradient-to-r from-[#04030f] to-transparent" />
-        <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 z-10 pointer-events-none bg-gradient-to-l from-[#04030f] to-transparent" />
-        <div className="flex gap-3 sm:gap-4 animate-marquee whitespace-nowrap will-change-transform">
+        <div className="absolute left-0 top-0 bottom-0 w-10 sm:w-32 z-10 pointer-events-none bg-gradient-to-r from-[#04030f] to-transparent" />
+        <div className="absolute right-0 top-0 bottom-0 w-10 sm:w-32 z-10 pointer-events-none bg-gradient-to-l from-[#04030f] to-transparent" />
+        <div className="flex gap-2.5 sm:gap-4 animate-marquee whitespace-nowrap will-change-transform">
           {doubled.map((it, i) => (
             <div
               key={`${it.id}-${i}`}
-              className="shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-1.5 flex items-center justify-center hover:border-cyan-300/40 transition-colors"
+              className="shrink-0 w-11 h-11 sm:w-16 sm:h-16 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-1.5 flex items-center justify-center hover:border-cyan-300/40 transition-colors"
               title={it.meta.name}
             >
               <img src={it.meta.icon} alt="" className="w-full h-full object-contain drop-shadow-[0_0_6px_rgba(255,255,255,0.25)]" loading="lazy" />
@@ -489,7 +488,12 @@ const LandingStyles = () => (
         0 11px 18px rgba(0,0,0,0.55),
         0 0 28px rgba(56,189,248,0.4);
     }
+    /* Mobile gets less aggressive tilt so the wordmark uses the full viewport width */
+    .hero-tilt-1 { transform: rotate(-1.5deg); }
+    .hero-tilt-2 { transform: rotate(1deg); }
     @media (min-width: 640px) {
+      .hero-tilt-1 { transform: rotate(-2.5deg); }
+      .hero-tilt-2 { transform: rotate(1.5deg); }
       .hero-word {
         -webkit-text-stroke: 5px #0b1738;
         text-shadow:
@@ -521,12 +525,15 @@ const LandingStyles = () => (
       0%,100% { transform: rotate(-2.5deg) translateY(0); }
       50%     { transform: rotate(-1.5deg) translateY(-4px); }
     }
-    .hero-word-blue { animation: hero-wobble 5s ease-in-out infinite; }
     @keyframes hero-wobble-2 {
       0%,100% { transform: rotate(1.5deg) translateY(0); }
       50%     { transform: rotate(2.5deg) translateY(-3px); }
     }
-    .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
+    /* Wobble animation only on tablet+ so mobile keeps the small-tilt static look */
+    @media (min-width: 640px) {
+      .hero-word-blue   { animation: hero-wobble   5s ease-in-out infinite; }
+      .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
+    }
 
     /* ─── Chunky 3D PLAY NOW button ─── */
     .play-cta-base {
