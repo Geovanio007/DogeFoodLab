@@ -89,39 +89,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
                  style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.35), rgba(168,85,247,0.18) 40%, transparent 70%)', filter: 'blur(40px)' }} />
           </div>
 
-          {/* Title wordmark */}
-          <div className="relative mb-1.5 sm:mb-3 flex items-center gap-2 sm:gap-4">
-            <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-r from-transparent to-cyan-400/70" />
-            <span data-testid="hero-eyebrow" className="text-[9px] sm:text-xs tracking-[0.4em] sm:tracking-[0.45em] font-mono text-cyan-300/80 uppercase">
-              The Meme Mixer Reactor
-            </span>
-            <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-l from-transparent to-cyan-400/70" />
-          </div>
-
-          <h1
-            data-testid="hero-title"
-            className="hero-title relative text-center select-none"
-            style={{
-              fontSize: 'clamp(4rem, 17vw, 9.5rem)',
-              fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
-              letterSpacing: '0.005em',
-              lineHeight: 0.88,
-              fontWeight: 400,
-            }}
-          >
-            <span
-              className="block hero-word hero-word-blue hero-tilt-1"
-              data-text="DogeFood"
-            >
-              DogeFood
-            </span>
-            <span
-              className="block hero-word hero-word-yellow hero-tilt-2 mt-1 sm:mt-2"
-              data-text="Lab"
-            >
-              Lab
-            </span>
-          </h1>
+          {/* Title wordmark — removed per user request */}
 
           {/* Season 2 incoming badge */}
           <div className="mt-4 sm:mt-7 flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full border-2 border-yellow-400/70 bg-yellow-400/10 backdrop-blur shadow-[0_4px_0_rgba(0,0,0,0.25),0_0_20px_rgba(250,204,21,0.4)]">
