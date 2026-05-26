@@ -100,43 +100,41 @@ const WelcomeScreen = ({ onPlayNow }) => {
 
           <h1
             data-testid="hero-title"
-            className="hero-title relative text-center font-black tracking-tight leading-[0.85] select-none"
+            className="hero-title relative text-center select-none"
             style={{
-              fontSize: 'clamp(3.25rem, 11vw, 8.5rem)',
-              background: 'linear-gradient(180deg, #ffffff 0%, #e0f2fe 35%, #67e8f9 70%, #38bdf8 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
-              textShadow: '0 0 60px rgba(56,189,248,0.4)',
-              fontFamily: "'Bebas Neue', 'Impact', system-ui, sans-serif",
-              letterSpacing: '0.02em',
+              fontSize: 'clamp(3.5rem, 12vw, 9.5rem)',
+              fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
+              letterSpacing: '0.005em',
+              lineHeight: 0.88,
+              fontWeight: 400,
             }}
           >
-            <span className="block">DOGEFOOD</span>
-            <span className="block relative">
-              LAB
-              <span
-                aria-hidden
-                className="absolute inset-0 block animate-glitch-tint pointer-events-none"
-                style={{
-                  background: 'linear-gradient(180deg, transparent 0%, #ec4899 60%, #f59e0b 100%)',
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  color: 'transparent',
-                  mixBlendMode: 'screen',
-                  opacity: 0.65,
-                }}
-              >LAB</span>
+            <span
+              className="block hero-word hero-word-blue"
+              data-text="DogeFood"
+              style={{ transform: 'rotate(-2.5deg)', display: 'inline-block' }}
+            >
+              DogeFood
+            </span>
+            <span
+              className="block hero-word hero-word-yellow mt-1 sm:mt-2"
+              data-text="Lab"
+              style={{ transform: 'rotate(1.5deg)', display: 'inline-block' }}
+            >
+              Lab
             </span>
           </h1>
 
           {/* Season 2 incoming badge */}
-          <div className="mt-4 sm:mt-6 flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-pink-400/40 bg-pink-500/10 backdrop-blur">
-            <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
-            <span className="text-[10px] sm:text-xs tracking-[0.3em] font-mono font-bold text-pink-200 uppercase">
+          <div className="mt-5 sm:mt-7 flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full border-2 border-yellow-400/70 bg-yellow-400/10 backdrop-blur shadow-[0_4px_0_rgba(0,0,0,0.25),0_0_20px_rgba(250,204,21,0.4)]">
+            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+            <span
+              className="text-[11px] sm:text-sm tracking-[0.3em] font-bold text-yellow-200 uppercase"
+              style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}
+            >
               {cd.finished ? 'Season 2 is LIVE' : 'Season 2 incoming'}
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
           </div>
 
           {/* Countdown */}
@@ -152,44 +150,51 @@ const WelcomeScreen = ({ onPlayNow }) => {
             </div>
           )}
 
-          {/* Primary CTA — Play Now with token logos */}
+          {/* Primary CTA — Chunky 3D Play button with token logos */}
           <button
             data-testid="play-now-btn"
             onClick={onPlayNow}
-            className="play-cta group relative mt-7 sm:mt-9 inline-flex items-center justify-center cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-cyan-300/60"
-            style={{ zIndex: 50 }}
+            className="play-cta group relative mt-8 sm:mt-10 inline-flex items-center justify-center cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none"
+            style={{ zIndex: 50, perspective: '600px' }}
           >
-            {/* Outer animated ring */}
-            <span aria-hidden className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 opacity-70 blur-md group-hover:opacity-100 group-hover:blur-lg transition-all duration-300 animate-spin-slow" />
-            {/* Solid pill */}
-            <span aria-hidden className="absolute inset-0 rounded-full bg-gradient-to-b from-[#0c1230] via-[#0a0820] to-[#06041a] border border-cyan-300/40 shadow-[0_20px_60px_-10px_rgba(56,189,248,0.6)] group-hover:shadow-[0_25px_75px_-10px_rgba(236,72,153,0.65)] transition-shadow" />
-            <span className="relative z-10 px-6 sm:px-10 py-4 sm:py-5 flex items-center gap-3 sm:gap-5">
-              <img src={LAB_TOKEN} alt="LAB Token" className="w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-[0_0_10px_rgba(56,189,248,0.6)]" />
+            {/* 3D bottom shadow layer (the "extruded base" of the button) */}
+            <span aria-hidden className="play-cta-base" />
+            {/* Halo */}
+            <span aria-hidden className="play-cta-halo" />
+            {/* Main top face */}
+            <span className="play-cta-top relative z-10 px-5 sm:px-12 py-3.5 sm:py-5 flex items-center gap-2.5 sm:gap-5 whitespace-nowrap">
+              {/* Inner gloss highlight */}
+              <span aria-hidden className="play-cta-gloss" />
+              <img
+                src={LAB_TOKEN}
+                alt="LAB Token"
+                className="relative w-8 h-8 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[-12deg] transition-transform duration-300"
+              />
               <span
-                className="text-2xl sm:text-4xl font-black tracking-wider"
+                className="relative play-cta-text"
                 style={{
-                  background: 'linear-gradient(180deg, #fef3c7 0%, #fbbf24 50%, #f59e0b 100%)',
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  color: 'transparent',
-                  textShadow: '0 0 25px rgba(245,158,11,0.4)',
-                  fontFamily: "'Bebas Neue', system-ui, sans-serif",
-                  letterSpacing: '0.08em',
+                  fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
+                  letterSpacing: '0.02em',
+                  fontWeight: 400,
                 }}
               >
                 PLAY NOW
               </span>
-              <img src={LAB_TOKEN} alt="LAB Token" className="w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-[0_0_10px_rgba(56,189,248,0.6)] animate-pulse" />
+              <img
+                src={LAB_TOKEN}
+                alt="LAB Token"
+                className="relative w-8 h-8 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[12deg] transition-transform duration-300 animate-coin-bounce"
+              />
             </span>
           </button>
 
           {/* Tagline */}
           <p
             data-testid="hero-tagline"
-            className="mt-5 sm:mt-7 text-center text-sm sm:text-lg text-cyan-100/80 max-w-xl px-4 leading-relaxed"
+            className="mt-5 sm:mt-7 text-center text-sm sm:text-lg text-sky-100/90 max-w-xl px-4 leading-relaxed"
           >
             Mix legendary memes. Mint mythical treats.<br className="hidden sm:block" />
-            Forge your reputation across <span className="text-fuchsia-300 font-semibold">50 new ingredients</span> in Season 2.
+            Forge your reputation across <span className="text-yellow-300 font-bold">50 new ingredients</span> in Season 2.
           </p>
 
           {/* Guest/Account secondary CTA */}
@@ -237,49 +242,50 @@ const WelcomeScreen = ({ onPlayNow }) => {
 /* ─── Cinematic background ─── */
 const CinematicBackground = () => (
   <>
-    {/* base radial gradient */}
+    {/* base radial gradient — warmer lab-blue base */}
     <div
       aria-hidden
       className="absolute inset-0 pointer-events-none"
       style={{
         background:
-          'radial-gradient(ellipse at 50% 35%, #0c1230 0%, #060418 50%, #02010a 100%)',
+          'radial-gradient(ellipse at 50% 30%, #1e3a8a 0%, #0c1a3f 40%, #050917 80%, #02030a 100%)',
       }}
     />
-    {/* neon grid floor */}
-    <div aria-hidden className="absolute inset-0 pointer-events-none welcome-grid opacity-40" />
-    {/* scanlines */}
-    <div aria-hidden className="absolute inset-0 pointer-events-none welcome-scanlines opacity-30 mix-blend-overlay" />
-    {/* horizon glow */}
+    {/* sky-blue grid floor */}
+    <div aria-hidden className="absolute inset-0 pointer-events-none welcome-grid opacity-30" />
+    {/* horizon glow — sky-blue warmth */}
     <div
       aria-hidden
       className="absolute left-0 right-0 pointer-events-none"
       style={{
-        top: '55%',
+        top: '60%',
         height: '40%',
-        background: 'linear-gradient(to top, rgba(56,189,248,0.18), transparent 60%)',
+        background: 'linear-gradient(to top, rgba(56,189,248,0.28), transparent 70%)',
         filter: 'blur(20px)',
       }}
     />
-    {/* aurora streaks */}
-    <div aria-hidden className="absolute -top-32 -left-32 w-[40rem] h-[40rem] rounded-full pointer-events-none opacity-30"
-         style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.55), transparent 60%)', filter: 'blur(60px)' }} />
-    <div aria-hidden className="absolute -bottom-32 -right-32 w-[40rem] h-[40rem] rounded-full pointer-events-none opacity-30"
-         style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.55), transparent 60%)', filter: 'blur(60px)' }} />
+    {/* warm yellow sun-spot top */}
+    <div aria-hidden className="absolute -top-40 left-1/2 -translate-x-1/2 w-[44rem] h-[44rem] rounded-full pointer-events-none opacity-30"
+         style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.55), rgba(56,189,248,0.18) 50%, transparent 75%)', filter: 'blur(60px)' }} />
+    {/* sky-blue side glow */}
+    <div aria-hidden className="absolute -bottom-32 -left-32 w-[36rem] h-[36rem] rounded-full pointer-events-none opacity-40"
+         style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.55), transparent 65%)', filter: 'blur(60px)' }} />
+    <div aria-hidden className="absolute -bottom-32 -right-32 w-[36rem] h-[36rem] rounded-full pointer-events-none opacity-30"
+         style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.45), transparent 65%)', filter: 'blur(60px)' }} />
 
-    {/* drifting particles */}
-    {Array.from({ length: 28 }).map((_, i) => (
+    {/* drifting particles — gold + sky-blue mix */}
+    {Array.from({ length: 22 }).map((_, i) => (
       <span
         key={i}
         aria-hidden
-        className="welcome-particle"
+        className={`welcome-particle ${i % 3 === 0 ? 'welcome-particle-gold' : ''}`}
         style={{
           left: `${(i * 37) % 100}%`,
-          animationDelay: `${(i * 0.45) % 9}s`,
-          animationDuration: `${10 + (i % 8)}s`,
-          width: `${2 + (i % 3)}px`,
-          height: `${2 + (i % 3)}px`,
-          opacity: 0.4 + (i % 5) * 0.1,
+          animationDelay: `${(i * 0.55) % 10}s`,
+          animationDuration: `${12 + (i % 6)}s`,
+          width: `${3 + (i % 3)}px`,
+          height: `${3 + (i % 3)}px`,
+          opacity: 0.5 + (i % 4) * 0.1,
         }}
       />
     ))}
@@ -288,7 +294,7 @@ const CinematicBackground = () => (
     <div
       aria-hidden
       className="absolute inset-0 pointer-events-none"
-      style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)' }}
+      style={{ background: 'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%)' }}
     />
   </>
 );
@@ -339,18 +345,20 @@ const SneakPeekCard = () => {
   return (
     <div
       data-testid="sneak-peek-card"
-      className="relative max-w-[12rem] sm:max-w-[15rem] rounded-2xl overflow-hidden border border-cyan-400/30 bg-gradient-to-br from-[#0d0b2a]/90 to-[#06041a]/90 backdrop-blur-md shadow-[0_15px_40px_-10px_rgba(56,189,248,0.5)] hover:-translate-y-0.5 transition-transform"
+      className="relative max-w-[12rem] sm:max-w-[15rem] rounded-2xl overflow-hidden border-2 border-yellow-400/50 bg-gradient-to-br from-sky-900/90 to-[#06112e]/90 backdrop-blur-md shadow-[0_8px_0_rgba(0,0,0,0.35),0_15px_40px_-10px_rgba(250,204,21,0.5)] hover:-translate-y-0.5 transition-transform"
     >
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-300/60 to-transparent" />
       <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3">
-        <div className="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-xl bg-gradient-to-br from-pink-500/20 via-fuchsia-500/15 to-purple-500/20 border border-pink-300/30 flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 animate-spin-slow opacity-60" style={{ background: 'conic-gradient(from 0deg, rgba(236,72,153,0.5), transparent 40%, rgba(168,85,247,0.5), transparent 80%)' }} />
-          <img src={meta?.icon} alt={meta?.name} className="relative w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]" />
+        <div className="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-xl bg-gradient-to-br from-yellow-400/20 via-yellow-300/10 to-sky-500/20 border-2 border-yellow-300/40 flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 animate-spin-slow opacity-60" style={{ background: 'conic-gradient(from 0deg, rgba(250,204,21,0.5), transparent 40%, rgba(56,189,248,0.5), transparent 80%)' }} />
+          <img src={meta?.icon} alt={meta?.name} className="relative w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
         </div>
         <div className="min-w-0">
-          <div className="text-[8px] sm:text-[9px] tracking-[0.3em] font-mono text-pink-300 font-bold uppercase">Mythic Reveal</div>
+          <div className="text-[8px] sm:text-[9px] tracking-[0.3em] font-bold text-yellow-300 uppercase" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
+            Mythic Reveal
+          </div>
           <div className="text-xs sm:text-sm font-bold text-white truncate">{meta?.name}</div>
-          <div className="text-[10px] sm:text-[11px] text-cyan-200/70">Drops in Season 2</div>
+          <div className="text-[10px] sm:text-[11px] text-sky-200/80">Drops in Season 2</div>
         </div>
       </div>
     </div>
@@ -444,9 +452,6 @@ const LandingStyles = () => (
       mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
       -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
     }
-    .welcome-scanlines {
-      background: repeating-linear-gradient(to bottom, rgba(255,255,255,0) 0, rgba(255,255,255,0) 3px, rgba(255,255,255,0.025) 4px);
-    }
     @keyframes welcome-particle {
       0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
       10%  { opacity: 1; }
@@ -457,25 +462,152 @@ const LandingStyles = () => (
       position: absolute;
       bottom: -10px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(103,232,249,0.95), rgba(56,189,248,0.3) 60%, transparent 100%);
+      background: radial-gradient(circle, rgba(186,230,253,0.95), rgba(56,189,248,0.3) 60%, transparent 100%);
       box-shadow: 0 0 8px rgba(56,189,248,0.7);
       animation: welcome-particle linear infinite;
       pointer-events: none;
     }
+    .welcome-particle-gold {
+      background: radial-gradient(circle, rgba(254,243,199,0.95), rgba(250,204,21,0.4) 60%, transparent 100%);
+      box-shadow: 0 0 10px rgba(250,204,21,0.7);
+    }
     @keyframes spin-slow { from { transform: rotate(0); } to { transform: rotate(360deg); } }
     .animate-spin-slow { animation: spin-slow 12s linear infinite; }
+
+    /* ─── Cartoon wordmark (chunky 3D extrusion, Chumbi-style) ─── */
+    .hero-word {
+      font-weight: 400;
+      position: relative;
+      display: inline-block;
+      -webkit-text-stroke: 3px #0b1738;
+      paint-order: stroke fill;
+      /* Stacked dark copies create the 3D extrusion. Final blurred shadow = ground shadow. */
+      text-shadow:
+        0 3px 0 #0b1738,
+        0 6px 0 #0b1738,
+        0 9px 0 #0b1738,
+        0 11px 18px rgba(0,0,0,0.55),
+        0 0 28px rgba(56,189,248,0.4);
+    }
+    @media (min-width: 640px) {
+      .hero-word {
+        -webkit-text-stroke: 5px #0b1738;
+        text-shadow:
+          0 4px 0 #0b1738,
+          0 8px 0 #0b1738,
+          0 12px 0 #0b1738,
+          0 16px 0 #0b1738,
+          0 18px 22px rgba(0,0,0,0.55),
+          0 0 40px rgba(56,189,248,0.45);
+      }
+    }
+    .hero-word-blue   { color: #38bdf8; }
+    .hero-word-yellow { color: #facc15; }
+    /* Glossy highlight overlay using a duplicated span sitting on top */
+    .hero-word::after {
+      content: attr(data-text);
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      -webkit-text-stroke: 0;
+      text-shadow: none;
+      color: transparent;
+      background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 45%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      mix-blend-mode: screen;
+    }
+    @keyframes hero-wobble {
+      0%,100% { transform: rotate(-2.5deg) translateY(0); }
+      50%     { transform: rotate(-1.5deg) translateY(-4px); }
+    }
+    .hero-word-blue { animation: hero-wobble 5s ease-in-out infinite; }
+    @keyframes hero-wobble-2 {
+      0%,100% { transform: rotate(1.5deg) translateY(0); }
+      50%     { transform: rotate(2.5deg) translateY(-3px); }
+    }
+    .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
+
+    /* ─── Chunky 3D PLAY NOW button ─── */
+    .play-cta-base {
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: linear-gradient(180deg, #0c4a6e 0%, #082f49 100%);
+      transform: translateY(8px);
+      box-shadow:
+        0 14px 0 #03182e,
+        0 24px 40px rgba(2,8,23,0.7),
+        0 0 0 4px rgba(8,47,73,0.95) inset;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .play-cta-top {
+      position: relative;
+      border-radius: 9999px;
+      background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 100%);
+      border: 4px solid #082f49;
+      box-shadow:
+        0 0 0 4px rgba(125,211,252,0.35),
+        inset 0 4px 0 rgba(255,255,255,0.55),
+        inset 0 -8px 14px rgba(8,47,73,0.55);
+      transition: transform 0.18s ease;
+    }
+    .play-cta-halo {
+      position: absolute;
+      inset: -10px;
+      border-radius: 9999px;
+      background: radial-gradient(circle, rgba(250,204,21,0.5), transparent 65%);
+      filter: blur(18px);
+      opacity: 0.7;
+      transition: opacity 0.3s ease;
+    }
+    .play-cta-gloss {
+      position: absolute;
+      top: 6px;
+      left: 18px;
+      right: 18px;
+      height: 35%;
+      border-radius: 9999px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%);
+      filter: blur(2px);
+      pointer-events: none;
+    }
+    .play-cta-text {
+      font-size: clamp(1.5rem, 5vw, 3rem);
+      color: #fef9c3;
+      -webkit-text-stroke: 2px #0c1c45;
+      paint-order: stroke fill;
+      text-shadow:
+        0 2px 0 #b45309,
+        0 4px 0 #78350f,
+        0 6px 10px rgba(0,0,0,0.45);
+      background: linear-gradient(180deg, #fef9c3 0%, #fde047 50%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .play-cta:hover .play-cta-top { transform: translateY(6px); }
+    .play-cta:hover .play-cta-base {
+      transform: translateY(2px);
+      box-shadow: 0 8px 0 #03182e, 0 14px 30px rgba(2,8,23,0.7), 0 0 0 4px rgba(8,47,73,0.95) inset;
+    }
+    .play-cta:hover .play-cta-halo { opacity: 1; }
+    .play-cta:active .play-cta-top { transform: translateY(10px); }
+    .play-cta:active .play-cta-base {
+      transform: translateY(0px);
+      box-shadow: 0 4px 0 #03182e, 0 8px 14px rgba(2,8,23,0.7), 0 0 0 4px rgba(8,47,73,0.95) inset;
+    }
+    @keyframes coin-bounce {
+      0%,100% { transform: translateY(0) rotate(0); }
+      50%     { transform: translateY(-4px) rotate(8deg); }
+    }
+    .animate-coin-bounce { animation: coin-bounce 2.2s ease-in-out infinite; }
+
     @keyframes cd-pulse {
       0%,100% { box-shadow: 0 10px 30px -10px rgba(56,189,248,0.5), inset 0 0 25px rgba(56,189,248,0.12); }
       50%     { box-shadow: 0 15px 40px -10px rgba(56,189,248,0.9), inset 0 0 35px rgba(56,189,248,0.22); }
     }
     .animate-cd-pulse { animation: cd-pulse 1s ease-in-out infinite; }
-    @keyframes glitch-tint {
-      0%,100% { transform: translate(0,0); opacity: 0.6; }
-      45%     { transform: translate(2px,-1px); opacity: 0.75; }
-      50%     { transform: translate(-2px,1px); opacity: 0.4; }
-      55%     { transform: translate(0,0); opacity: 0.7; }
-    }
-    .animate-glitch-tint { animation: glitch-tint 4.5s ease-in-out infinite; }
     @keyframes orbit-float {
       0%,100% { transform: translateY(0) rotate(-2deg); }
       50%     { transform: translateY(-14px) rotate(2deg); }
@@ -487,10 +619,10 @@ const LandingStyles = () => (
     }
     .animate-marquee { animation: marquee 60s linear infinite; }
 
-    .hero-title { line-height: 0.85; }
-
     @media (prefers-reduced-motion: reduce) {
-      .welcome-particle, .orbit-tile, .animate-spin-slow, .animate-cd-pulse, .animate-glitch-tint, .animate-marquee {
+      .welcome-particle, .orbit-tile, .animate-spin-slow, .animate-cd-pulse,
+      .animate-marquee, .animate-coin-bounce,
+      .hero-word-blue, .hero-word-yellow {
         animation: none !important;
       }
     }
