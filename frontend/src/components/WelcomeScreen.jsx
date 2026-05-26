@@ -313,8 +313,8 @@ const CountdownDigit = ({ value, label, pad = 2, pulse = false }) => {
           className="text-center font-bold tabular-nums leading-none"
           style={{
             fontSize: 'clamp(1.75rem, 5.5vw, 3rem)',
-            color: '#67e8f9',
-            textShadow: '0 0 14px rgba(56,189,248,0.85)',
+            color: '#ffffff',
+            textShadow: '0 0 14px rgba(56,189,248,0.85), 0 2px 4px rgba(0,0,0,0.4)',
             fontFamily: "'JetBrains Mono', 'Courier New', monospace",
           }}
         >
@@ -574,17 +574,14 @@ const LandingStyles = () => (
     }
     .play-cta-text {
       font-size: clamp(1.5rem, 5vw, 3rem);
-      color: #fef9c3;
+      color: #ffffff;
       -webkit-text-stroke: 2px #0c1c45;
       paint-order: stroke fill;
       text-shadow:
-        0 2px 0 #b45309,
-        0 4px 0 #78350f,
-        0 6px 10px rgba(0,0,0,0.45);
-      background: linear-gradient(180deg, #fef9c3 0%, #fde047 50%, #f59e0b 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+        0 2px 0 #0c4a6e,
+        0 4px 0 #082f49,
+        0 6px 10px rgba(0,0,0,0.5);
+      -webkit-text-fill-color: #ffffff;
     }
     .play-cta:hover .play-cta-top { transform: translateY(6px); }
     .play-cta:hover .play-cta-base {
