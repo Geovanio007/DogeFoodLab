@@ -1201,8 +1201,9 @@ const MainMenu = () => {
                 See All <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
               <FeatureCard icon={Beaker} label="Lab" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/lab" onClick={handleLabAccess} testId="feature-lab" />
+              <FeatureCard icon={Zap} label="Arena" gradient="from-amber-500/25 to-orange-600/10" iconColor="text-amber-300" borderColor="border-amber-500/30" to="/arena" badge="LIVE" testId="feature-arena" />
               <FeatureCard icon={Settings} label="Auto-Mix" gradient="from-sky-500/20 to-indigo-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/auto-mixer" badge="AI" testId="feature-auto-mixer" />
               <FeatureCard icon={Palette} label="Treats" gradient="from-purple-500/20 to-pink-600/10" iconColor="text-purple-300" borderColor="border-purple-500/15" to="/nfts" testId="feature-treats" />
               <FeatureCard icon={Store} label="Market" gradient="from-sky-500/20 to-cyan-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/marketplace" testId="feature-market" />

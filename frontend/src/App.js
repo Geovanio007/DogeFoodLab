@@ -32,6 +32,7 @@ import './App.css';
 // Lazy-load heavy route components for faster initial page load
 const GameLabRedesign = lazy(() => import('./components/GameLabRedesign'));
 const SeasonTwoLab = lazy(() => import('./components/SeasonTwoLab'));
+const LabArena = lazy(() => import('./components/LabArena'));
 const MyTreats = lazy(() => import('./components/MyTreats'));
 const Leaderboard = lazy(() => import('./components/Leaderboard'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -285,6 +286,7 @@ const InnerApp = () => {
               <Route path="/tournament" element={<Tournament />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/auto-mixer" element={<AutoMixerSubscription playerAddress={effectiveAddress || 'GUEST_USER'} />} />
+              <Route path="/arena" element={<LabArena playerAddress={effectiveAddress || 'GUEST_USER'} />} />
             </Routes>
             </Suspense>
             {/* Global Treat Notifications */}
