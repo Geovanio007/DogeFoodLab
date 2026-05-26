@@ -89,7 +89,14 @@ const WelcomeScreen = ({ onPlayNow }) => {
                  style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.35), rgba(168,85,247,0.18) 40%, transparent 70%)', filter: 'blur(40px)' }} />
           </div>
 
-          {/* Title wordmark — removed per user request */}
+          {/* Eyebrow */}
+          <div className="relative mb-1.5 sm:mb-3 flex items-center gap-2 sm:gap-4">
+            <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-r from-transparent to-cyan-400/70" />
+            <span data-testid="hero-eyebrow" className="text-[9px] sm:text-xs tracking-[0.4em] sm:tracking-[0.45em] font-mono text-cyan-300/80 uppercase">
+              The Meme Mixer Reactor
+            </span>
+            <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-l from-transparent to-cyan-400/70" />
+          </div>
 
           {/* Season 2 incoming badge */}
           <div className="mt-4 sm:mt-7 flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full border-2 border-yellow-400/70 bg-yellow-400/10 backdrop-blur shadow-[0_4px_0_rgba(0,0,0,0.25),0_0_20px_rgba(250,204,21,0.4)]">
@@ -120,37 +127,32 @@ const WelcomeScreen = ({ onPlayNow }) => {
           <button
             data-testid="play-now-btn"
             onClick={onPlayNow}
-            className="play-cta group relative mt-6 sm:mt-10 inline-flex items-center justify-center cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none w-full max-w-[22rem] sm:max-w-none sm:w-auto"
-            style={{ zIndex: 50, perspective: '600px' }}
+            className="play-cta group relative mt-6 sm:mt-10 inline-block cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none w-full max-w-[22rem] sm:max-w-none sm:w-auto"
+            style={{ zIndex: 50 }}
           >
-            {/* 3D bottom shadow layer (the "extruded base" of the button) */}
-            <span aria-hidden className="play-cta-base" />
-            {/* Halo */}
-            <span aria-hidden className="play-cta-halo" />
-            {/* Main top face */}
-            <span className="play-cta-top relative z-10 w-full sm:w-auto px-5 sm:px-12 py-4 sm:py-5 flex items-center justify-center gap-3 sm:gap-5 whitespace-nowrap">
-              {/* Inner gloss highlight */}
-              <span aria-hidden className="play-cta-gloss" />
-              <img
-                src={LAB_TOKEN}
-                alt="LAB Token"
-                className="relative w-9 h-9 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[-12deg] transition-transform duration-300 shrink-0"
-              />
-              <span
-                className="relative play-cta-text"
-                style={{
-                  fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
-                  letterSpacing: '0.02em',
-                  fontWeight: 400,
-                }}
-              >
-                PLAY NOW
+            <span className="play-cta-top relative z-10 block w-full sm:w-auto px-5 sm:px-12 py-4 sm:py-5">
+              <span className="relative flex items-center justify-center gap-3 sm:gap-5 whitespace-nowrap">
+                <img
+                  src={LAB_TOKEN}
+                  alt="LAB Token"
+                  className="w-9 h-9 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[-12deg] transition-transform duration-300 shrink-0"
+                />
+                <span
+                  className="play-cta-text"
+                  style={{
+                    fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
+                    letterSpacing: '0.02em',
+                    fontWeight: 400,
+                  }}
+                >
+                  PLAY NOW
+                </span>
+                <img
+                  src={LAB_TOKEN}
+                  alt="LAB Token"
+                  className="w-9 h-9 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[12deg] transition-transform duration-300 animate-coin-bounce shrink-0"
+                />
               </span>
-              <img
-                src={LAB_TOKEN}
-                alt="LAB Token"
-                className="relative w-9 h-9 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[12deg] transition-transform duration-300 animate-coin-bounce shrink-0"
-              />
             </span>
           </button>
 
@@ -503,49 +505,23 @@ const LandingStyles = () => (
       .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
     }
 
-    /* ─── Chunky 3D PLAY NOW button ─── */
-    .play-cta-base {
-      position: absolute;
-      inset: 0;
-      border-radius: 9999px;
-      background: linear-gradient(180deg, #0c4a6e 0%, #082f49 100%);
-      transform: translateY(8px);
-      box-shadow:
-        0 14px 0 #03182e,
-        0 24px 40px rgba(2,8,23,0.7),
-        0 0 0 4px rgba(8,47,73,0.95) inset;
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
-    }
+    /* ─── Chunky 3D PLAY NOW button — single-element design for webview compatibility ─── */
     .play-cta-top {
       position: relative;
       border-radius: 9999px;
-      background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 100%);
+      background-color: #0284c7; /* solid fallback if gradient fails (older webviews) */
+      background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 100%);
       border: 4px solid #082f49;
+      /* Stacked box-shadows give the chunky 3D depth WITHOUT needing extra positioned layers */
       box-shadow:
-        0 0 0 4px rgba(125,211,252,0.35),
-        inset 0 4px 0 rgba(255,255,255,0.55),
-        inset 0 -8px 14px rgba(8,47,73,0.55);
-      transition: transform 0.18s ease;
-    }
-    .play-cta-halo {
-      position: absolute;
-      inset: -10px;
-      border-radius: 9999px;
-      background: radial-gradient(circle, rgba(250,204,21,0.5), transparent 65%);
-      filter: blur(18px);
-      opacity: 0.7;
-      transition: opacity 0.3s ease;
-    }
-    .play-cta-gloss {
-      position: absolute;
-      top: 6px;
-      left: 18px;
-      right: 18px;
-      height: 35%;
-      border-radius: 9999px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%);
-      filter: blur(2px);
-      pointer-events: none;
+        0 5px 0 #03182e,      /* dark extruded base */
+        0 9px 0 #03182e,
+        0 12px 0 #03182e,
+        inset 0 4px 0 rgba(255,255,255,0.55),  /* top gloss */
+        inset 0 -8px 14px rgba(8,47,73,0.55),  /* bottom inner shadow */
+        0 24px 40px -10px rgba(2,8,23,0.7),    /* drop shadow */
+        0 0 24px rgba(250,204,21,0.35);        /* yellow ambient glow */
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
     }
     .play-cta-text {
       font-size: clamp(1.5rem, 5vw, 3rem);
@@ -558,16 +534,27 @@ const LandingStyles = () => (
         0 6px 10px rgba(0,0,0,0.5);
       -webkit-text-fill-color: #ffffff;
     }
-    .play-cta:hover .play-cta-top { transform: translateY(6px); }
-    .play-cta:hover .play-cta-base {
-      transform: translateY(2px);
-      box-shadow: 0 8px 0 #03182e, 0 14px 30px rgba(2,8,23,0.7), 0 0 0 4px rgba(8,47,73,0.95) inset;
+    .play-cta:hover .play-cta-top {
+      transform: translateY(3px);
+      box-shadow:
+        0 3px 0 #03182e,
+        0 6px 0 #03182e,
+        0 9px 0 #03182e,
+        inset 0 4px 0 rgba(255,255,255,0.55),
+        inset 0 -8px 14px rgba(8,47,73,0.55),
+        0 18px 30px -8px rgba(2,8,23,0.7),
+        0 0 30px rgba(250,204,21,0.5);
     }
-    .play-cta:hover .play-cta-halo { opacity: 1; }
-    .play-cta:active .play-cta-top { transform: translateY(10px); }
-    .play-cta:active .play-cta-base {
-      transform: translateY(0px);
-      box-shadow: 0 4px 0 #03182e, 0 8px 14px rgba(2,8,23,0.7), 0 0 0 4px rgba(8,47,73,0.95) inset;
+    .play-cta:active .play-cta-top {
+      transform: translateY(6px);
+      box-shadow:
+        0 1px 0 #03182e,
+        0 3px 0 #03182e,
+        0 5px 0 #03182e,
+        inset 0 4px 0 rgba(255,255,255,0.55),
+        inset 0 -8px 14px rgba(8,47,73,0.55),
+        0 10px 18px -5px rgba(2,8,23,0.7),
+        0 0 18px rgba(250,204,21,0.35);
     }
     @keyframes coin-bounce {
       0%,100% { transform: translateY(0) rotate(0); }
