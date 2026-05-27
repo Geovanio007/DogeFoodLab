@@ -504,26 +504,23 @@ const LandingStyles = () => (
       .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
     }
 
-    /* ─── PLAY button — circular glass bubble with gold ring (matches reference) ─── */
+    /* ─── PLAY button — circular glass bubble with gold ring (MyDoge-webview safe) ─── */
     .play-cta-top {
       position: relative;
       width: 9rem;
       height: 9rem;
       border-radius: 50%;
-      background-color: #38bdf8; /* solid fallback */
-      /* Light-blue glassy bubble interior with radial highlight from top-left */
-      background-image:
-        radial-gradient(circle at 30% 25%, #f0f9ff 0%, #bae6fd 18%, #7dd3fc 40%, #38bdf8 70%, #0284c7 100%);
-      /* Thick gold ring + darker outer rim shadow */
+      /* Solid color first — guaranteed to render even if gradient fails */
+      background: #38bdf8;
+      /* Then layer a simple vertical linear-gradient (universally supported) */
+      background-image: linear-gradient(180deg, #bae6fd 0%, #7dd3fc 30%, #38bdf8 65%, #0284c7 100%);
+      /* Thick gold ring + darker outer rim */
       border: 8px solid #f59e0b;
       box-shadow:
         0 0 0 3px #b45309,                         /* darker gold under-ring */
-        inset 0 0 0 2px rgba(254,243,199,0.9),     /* cream inner edge */
-        inset 0 -10px 18px rgba(2,40,89,0.4),      /* lower water shadow */
-        inset 0 6px 10px rgba(255,255,255,0.5),    /* upper inner glow */
         0 10px 28px -6px rgba(2,8,23,0.6),         /* ground shadow */
         0 0 28px rgba(56,189,248,0.35);            /* ambient sky glow */
-      transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+      transition: transform 0.18s ease, filter 0.18s ease;
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -532,28 +529,29 @@ const LandingStyles = () => (
     @media (min-width: 640px) {
       .play-cta-top { width: 11rem; height: 11rem; }
     }
-    /* Big top glossy reflection — like sun hitting a bubble */
+    /* Big top glossy reflection — the bubble's highlight */
     .play-cta-shine {
       position: absolute;
       pointer-events: none;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.85) 0%,
-        rgba(255,255,255,0.35) 50%,
-        rgba(255,255,255,0) 100%);
     }
     .play-cta-shine-1 {
       top: 6%;
       left: 12%;
       width: 60%;
-      height: 30%;
+      height: 38%;
       border-radius: 50%;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,0.85) 0%,
+        rgba(255,255,255,0.45) 40%,
+        rgba(255,255,255,0.1) 80%,
+        rgba(255,255,255,0) 100%);
       transform: rotate(-8deg);
     }
     /* Decorative white bubble dots inside the glass */
     .play-cta-dot {
       position: absolute;
       pointer-events: none;
-      background: rgba(255,255,255,0.85);
+      background: #ffffff;
       border-radius: 50%;
     }
     .play-cta-dot-1 { top: 22%; left: 16%; width: 8px; height: 8px; opacity: 0.9; }
@@ -572,7 +570,7 @@ const LandingStyles = () => (
       -webkit-text-fill-color: #ffffff;
       line-height: 1;
     }
-    /* Tiny $LAB coin floating in the bottom-right corner as a brand mark */
+    /* Tiny $LAB coin in the bottom-right corner */
     .play-cta-coin {
       position: absolute;
       bottom: -6px;
@@ -589,15 +587,11 @@ const LandingStyles = () => (
     .play-cta:hover .play-cta-top {
       transform: scale(1.05);
       filter: brightness(1.06);
-      box-shadow:
-        0 0 0 3px #b45309,
-        inset 0 0 0 2px rgba(254,243,199,0.95),
-        inset 0 -10px 18px rgba(2,40,89,0.4),
-        inset 0 6px 10px rgba(255,255,255,0.65),
-        0 14px 32px -6px rgba(2,8,23,0.65),
-        0 0 40px rgba(56,189,248,0.55);
     }
-    .play-cta:active .play-cta-top { transform: scale(0.96); filter: brightness(0.95); }
+    .play-cta:active .play-cta-top {
+      transform: scale(0.96);
+      filter: brightness(0.95);
+    }
     @keyframes coin-bounce {
       0%,100% { transform: translateY(0) rotate(0); }
       50%     { transform: translateY(-3px) rotate(8deg); }
