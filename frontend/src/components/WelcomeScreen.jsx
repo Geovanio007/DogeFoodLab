@@ -123,39 +123,35 @@ const WelcomeScreen = ({ onPlayNow }) => {
             </div>
           )}
 
-          {/* Primary CTA — Glossy pill with cream border, sized for hero but compact */}
+          {/* Primary CTA — Circular bubble button with gold ring */}
           <button
             data-testid="play-now-btn"
             onClick={onPlayNow}
-            className="play-cta group relative mt-5 sm:mt-8 inline-block cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none"
+            className="play-cta group relative mt-5 sm:mt-7 cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none"
             style={{ zIndex: 50 }}
+            aria-label="Play Now"
           >
-            <span className="play-cta-top relative z-10 block px-4 sm:px-6 py-2.5 sm:py-3">
-              {/* Glossy highlights on top-left */}
+            <span className="play-cta-top relative z-10 block">
               <span aria-hidden className="play-cta-shine play-cta-shine-1" />
-              <span aria-hidden className="play-cta-shine play-cta-shine-2" />
-              <span className="relative flex items-center justify-center gap-2.5 sm:gap-3.5 whitespace-nowrap">
-                <img
-                  src={LAB_TOKEN}
-                  alt="LAB Token"
-                  className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-[0_2px_0_rgba(0,0,0,0.3)] group-hover:rotate-[-12deg] transition-transform duration-300 shrink-0"
-                />
-                <span
-                  className="play-cta-text"
-                  style={{
-                    fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
-                    letterSpacing: '0.04em',
-                    fontWeight: 400,
-                  }}
-                >
-                  PLAY NOW
-                </span>
-                <img
-                  src={LAB_TOKEN}
-                  alt="LAB Token"
-                  className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-[0_2px_0_rgba(0,0,0,0.3)] group-hover:rotate-[12deg] transition-transform duration-300 animate-coin-bounce shrink-0"
-                />
+              <span aria-hidden className="play-cta-dot play-cta-dot-1" />
+              <span aria-hidden className="play-cta-dot play-cta-dot-2" />
+              <span aria-hidden className="play-cta-dot play-cta-dot-3" />
+              <span
+                className="play-cta-text"
+                style={{
+                  fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
+                  letterSpacing: '0.02em',
+                  fontWeight: 400,
+                }}
+              >
+                PLAY
               </span>
+              {/* Tiny $LAB coin tucked into the corner as a brand mark */}
+              <img
+                src={LAB_TOKEN}
+                alt=""
+                className="play-cta-coin animate-coin-bounce"
+              />
             </span>
           </button>
 
@@ -508,78 +504,100 @@ const LandingStyles = () => (
       .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
     }
 
-    /* ─── PLAY NOW button — glossy crystal pill (premium aqua / chrome ring style) ─── */
+    /* ─── PLAY button — circular glass bubble with gold ring (matches reference) ─── */
     .play-cta-top {
       position: relative;
-      border-radius: 9999px;
-      background-color: #0c4a6e; /* solid fallback */
+      width: 9rem;
+      height: 9rem;
+      border-radius: 50%;
+      background-color: #38bdf8; /* solid fallback */
+      /* Light-blue glassy bubble interior with radial highlight from top-left */
       background-image:
-        linear-gradient(180deg, #7dd3fc 0%, #38bdf8 22%, #0ea5e9 55%, #0369a1 100%);
-      /* Metallic chrome outer ring */
-      border: 4px solid #f1f5f9;
+        radial-gradient(circle at 30% 25%, #f0f9ff 0%, #bae6fd 18%, #7dd3fc 40%, #38bdf8 70%, #0284c7 100%);
+      /* Thick gold ring + darker outer rim shadow */
+      border: 8px solid #f59e0b;
       box-shadow:
-        0 0 0 1.5px #cbd5e1,                         /* secondary chrome ring */
-        0 0 0 3px #94a3b8,                           /* darker chrome edge */
-        inset 0 1.5px 0 rgba(255,255,255,0.85),      /* top inner highlight */
-        inset 0 -8px 16px rgba(3,30,51,0.55),        /* bottom inner shadow for crystal depth */
-        inset 0 4px 10px rgba(125,211,252,0.4),      /* upper cyan glow */
-        0 8px 22px -4px rgba(2,8,23,0.55),           /* soft ground shadow */
-        0 0 30px rgba(56,189,248,0.35);              /* sky ambient glow */
-      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+        0 0 0 3px #b45309,                         /* darker gold under-ring */
+        inset 0 0 0 2px rgba(254,243,199,0.9),     /* cream inner edge */
+        inset 0 -10px 18px rgba(2,40,89,0.4),      /* lower water shadow */
+        inset 0 6px 10px rgba(255,255,255,0.5),    /* upper inner glow */
+        0 10px 28px -6px rgba(2,8,23,0.6),         /* ground shadow */
+        0 0 28px rgba(56,189,248,0.35);            /* ambient sky glow */
+      transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    /* Big glossy reflection — covers the upper half like a polished crystal */
+    @media (min-width: 640px) {
+      .play-cta-top { width: 11rem; height: 11rem; }
+    }
+    /* Big top glossy reflection — like sun hitting a bubble */
     .play-cta-shine {
       position: absolute;
       pointer-events: none;
-      border-radius: 9999px;
-    }
-    .play-cta-shine-1 {
-      top: 3px;
-      left: 5%;
-      right: 5%;
-      height: 42%;
       background: linear-gradient(180deg,
         rgba(255,255,255,0.85) 0%,
-        rgba(255,255,255,0.45) 40%,
-        rgba(255,255,255,0.1) 80%,
+        rgba(255,255,255,0.35) 50%,
         rgba(255,255,255,0) 100%);
     }
-    /* Faint bottom reflection */
-    .play-cta-shine-2 {
-      bottom: 3px;
-      left: 18%;
-      right: 18%;
-      height: 18%;
-      background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(186,230,253,0.25) 100%);
-      opacity: 0.7;
+    .play-cta-shine-1 {
+      top: 6%;
+      left: 12%;
+      width: 60%;
+      height: 30%;
+      border-radius: 50%;
+      transform: rotate(-8deg);
     }
+    /* Decorative white bubble dots inside the glass */
+    .play-cta-dot {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(255,255,255,0.85);
+      border-radius: 50%;
+    }
+    .play-cta-dot-1 { top: 22%; left: 16%; width: 8px; height: 8px; opacity: 0.9; }
+    .play-cta-dot-2 { top: 60%; right: 14%; width: 5px; height: 5px; opacity: 0.7; }
+    .play-cta-dot-3 { bottom: 18%; left: 24%; width: 4px; height: 4px; opacity: 0.6; }
     .play-cta-text {
-      font-size: clamp(1.15rem, 4vw, 1.85rem);
+      position: relative;
+      z-index: 2;
+      font-size: clamp(2rem, 6vw, 2.75rem);
       color: #ffffff;
-      -webkit-text-stroke: 2px #0c1c45;
+      -webkit-text-stroke: 3px #0c4a6e;
       paint-order: stroke fill;
       text-shadow:
-        0 1px 0 rgba(255,255,255,0.35),
-        0 2px 4px rgba(0,0,0,0.45);
+        0 2px 0 #075985,
+        0 3px 6px rgba(0,0,0,0.4);
       -webkit-text-fill-color: #ffffff;
+      line-height: 1;
+    }
+    /* Tiny $LAB coin floating in the bottom-right corner as a brand mark */
+    .play-cta-coin {
+      position: absolute;
+      bottom: -6px;
+      right: -8px;
+      width: 38px;
+      height: 38px;
+      z-index: 3;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+      object-fit: contain;
+    }
+    @media (min-width: 640px) {
+      .play-cta-coin { width: 48px; height: 48px; }
     }
     .play-cta:hover .play-cta-top {
-      transform: scale(1.04);
-      filter: brightness(1.08);
+      transform: scale(1.05);
+      filter: brightness(1.06);
       box-shadow:
-        0 0 0 1.5px #cbd5e1,
-        0 0 0 3px #94a3b8,
-        inset 0 1.5px 0 rgba(255,255,255,0.95),
-        inset 0 -8px 16px rgba(3,30,51,0.55),
-        inset 0 4px 10px rgba(125,211,252,0.55),
-        0 12px 26px -4px rgba(2,8,23,0.6),
+        0 0 0 3px #b45309,
+        inset 0 0 0 2px rgba(254,243,199,0.95),
+        inset 0 -10px 18px rgba(2,40,89,0.4),
+        inset 0 6px 10px rgba(255,255,255,0.65),
+        0 14px 32px -6px rgba(2,8,23,0.65),
         0 0 40px rgba(56,189,248,0.55);
     }
-    .play-cta:active .play-cta-top {
-      transform: scale(0.97);
-      filter: brightness(0.95);
-    }
+    .play-cta:active .play-cta-top { transform: scale(0.96); filter: brightness(0.95); }
     @keyframes coin-bounce {
       0%,100% { transform: translateY(0) rotate(0); }
       50%     { transform: translateY(-3px) rotate(8deg); }
