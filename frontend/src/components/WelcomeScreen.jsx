@@ -123,25 +123,28 @@ const WelcomeScreen = ({ onPlayNow }) => {
             </div>
           )}
 
-          {/* Primary CTA — Chunky 3D Play button with token logos */}
+          {/* Primary CTA — Glossy pill with cream border, sized for hero but compact */}
           <button
             data-testid="play-now-btn"
             onClick={onPlayNow}
-            className="play-cta group relative mt-6 sm:mt-10 inline-block cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none w-full max-w-[22rem] sm:max-w-none sm:w-auto"
+            className="play-cta group relative mt-5 sm:mt-8 inline-block cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none"
             style={{ zIndex: 50 }}
           >
-            <span className="play-cta-top relative z-10 block w-full sm:w-auto px-5 sm:px-12 py-4 sm:py-5">
-              <span className="relative flex items-center justify-center gap-3 sm:gap-5 whitespace-nowrap">
+            <span className="play-cta-top relative z-10 block px-4 sm:px-6 py-2.5 sm:py-3">
+              {/* Glossy highlights on top-left */}
+              <span aria-hidden className="play-cta-shine play-cta-shine-1" />
+              <span aria-hidden className="play-cta-shine play-cta-shine-2" />
+              <span className="relative flex items-center justify-center gap-2.5 sm:gap-3.5 whitespace-nowrap">
                 <img
                   src={LAB_TOKEN}
                   alt="LAB Token"
-                  className="w-9 h-9 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[-12deg] transition-transform duration-300 shrink-0"
+                  className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-[0_2px_0_rgba(0,0,0,0.3)] group-hover:rotate-[-12deg] transition-transform duration-300 shrink-0"
                 />
                 <span
                   className="play-cta-text"
                   style={{
                     fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
-                    letterSpacing: '0.02em',
+                    letterSpacing: '0.04em',
                     fontWeight: 400,
                   }}
                 >
@@ -150,7 +153,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
                 <img
                   src={LAB_TOKEN}
                   alt="LAB Token"
-                  className="w-9 h-9 sm:w-14 sm:h-14 object-contain drop-shadow-[0_3px_0_rgba(0,0,0,0.35)] group-hover:rotate-[12deg] transition-transform duration-300 animate-coin-bounce shrink-0"
+                  className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-[0_2px_0_rgba(0,0,0,0.3)] group-hover:rotate-[12deg] transition-transform duration-300 animate-coin-bounce shrink-0"
                 />
               </span>
             </span>
@@ -505,60 +508,80 @@ const LandingStyles = () => (
       .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
     }
 
-    /* ─── Chunky 3D PLAY NOW button — single-element design for webview compatibility ─── */
+    /* ─── PLAY NOW button — cream-bordered glossy pill (single-element, webview safe) ─── */
     .play-cta-top {
       position: relative;
       border-radius: 9999px;
-      background-color: #0284c7; /* solid fallback if gradient fails (older webviews) */
-      background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 100%);
-      border: 4px solid #082f49;
-      /* Stacked box-shadows give the chunky 3D depth WITHOUT needing extra positioned layers */
+      background-color: #0284c7; /* solid fallback for older webviews */
+      background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 35%, #0284c7 70%, #075985 100%);
+      /* Cream/off-white beveled outer border like the reference design */
+      border: 5px solid #fef3c7;
       box-shadow:
-        0 5px 0 #03182e,      /* dark extruded base */
-        0 9px 0 #03182e,
-        0 12px 0 #03182e,
-        inset 0 4px 0 rgba(255,255,255,0.55),  /* top gloss */
-        inset 0 -8px 14px rgba(8,47,73,0.55),  /* bottom inner shadow */
-        0 24px 40px -10px rgba(2,8,23,0.7),    /* drop shadow */
-        0 0 24px rgba(250,204,21,0.35);        /* yellow ambient glow */
+        0 0 0 2px #0b1738,                        /* dark hairline outside cream border */
+        0 4px 0 #03182e,                          /* chunky bottom edge */
+        0 7px 0 #03182e,
+        inset 0 -6px 12px rgba(8,47,73,0.5),      /* inner bottom shadow for volume */
+        0 16px 28px -8px rgba(2,8,23,0.65),       /* ground shadow */
+        0 0 22px rgba(250,204,21,0.3);            /* warm ambient glow */
       transition: transform 0.18s ease, box-shadow 0.18s ease;
+      overflow: hidden;
+    }
+    /* Glossy white highlights — sit on top of the gradient */
+    .play-cta-shine {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(255,255,255,0.85);
+      border-radius: 9999px;
+      filter: blur(0.5px); /* very light blur for soft edge, safe in all webviews */
+    }
+    .play-cta-shine-1 {
+      top: 4px;
+      left: 14%;
+      width: 28%;
+      height: 10px;
+      transform: rotate(-3deg);
+      opacity: 0.9;
+    }
+    .play-cta-shine-2 {
+      top: 5px;
+      left: 48%;
+      width: 14%;
+      height: 7px;
+      transform: rotate(-3deg);
+      opacity: 0.75;
     }
     .play-cta-text {
-      font-size: clamp(1.5rem, 5vw, 3rem);
+      font-size: clamp(1.25rem, 4.5vw, 2rem);
       color: #ffffff;
       -webkit-text-stroke: 2px #0c1c45;
       paint-order: stroke fill;
       text-shadow:
         0 2px 0 #0c4a6e,
-        0 4px 0 #082f49,
-        0 6px 10px rgba(0,0,0,0.5);
+        0 3px 6px rgba(0,0,0,0.45);
       -webkit-text-fill-color: #ffffff;
     }
     .play-cta:hover .play-cta-top {
-      transform: translateY(3px);
+      transform: translateY(2px);
       box-shadow:
-        0 3px 0 #03182e,
-        0 6px 0 #03182e,
-        0 9px 0 #03182e,
-        inset 0 4px 0 rgba(255,255,255,0.55),
-        inset 0 -8px 14px rgba(8,47,73,0.55),
-        0 18px 30px -8px rgba(2,8,23,0.7),
-        0 0 30px rgba(250,204,21,0.5);
+        0 0 0 2px #0b1738,
+        0 2px 0 #03182e,
+        0 5px 0 #03182e,
+        inset 0 -6px 12px rgba(8,47,73,0.5),
+        0 12px 22px -6px rgba(2,8,23,0.65),
+        0 0 28px rgba(250,204,21,0.5);
     }
     .play-cta:active .play-cta-top {
-      transform: translateY(6px);
+      transform: translateY(5px);
       box-shadow:
+        0 0 0 2px #0b1738,
         0 1px 0 #03182e,
-        0 3px 0 #03182e,
-        0 5px 0 #03182e,
-        inset 0 4px 0 rgba(255,255,255,0.55),
-        inset 0 -8px 14px rgba(8,47,73,0.55),
-        0 10px 18px -5px rgba(2,8,23,0.7),
-        0 0 18px rgba(250,204,21,0.35);
+        0 2px 0 #03182e,
+        inset 0 -4px 10px rgba(8,47,73,0.5),
+        0 6px 12px -4px rgba(2,8,23,0.65);
     }
     @keyframes coin-bounce {
       0%,100% { transform: translateY(0) rotate(0); }
-      50%     { transform: translateY(-4px) rotate(8deg); }
+      50%     { transform: translateY(-3px) rotate(8deg); }
     }
     .animate-coin-bounce { animation: coin-bounce 2.2s ease-in-out infinite; }
 
