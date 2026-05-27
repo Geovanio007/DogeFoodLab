@@ -508,76 +508,60 @@ const LandingStyles = () => (
       .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
     }
 
-    /* ─── PLAY NOW button — cream-bordered glossy pill (single-element, webview safe) ─── */
+    /* ─── PLAY NOW button — flat cartoon style (no 3D extrusion) ─── */
     .play-cta-top {
       position: relative;
       border-radius: 9999px;
       background-color: #0284c7; /* solid fallback for older webviews */
-      background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 35%, #0284c7 70%, #075985 100%);
-      /* Cream/off-white beveled outer border like the reference design */
+      background-image: linear-gradient(180deg, #38bdf8 0%, #0284c7 60%, #075985 100%);
+      /* Thick cartoon outline — cream outer ring + dark hairline */
       border: 5px solid #fef3c7;
       box-shadow:
-        0 0 0 2px #0b1738,                        /* dark hairline outside cream border */
-        0 4px 0 #03182e,                          /* chunky bottom edge */
-        0 7px 0 #03182e,
-        inset 0 -6px 12px rgba(8,47,73,0.5),      /* inner bottom shadow for volume */
-        0 16px 28px -8px rgba(2,8,23,0.65),       /* ground shadow */
-        0 0 22px rgba(250,204,21,0.3);            /* warm ambient glow */
+        0 0 0 3px #0b1738,                       /* dark cartoon outline */
+        0 8px 18px -4px rgba(2,8,23,0.55),       /* soft ground shadow */
+        0 0 24px rgba(56,189,248,0.35);          /* sky ambient glow */
       transition: transform 0.18s ease, box-shadow 0.18s ease;
       overflow: hidden;
     }
-    /* Glossy white highlights — sit on top of the gradient */
+    /* Big glossy top half — the classic cartoon highlight */
     .play-cta-shine {
       position: absolute;
       pointer-events: none;
-      background: rgba(255,255,255,0.85);
       border-radius: 9999px;
-      filter: blur(0.5px); /* very light blur for soft edge, safe in all webviews */
     }
     .play-cta-shine-1 {
-      top: 4px;
-      left: 14%;
-      width: 28%;
-      height: 10px;
-      transform: rotate(-3deg);
-      opacity: 0.9;
+      top: 3px;
+      left: 6%;
+      right: 6%;
+      height: 38%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.15) 60%, rgba(255,255,255,0) 100%);
     }
     .play-cta-shine-2 {
       top: 5px;
-      left: 48%;
-      width: 14%;
-      height: 7px;
+      left: 18%;
+      width: 22%;
+      height: 8px;
+      background: rgba(255,255,255,0.95);
       transform: rotate(-3deg);
-      opacity: 0.75;
+      opacity: 0.85;
     }
     .play-cta-text {
       font-size: clamp(1.25rem, 4.5vw, 2rem);
       color: #ffffff;
-      -webkit-text-stroke: 2px #0c1c45;
+      -webkit-text-stroke: 2.5px #0c1c45;
       paint-order: stroke fill;
-      text-shadow:
-        0 2px 0 #0c4a6e,
-        0 3px 6px rgba(0,0,0,0.45);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.35);
       -webkit-text-fill-color: #ffffff;
     }
     .play-cta:hover .play-cta-top {
-      transform: translateY(2px);
+      transform: scale(1.04);
       box-shadow:
-        0 0 0 2px #0b1738,
-        0 2px 0 #03182e,
-        0 5px 0 #03182e,
-        inset 0 -6px 12px rgba(8,47,73,0.5),
-        0 12px 22px -6px rgba(2,8,23,0.65),
-        0 0 28px rgba(250,204,21,0.5);
+        0 0 0 3px #0b1738,
+        0 12px 24px -4px rgba(2,8,23,0.6),
+        0 0 36px rgba(250,204,21,0.5);
     }
     .play-cta:active .play-cta-top {
-      transform: translateY(5px);
-      box-shadow:
-        0 0 0 2px #0b1738,
-        0 1px 0 #03182e,
-        0 2px 0 #03182e,
-        inset 0 -4px 10px rgba(8,47,73,0.5),
-        0 6px 12px -4px rgba(2,8,23,0.65);
+      transform: scale(0.97);
     }
     @keyframes coin-bounce {
       0%,100% { transform: translateY(0) rotate(0); }
