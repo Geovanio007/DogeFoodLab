@@ -508,22 +508,27 @@ const LandingStyles = () => (
       .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
     }
 
-    /* ─── PLAY NOW button — flat cartoon style (no 3D extrusion) ─── */
+    /* ─── PLAY NOW button — glossy crystal pill (premium aqua / chrome ring style) ─── */
     .play-cta-top {
       position: relative;
       border-radius: 9999px;
-      background-color: #0284c7; /* solid fallback for older webviews */
-      background-image: linear-gradient(180deg, #38bdf8 0%, #0284c7 60%, #075985 100%);
-      /* Thick cartoon outline — cream outer ring + dark hairline */
-      border: 5px solid #fef3c7;
+      background-color: #0c4a6e; /* solid fallback */
+      background-image:
+        linear-gradient(180deg, #7dd3fc 0%, #38bdf8 22%, #0ea5e9 55%, #0369a1 100%);
+      /* Metallic chrome outer ring */
+      border: 4px solid #f1f5f9;
       box-shadow:
-        0 0 0 3px #0b1738,                       /* dark cartoon outline */
-        0 8px 18px -4px rgba(2,8,23,0.55),       /* soft ground shadow */
-        0 0 24px rgba(56,189,248,0.35);          /* sky ambient glow */
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
+        0 0 0 1.5px #cbd5e1,                         /* secondary chrome ring */
+        0 0 0 3px #94a3b8,                           /* darker chrome edge */
+        inset 0 1.5px 0 rgba(255,255,255,0.85),      /* top inner highlight */
+        inset 0 -8px 16px rgba(3,30,51,0.55),        /* bottom inner shadow for crystal depth */
+        inset 0 4px 10px rgba(125,211,252,0.4),      /* upper cyan glow */
+        0 8px 22px -4px rgba(2,8,23,0.55),           /* soft ground shadow */
+        0 0 30px rgba(56,189,248,0.35);              /* sky ambient glow */
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
       overflow: hidden;
     }
-    /* Big glossy top half — the classic cartoon highlight */
+    /* Big glossy reflection — covers the upper half like a polished crystal */
     .play-cta-shine {
       position: absolute;
       pointer-events: none;
@@ -531,37 +536,49 @@ const LandingStyles = () => (
     }
     .play-cta-shine-1 {
       top: 3px;
-      left: 6%;
-      right: 6%;
-      height: 38%;
-      background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.15) 60%, rgba(255,255,255,0) 100%);
+      left: 5%;
+      right: 5%;
+      height: 42%;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,0.85) 0%,
+        rgba(255,255,255,0.45) 40%,
+        rgba(255,255,255,0.1) 80%,
+        rgba(255,255,255,0) 100%);
     }
+    /* Faint bottom reflection */
     .play-cta-shine-2 {
-      top: 5px;
+      bottom: 3px;
       left: 18%;
-      width: 22%;
-      height: 8px;
-      background: rgba(255,255,255,0.95);
-      transform: rotate(-3deg);
-      opacity: 0.85;
+      right: 18%;
+      height: 18%;
+      background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(186,230,253,0.25) 100%);
+      opacity: 0.7;
     }
     .play-cta-text {
-      font-size: clamp(1.25rem, 4.5vw, 2rem);
+      font-size: clamp(1.15rem, 4vw, 1.85rem);
       color: #ffffff;
-      -webkit-text-stroke: 2.5px #0c1c45;
+      -webkit-text-stroke: 2px #0c1c45;
       paint-order: stroke fill;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.35);
+      text-shadow:
+        0 1px 0 rgba(255,255,255,0.35),
+        0 2px 4px rgba(0,0,0,0.45);
       -webkit-text-fill-color: #ffffff;
     }
     .play-cta:hover .play-cta-top {
       transform: scale(1.04);
+      filter: brightness(1.08);
       box-shadow:
-        0 0 0 3px #0b1738,
-        0 12px 24px -4px rgba(2,8,23,0.6),
-        0 0 36px rgba(250,204,21,0.5);
+        0 0 0 1.5px #cbd5e1,
+        0 0 0 3px #94a3b8,
+        inset 0 1.5px 0 rgba(255,255,255,0.95),
+        inset 0 -8px 16px rgba(3,30,51,0.55),
+        inset 0 4px 10px rgba(125,211,252,0.55),
+        0 12px 26px -4px rgba(2,8,23,0.6),
+        0 0 40px rgba(56,189,248,0.55);
     }
     .play-cta:active .play-cta-top {
       transform: scale(0.97);
+      filter: brightness(0.95);
     }
     @keyframes coin-bounce {
       0%,100% { transform: translateY(0) rotate(0); }
