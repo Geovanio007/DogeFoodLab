@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+import { unregister as unregisterServiceWorker } from './serviceWorkerRegistration';
 import { installWalletErrorSwallow } from './lib/walletErrors';
 
 // Swallow non-fatal wallet-connection errors thrown by the DogeOS SDK on
@@ -17,12 +17,7 @@ root.render(
   </React.StrictMode>
 );
 
-// Register service worker for update detection and caching
-serviceWorkerRegistration.register({
-  onUpdate: (registration) => {
-    console.log('[App] New version available!');
-  },
-  onSuccess: (registration) => {
-    console.log('[App] Content cached for offline use.');
-  }
-});
+// Service worker registration disabled to prevent net::ERR_FAILED in MyDoge wallet webview.
+// /public/service-worker.js is now a self-destruct script that uninstalls any
+// previously-registered SW from existing users on their next visit.
+unregisterServiceWorker();
