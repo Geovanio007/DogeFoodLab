@@ -123,36 +123,34 @@ const WelcomeScreen = ({ onPlayNow }) => {
             </div>
           )}
 
-          {/* Primary CTA — Circular bubble button with gold ring */}
+          {/* Primary CTA — Circular bubble button with gold ring (bulletproof for MyDoge webview) */}
           <button
             data-testid="play-now-btn"
             onClick={onPlayNow}
             className="play-cta group relative mt-5 sm:mt-7 cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none"
-            style={{ zIndex: 50 }}
             aria-label="Play Now"
+            style={{ zIndex: 50 }}
           >
-            <span className="play-cta-top relative z-10 block">
-              <span aria-hidden className="play-cta-shine play-cta-shine-1" />
-              <span aria-hidden className="play-cta-dot play-cta-dot-1" />
-              <span aria-hidden className="play-cta-dot play-cta-dot-2" />
-              <span aria-hidden className="play-cta-dot play-cta-dot-3" />
-              <span
-                className="play-cta-text"
-                style={{
-                  fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
-                  letterSpacing: '0.02em',
-                  fontWeight: 400,
-                }}
-              >
-                PLAY
-              </span>
-              {/* Tiny $LAB coin tucked into the corner as a brand mark */}
-              <img
-                src={LAB_TOKEN}
-                alt=""
-                className="play-cta-coin animate-coin-bounce"
-              />
+            <span aria-hidden className="play-cta-shine play-cta-shine-1" />
+            <span aria-hidden className="play-cta-dot play-cta-dot-1" />
+            <span aria-hidden className="play-cta-dot play-cta-dot-2" />
+            <span aria-hidden className="play-cta-dot play-cta-dot-3" />
+            <span
+              className="play-cta-text"
+              style={{
+                fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
+                letterSpacing: '0.02em',
+                fontWeight: 400,
+              }}
+            >
+              PLAY
             </span>
+            {/* Tiny $LAB coin in corner */}
+            <img
+              src={LAB_TOKEN}
+              alt=""
+              className="play-cta-coin animate-coin-bounce"
+            />
           </button>
 
           {/* Tagline */}
@@ -504,30 +502,46 @@ const LandingStyles = () => (
       .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
     }
 
-    /* ─── PLAY button — circular glass bubble with gold ring (MyDoge-webview safe) ─── */
-    .play-cta-top {
-      position: relative;
-      width: 9rem;
-      height: 9rem;
-      border-radius: 50%;
-      /* Solid color first — guaranteed to render even if gradient fails */
-      background: #38bdf8;
-      /* Then layer a simple vertical linear-gradient (universally supported) */
-      background-image: linear-gradient(180deg, #bae6fd 0%, #7dd3fc 30%, #38bdf8 65%, #0284c7 100%);
-      /* Thick gold ring + darker outer rim */
-      border: 8px solid #f59e0b;
-      box-shadow:
-        0 0 0 3px #b45309,                         /* darker gold under-ring */
-        0 10px 28px -6px rgba(2,8,23,0.6),         /* ground shadow */
-        0 0 28px rgba(56,189,248,0.35);            /* ambient sky glow */
-      transition: transform 0.18s ease, filter 0.18s ease;
-      overflow: hidden;
-      display: flex;
+    /* ─── PLAY button — circular glass bubble (locked dimensions, MyDoge-webview safe) ─── */
+    .play-cta {
+      /* Lock dimensions on the BUTTON itself — highest priority, no stretching */
+      display: inline-flex !important;
       align-items: center;
       justify-content: center;
+      width: 9rem !important;
+      height: 9rem !important;
+      min-width: 9rem;
+      min-height: 9rem;
+      max-width: 9rem;
+      max-height: 9rem;
+      aspect-ratio: 1 / 1;             /* extra safety net */
+      flex: 0 0 9rem;                  /* prevent flex parents from squashing/stretching */
+      padding: 0;
+      border-radius: 50%;
+      /* Solid color first — guaranteed to render */
+      background: #0284c7;
+      /* Then layer a simple vertical linear-gradient on top for the glass effect */
+      background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
+      /* Thick gold ring + dark rim shadow */
+      border: 8px solid #f59e0b;
+      box-shadow:
+        0 0 0 3px #b45309,
+        0 10px 28px -6px rgba(2,8,23,0.6),
+        0 0 28px rgba(56,189,248,0.35);
+      transition: transform 0.18s ease, filter 0.18s ease;
+      overflow: hidden;
+      box-sizing: border-box;
     }
     @media (min-width: 640px) {
-      .play-cta-top { width: 11rem; height: 11rem; }
+      .play-cta {
+        width: 11rem !important;
+        height: 11rem !important;
+        min-width: 11rem;
+        min-height: 11rem;
+        max-width: 11rem;
+        max-height: 11rem;
+        flex: 0 0 11rem;
+      }
     }
     /* Big top glossy reflection — the bubble's highlight */
     .play-cta-shine {
@@ -535,32 +549,31 @@ const LandingStyles = () => (
       pointer-events: none;
     }
     .play-cta-shine-1 {
-      top: 6%;
-      left: 12%;
-      width: 60%;
-      height: 38%;
+      top: 8%;
+      left: 14%;
+      width: 56%;
+      height: 32%;
       border-radius: 50%;
       background: linear-gradient(180deg,
         rgba(255,255,255,0.85) 0%,
-        rgba(255,255,255,0.45) 40%,
-        rgba(255,255,255,0.1) 80%,
+        rgba(255,255,255,0.4) 50%,
         rgba(255,255,255,0) 100%);
       transform: rotate(-8deg);
     }
-    /* Decorative white bubble dots inside the glass */
+    /* Decorative white bubble dots */
     .play-cta-dot {
       position: absolute;
       pointer-events: none;
       background: #ffffff;
       border-radius: 50%;
     }
-    .play-cta-dot-1 { top: 22%; left: 16%; width: 8px; height: 8px; opacity: 0.9; }
-    .play-cta-dot-2 { top: 60%; right: 14%; width: 5px; height: 5px; opacity: 0.7; }
-    .play-cta-dot-3 { bottom: 18%; left: 24%; width: 4px; height: 4px; opacity: 0.6; }
+    .play-cta-dot-1 { top: 22%; left: 18%; width: 8px; height: 8px; opacity: 0.9; }
+    .play-cta-dot-2 { top: 58%; right: 16%; width: 5px; height: 5px; opacity: 0.7; }
+    .play-cta-dot-3 { bottom: 22%; left: 26%; width: 4px; height: 4px; opacity: 0.6; }
     .play-cta-text {
       position: relative;
       z-index: 2;
-      font-size: clamp(2rem, 6vw, 2.75rem);
+      font-size: 2rem;
       color: #ffffff;
       -webkit-text-stroke: 3px #0c4a6e;
       paint-order: stroke fill;
@@ -570,25 +583,28 @@ const LandingStyles = () => (
       -webkit-text-fill-color: #ffffff;
       line-height: 1;
     }
+    @media (min-width: 640px) {
+      .play-cta-text { font-size: 2.5rem; }
+    }
     /* Tiny $LAB coin in the bottom-right corner */
     .play-cta-coin {
       position: absolute;
-      bottom: -6px;
-      right: -8px;
-      width: 38px;
-      height: 38px;
+      bottom: -4px;
+      right: -6px;
+      width: 36px;
+      height: 36px;
       z-index: 3;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
       object-fit: contain;
     }
     @media (min-width: 640px) {
-      .play-cta-coin { width: 48px; height: 48px; }
+      .play-cta-coin { width: 46px; height: 46px; bottom: -6px; right: -8px; }
     }
-    .play-cta:hover .play-cta-top {
+    .play-cta:hover {
       transform: scale(1.05);
       filter: brightness(1.06);
     }
-    .play-cta:active .play-cta-top {
+    .play-cta:active {
       transform: scale(0.96);
       filter: brightness(0.95);
     }
