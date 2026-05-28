@@ -123,35 +123,35 @@ const WelcomeScreen = ({ onPlayNow }) => {
             </div>
           )}
 
-          {/* Primary CTA — Circular bubble button with gold ring (bulletproof for MyDoge webview) */}
-          <button
-            data-testid="play-now-btn"
-            onClick={onPlayNow}
-            className="play-cta group relative mt-5 sm:mt-7 cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/60 select-none"
-            aria-label="Play Now"
-            style={{ zIndex: 50 }}
-          >
-            <span aria-hidden className="play-cta-shine play-cta-shine-1" />
-            <span aria-hidden className="play-cta-dot play-cta-dot-1" />
-            <span aria-hidden className="play-cta-dot play-cta-dot-2" />
-            <span aria-hidden className="play-cta-dot play-cta-dot-3" />
-            <span
-              className="play-cta-text"
-              style={{
-                fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
-                letterSpacing: '0.02em',
-                fontWeight: 400,
-              }}
+          {/* Primary CTA — Circular bubble button. Wrapped in a fixed-pixel container so MyDoge webview can NEVER stretch it. */}
+          <div className="play-cta-wrap" data-testid="play-now-btn-wrap">
+            <button
+              data-testid="play-now-btn"
+              onClick={onPlayNow}
+              className="play-cta group"
+              aria-label="Play Now"
             >
-              PLAY
-            </span>
-            {/* Tiny $LAB coin in corner */}
-            <img
-              src={LAB_TOKEN}
-              alt=""
-              className="play-cta-coin animate-coin-bounce"
-            />
-          </button>
+              <span aria-hidden className="play-cta-shine play-cta-shine-1" />
+              <span aria-hidden className="play-cta-dot play-cta-dot-1" />
+              <span aria-hidden className="play-cta-dot play-cta-dot-2" />
+              <span aria-hidden className="play-cta-dot play-cta-dot-3" />
+              <span
+                className="play-cta-text"
+                style={{
+                  fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif",
+                  letterSpacing: '0.02em',
+                  fontWeight: 400,
+                }}
+              >
+                PLAY
+              </span>
+              <img
+                src={LAB_TOKEN}
+                alt=""
+                className="play-cta-coin animate-coin-bounce"
+              />
+            </button>
+          </div>
 
           {/* Tagline */}
           <p
@@ -182,21 +182,16 @@ const WelcomeScreen = ({ onPlayNow }) => {
 
       {/* ─── Footer tagline ─── */}
       <footer className="relative z-10 px-3 pb-3 sm:pb-6 mt-3 sm:mt-6">
-        <div className="flex items-center justify-center gap-2 sm:gap-6 text-[9px] sm:text-xs tracking-[0.2em] sm:tracking-[0.25em] font-mono text-cyan-300/40 uppercase">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-[9px] sm:text-xs tracking-[0.2em] sm:tracking-[0.25em] font-mono text-cyan-300/40 uppercase">
           <span>Web3 Gaming</span>
           <span className="w-1 h-1 rounded-full bg-cyan-300/40" />
           <span>Mythic NFTs</span>
           <span className="w-1 h-1 rounded-full bg-cyan-300/40" />
           <span>$LAB Rewards</span>
+          <span className="w-1 h-1 rounded-full bg-cyan-300/40" />
+          <span className="text-white/50" data-testid="beta-tag">v2.0 BETA</span>
         </div>
       </footer>
-
-      {/* Beta badge — kept, smaller */}
-      <div className="absolute bottom-2 right-2 sm:bottom-4 sm:left-4 sm:right-auto z-20">
-        <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-mono font-bold tracking-[0.2em] sm:tracking-[0.25em] bg-white/5 border border-white/15 text-white/70 uppercase">
-          v2.0 · BETA
-        </span>
-      </div>
 
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onSuccess={handleAuthSuccess} />
       <WhatsNewToast />
@@ -502,63 +497,64 @@ const LandingStyles = () => (
       .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
     }
 
-    /* ─── PLAY button — circular glass bubble (locked dimensions, MyDoge-webview safe) ─── */
-    .play-cta {
-      /* Lock dimensions on the BUTTON itself — highest priority, no stretching */
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: center;
-      width: 9rem !important;
-      height: 9rem !important;
-      min-width: 9rem;
-      min-height: 9rem;
-      max-width: 9rem;
-      max-height: 9rem;
-      aspect-ratio: 1 / 1;             /* extra safety net */
-      flex: 0 0 9rem;                  /* prevent flex parents from squashing/stretching */
-      padding: 0;
-      border-radius: 50%;
-      /* Solid color first — guaranteed to render */
-      background: #0284c7;
-      /* Then layer a simple vertical linear-gradient on top for the glass effect */
-      background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
-      /* Thick gold ring + dark rim shadow */
-      border: 8px solid #f59e0b;
-      box-shadow:
-        0 0 0 3px #b45309,
-        0 10px 28px -6px rgba(2,8,23,0.6),
-        0 0 28px rgba(56,189,248,0.35);
-      transition: transform 0.18s ease, filter 0.18s ease;
-      overflow: hidden;
-      box-sizing: border-box;
+    /* ─── PLAY button — Fixed-pixel wrapper locks the circle no matter what the parent does ─── */
+    .play-cta-wrap {
+      position: relative;
+      margin-top: 20px;
+      width: 144px;
+      height: 144px;
+      flex: 0 0 144px;
+      z-index: 50;
+      /* Fixed pixels (not rem) bypass any zoom/font-size differences across webviews */
     }
     @media (min-width: 640px) {
-      .play-cta {
-        width: 11rem !important;
-        height: 11rem !important;
-        min-width: 11rem;
-        min-height: 11rem;
-        max-width: 11rem;
-        max-height: 11rem;
-        flex: 0 0 11rem;
+      .play-cta-wrap {
+        margin-top: 28px;
+        width: 176px;
+        height: 176px;
+        flex: 0 0 176px;
       }
     }
-    /* Big top glossy reflection — the bubble's highlight */
+    /* The button completely fills its fixed-pixel wrapper */
+    .play-cta {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      border-radius: 50%;
+      cursor: pointer;
+      outline: none;
+      user-select: none;
+      box-sizing: border-box;
+      /* Solid color first — guaranteed render */
+      background: #0284c7;
+      /* Then layer simple vertical gradient (universally supported since 2010) */
+      background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
+      /* Thick gold ring + dark rim shadow */
+      border: 7px solid #f59e0b;
+      box-shadow:
+        0 0 0 3px #b45309,
+        0 10px 24px -6px rgba(2,8,23,0.55),
+        0 0 24px rgba(56,189,248,0.35);
+      transition: transform 0.18s ease, filter 0.18s ease;
+      overflow: hidden;
+    }
+    /* Big top glossy reflection */
     .play-cta-shine {
       position: absolute;
       pointer-events: none;
     }
     .play-cta-shine-1 {
-      top: 8%;
-      left: 14%;
+      top: 10%;
+      left: 16%;
       width: 56%;
-      height: 32%;
+      height: 28%;
       border-radius: 50%;
       background: linear-gradient(180deg,
-        rgba(255,255,255,0.85) 0%,
-        rgba(255,255,255,0.4) 50%,
+        rgba(255,255,255,0.8) 0%,
+        rgba(255,255,255,0.35) 55%,
         rgba(255,255,255,0) 100%);
-      transform: rotate(-8deg);
     }
     /* Decorative white bubble dots */
     .play-cta-dot {
@@ -567,24 +563,31 @@ const LandingStyles = () => (
       background: #ffffff;
       border-radius: 50%;
     }
-    .play-cta-dot-1 { top: 22%; left: 18%; width: 8px; height: 8px; opacity: 0.9; }
-    .play-cta-dot-2 { top: 58%; right: 16%; width: 5px; height: 5px; opacity: 0.7; }
-    .play-cta-dot-3 { bottom: 22%; left: 26%; width: 4px; height: 4px; opacity: 0.6; }
+    .play-cta-dot-1 { top: 26%; left: 22%; width: 7px; height: 7px; opacity: 0.85; }
+    .play-cta-dot-2 { top: 56%; right: 18%; width: 5px; height: 5px; opacity: 0.65; }
+    .play-cta-dot-3 { bottom: 24%; left: 30%; width: 4px; height: 4px; opacity: 0.55; }
+    /* PLAY text — NO -webkit-text-stroke (broken in older WebKit) — use solid color + heavy text-shadow instead */
     .play-cta-text {
-      position: relative;
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      transform: translateY(-50%);
+      text-align: center;
       z-index: 2;
-      font-size: 2rem;
-      color: #ffffff;
-      -webkit-text-stroke: 3px #0c4a6e;
-      paint-order: stroke fill;
-      text-shadow:
-        0 2px 0 #075985,
-        0 3px 6px rgba(0,0,0,0.4);
-      -webkit-text-fill-color: #ffffff;
+      font-size: 34px;
       line-height: 1;
+      color: #ffffff;
+      text-shadow:
+        -2px -2px 0 #0c4a6e,
+         2px -2px 0 #0c4a6e,
+        -2px  2px 0 #0c4a6e,
+         2px  2px 0 #0c4a6e,
+         0    3px 0 #075985,
+         0    4px 6px rgba(0,0,0,0.45);
     }
     @media (min-width: 640px) {
-      .play-cta-text { font-size: 2.5rem; }
+      .play-cta-text { font-size: 42px; }
     }
     /* Tiny $LAB coin in the bottom-right corner */
     .play-cta-coin {
@@ -594,7 +597,6 @@ const LandingStyles = () => (
       width: 36px;
       height: 36px;
       z-index: 3;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
       object-fit: contain;
     }
     @media (min-width: 640px) {
