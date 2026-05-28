@@ -1,0 +1,31 @@
+# DogeFood Lab — static file headers (Render / Netlify-style)
+# Force the service worker file to NEVER be cached at any layer.
+# Old broken SW versions could be cached at Render's CDN edge or in the
+# browser HTTP cache, preventing the kill-switch SW from reaching users.
+
+/service-worker.js
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+  Service-Worker-Allowed: /
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+
+# Don't cache the manifest either — small and changes with each release
+/manifest.json
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+
+# Don't cache index.html (it references hashed JS/CSS bundle names that change)
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+
+/
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+
+# Long-cache hashed static assets (these have content hashes in filenames so
+# they never collide between deploys)
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
