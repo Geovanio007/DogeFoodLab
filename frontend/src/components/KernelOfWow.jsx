@@ -219,7 +219,7 @@ export const useKernelOfWow = () => {
           setCurrentHolder(data);
         }
       } catch (err) {
-        console.error('Error fetching kernel holder:', err);
+        // Backend may not have this endpoint deployed yet — silently ignore.
       } finally {
         setLoading(false);
       }

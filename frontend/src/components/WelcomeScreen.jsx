@@ -14,20 +14,11 @@ import INGREDIENT_ICONS from '../config/ingredientIcons';
 const LAB_TOKEN = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/bihai5rz_1000081758-removebg-preview.png';
 const SHIBA_SCIENTIST = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/uvrqvytu_1000081756-removebg-preview.png';
 
-// Persist a stable Season 2 launch date in localStorage (14 days from first visit)
-const SEASON2_KEY = 'dogefood_s2_launch_at';
-const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
-const getSeason2Launch = () => {
-  try {
-    const stored = localStorage.getItem(SEASON2_KEY);
-    if (stored) return parseInt(stored, 10);
-    const launch = Date.now() + FOURTEEN_DAYS_MS;
-    localStorage.setItem(SEASON2_KEY, String(launch));
-    return launch;
-  } catch {
-    return Date.now() + FOURTEEN_DAYS_MS;
-  }
-};
+// Season 2 launches at a FIXED absolute UTC date — identical for every visitor
+// regardless of browser, device, or first-visit time. Adjust this single
+// constant when you want to move the launch date.
+const SEASON2_LAUNCH_ISO = '2026-06-11T00:00:00Z';
+const SEASON2_LAUNCH_AT = Date.parse(SEASON2_LAUNCH_ISO);
 
 const useCountdown = (target) => {
   const [now, setNow] = useState(Date.now());
@@ -51,7 +42,7 @@ const ALL_S2_IDS = Object.keys(INGREDIENT_ICONS);
 const WelcomeScreen = ({ onPlayNow }) => {
   const { isDarkMode } = useTheme();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const season2At = useMemo(getSeason2Launch, []);
+  const season2At = SEASON2_LAUNCH_AT;
   const cd = useCountdown(season2At);
 
   const handleAuthSuccess = () => {
