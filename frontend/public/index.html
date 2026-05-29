@@ -16,17 +16,37 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="DogeFood Lab" />
-    <!-- Google Fonts - Consistent Typography -->
+    <!-- Google Fonts — loaded non-render-blocking so a slow/failed font CDN
+         never blocks the page in restrictive webviews. Falls back gracefully
+         to system-ui via font-family stacks if Bowlby/Fredoka aren't ready. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Bowlby+One&family=Luckiest+Guy&display=swap" rel="stylesheet">
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Bowlby+One&family=Luckiest+Guy&display=swap"
+      media="print"
+      onload="this.media='all'; this.onload=null;"
+    />
     <meta
       name="description"
       content="DogeFood Lab - Mix, Test & Upgrade Your Way to the Top!"
     />
     <title>DogeFood Lab</title>
-    <!-- Telegram WebApp Script -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Telegram WebApp Script — loaded async + with error handler so a network
+         failure (e.g. inside MyDoge wallet webview where telegram.org may be
+         blocked or unreachable) never blocks the page from rendering. -->
+    <script>
+      (function () {
+        try {
+          var s = document.createElement('script');
+          s.src = 'https://telegram.org/js/telegram-web-app.js';
+          s.async = true;
+          s.defer = true;
+          s.onerror = function () { /* swallow — Telegram features simply won't be available */ };
+          (document.head || document.documentElement).appendChild(s);
+        } catch (e) { /* no-op */ }
+      })();
+    </script>
     <!-- Stubs for optional wallet adapters pulled in transitively by DogeOS SDK.
          These globals are normally provided by host pages that ship the
          respective wallet bundles. We stub them out so the SDK's adapter
