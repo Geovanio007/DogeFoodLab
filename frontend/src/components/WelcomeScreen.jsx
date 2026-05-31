@@ -5,18 +5,9 @@ import AuthModal from './AuthModal';
 import WhatsNewToast from './WhatsNewToast';
 import INGREDIENT_ICONS from '../config/ingredientIcons';
 
-/* ============================================================
-   DogeFood Lab — SEASON 2 cinematic landing
-   Inspired by AAA crypto-game hero pages (Chumbi-style),
-   reimagined for a neon meme-science laboratory.
-   ============================================================ */
-
 const LAB_TOKEN = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/bihai5rz_1000081758-removebg-preview.png';
 const SHIBA_SCIENTIST = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/uvrqvytu_1000081756-removebg-preview.png';
 
-// Season 2 launches at a FIXED absolute UTC date — identical for every visitor
-// regardless of browser, device, or first-visit time. Adjust this single
-// constant when you want to move the launch date.
 const SEASON2_LAUNCH_ISO = '2026-06-11T00:00:00Z';
 const SEASON2_LAUNCH_AT = Date.parse(SEASON2_LAUNCH_ISO);
 
@@ -34,16 +25,33 @@ const useCountdown = (target) => {
   return { days, hours, minutes, seconds, finished: diff <= 0 };
 };
 
-// 6 hand-picked Season 2 ingredients for the sneak-peek showcase
 const SNEAK_PEEK_IDS = ['S2_050', 'S2_045', 'S2_041', 'S2_040', 'S2_032', 'S2_021'];
-// All 50 for the marquee strip
 const ALL_S2_IDS = Object.keys(INGREDIENT_ICONS);
+
+// ✅ FIX: inject styles once on mount via useEffect, never re-inject on re-render
+const useLandingStyles = () => {
+  useEffect(() => {
+    const id = 'dogefood-landing-styles';
+    if (document.getElementById(id)) return; // already injected
+    const el = document.createElement('style');
+    el.id = id;
+    el.textContent = LANDING_CSS;
+    document.head.appendChild(el);
+    return () => {
+      // only clean up if you want styles removed when component unmounts
+      // document.getElementById(id)?.remove();
+    };
+  }, []);
+};
 
 const WelcomeScreen = ({ onPlayNow }) => {
   const { isDarkMode } = useTheme();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const season2At = SEASON2_LAUNCH_AT;
   const cd = useCountdown(season2At);
+
+  // ✅ FIX: inject styles once, not on every countdown tick
+  useLandingStyles();
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
@@ -58,7 +66,6 @@ const WelcomeScreen = ({ onPlayNow }) => {
     >
       <CinematicBackground />
 
-      {/* ─── Top bar: brand + sneak-peek card ─── */}
       <header className="relative z-20 flex items-start justify-between px-3 sm:px-8 pt-3 sm:pt-6 gap-2">
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <DogeFoodLogo size="sm" showText={false} showBeta={false} className="w-10 h-10 sm:w-12 sm:h-12" />
@@ -67,20 +74,16 @@ const WelcomeScreen = ({ onPlayNow }) => {
             <div className="text-xs font-bold text-white/90">Season 2 · Reactor</div>
           </div>
         </div>
-
         <SneakPeekCard />
       </header>
 
-      {/* ─── Main hero ─── */}
       <main className="relative z-10 flex flex-col items-center justify-center px-3 sm:px-6 pt-4 sm:pt-12 pb-6 sm:pb-8 w-full">
-        {/* Reactor glow halo behind logo */}
         <div className="relative flex flex-col items-center w-full max-w-[28rem] sm:max-w-none">
           <div className="absolute inset-0 -z-10 pointer-events-none">
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[24rem] h-[24rem] sm:w-[40rem] sm:h-[40rem] rounded-full opacity-60"
                  style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.35), rgba(168,85,247,0.18) 40%, transparent 70%)', filter: 'blur(40px)' }} />
           </div>
 
-          {/* Eyebrow */}
           <div className="relative mb-1.5 sm:mb-3 flex items-center gap-2 sm:gap-4">
             <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-r from-transparent to-cyan-400/70" />
             <span data-testid="hero-eyebrow" className="text-[9px] sm:text-xs tracking-[0.4em] sm:tracking-[0.45em] font-mono text-cyan-300/80 uppercase">
@@ -89,7 +92,6 @@ const WelcomeScreen = ({ onPlayNow }) => {
             <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-l from-transparent to-cyan-400/70" />
           </div>
 
-          {/* Season 2 incoming badge */}
           <div className="mt-4 sm:mt-7 flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full border-2 border-yellow-400/70 bg-yellow-400/10 backdrop-blur shadow-[0_4px_0_rgba(0,0,0,0.25),0_0_20px_rgba(250,204,21,0.4)]">
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
             <span
@@ -101,7 +103,6 @@ const WelcomeScreen = ({ onPlayNow }) => {
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
           </div>
 
-          {/* Countdown */}
           {!cd.finished && (
             <div data-testid="season2-countdown" className="mt-4 sm:mt-7 flex items-stretch gap-1.5 sm:gap-3 w-full max-w-[26rem] sm:max-w-[28rem] px-1 sm:px-0">
               <CountdownDigit value={cd.days}    label="DAYS" />
@@ -114,7 +115,6 @@ const WelcomeScreen = ({ onPlayNow }) => {
             </div>
           )}
 
-          {/* Primary CTA — Circular bubble button. Wrapped in a fixed-pixel container so MyDoge webview can NEVER stretch it. */}
           <div className="play-cta-wrap" data-testid="play-now-btn-wrap">
             <button
               data-testid="play-now-btn"
@@ -144,7 +144,6 @@ const WelcomeScreen = ({ onPlayNow }) => {
             </button>
           </div>
 
-          {/* Tagline */}
           <p
             data-testid="hero-tagline"
             className="mt-4 sm:mt-7 text-center text-[13px] sm:text-lg text-sky-100/90 max-w-xl px-2 sm:px-4 leading-relaxed"
@@ -154,7 +153,6 @@ const WelcomeScreen = ({ onPlayNow }) => {
             Forge your reputation across <span className="text-yellow-300 font-bold">50 new ingredients</span> in Season 2.
           </p>
 
-          {/* Guest/Account secondary CTA */}
           <button
             data-testid="guest-cta-btn"
             onClick={() => setShowAuthModal(true)}
@@ -165,13 +163,9 @@ const WelcomeScreen = ({ onPlayNow }) => {
         </div>
       </main>
 
-      {/* ─── Ingredient sneak-peek tiles (orbiting around the title) ─── */}
       <OrbitingIngredients />
-
-      {/* ─── Marquee strip: all 50 ingredients ─── */}
       <IngredientMarquee />
 
-      {/* ─── Footer tagline ─── */}
       <footer className="relative z-10 px-3 pb-3 sm:pb-6 mt-3 sm:mt-6">
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-[9px] sm:text-xs tracking-[0.2em] sm:tracking-[0.25em] font-mono text-cyan-300/40 uppercase">
           <span>Web3 Gaming</span>
@@ -186,7 +180,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
 
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onSuccess={handleAuthSuccess} />
       <WhatsNewToast />
-      <LandingStyles />
+      {/* ✅ FIX: <LandingStyles /> removed from here — styles injected via useLandingStyles() hook above */}
     </div>
   );
 };
@@ -194,7 +188,6 @@ const WelcomeScreen = ({ onPlayNow }) => {
 /* ─── Cinematic background ─── */
 const CinematicBackground = () => (
   <>
-    {/* base radial gradient — warmer lab-blue base */}
     <div
       aria-hidden
       className="absolute inset-0 pointer-events-none"
@@ -203,9 +196,7 @@ const CinematicBackground = () => (
           'radial-gradient(ellipse at 50% 30%, #1e3a8a 0%, #0c1a3f 40%, #050917 80%, #02030a 100%)',
       }}
     />
-    {/* sky-blue grid floor */}
     <div aria-hidden className="absolute inset-0 pointer-events-none welcome-grid opacity-30" />
-    {/* horizon glow — sky-blue warmth */}
     <div
       aria-hidden
       className="absolute left-0 right-0 pointer-events-none"
@@ -216,16 +207,13 @@ const CinematicBackground = () => (
         filter: 'blur(20px)',
       }}
     />
-    {/* warm yellow sun-spot top */}
     <div aria-hidden className="absolute -top-40 left-1/2 -translate-x-1/2 w-[44rem] h-[44rem] rounded-full pointer-events-none opacity-30"
          style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.55), rgba(56,189,248,0.18) 50%, transparent 75%)', filter: 'blur(60px)' }} />
-    {/* sky-blue side glow */}
     <div aria-hidden className="absolute -bottom-32 -left-32 w-[36rem] h-[36rem] rounded-full pointer-events-none opacity-40"
          style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.55), transparent 65%)', filter: 'blur(60px)' }} />
     <div aria-hidden className="absolute -bottom-32 -right-32 w-[36rem] h-[36rem] rounded-full pointer-events-none opacity-30"
          style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.45), transparent 65%)', filter: 'blur(60px)' }} />
 
-    {/* drifting particles — gold + sky-blue mix */}
     {Array.from({ length: 22 }).map((_, i) => (
       <span
         key={i}
@@ -242,7 +230,6 @@ const CinematicBackground = () => (
       />
     ))}
 
-    {/* vignette */}
     <div
       aria-hidden
       className="absolute inset-0 pointer-events-none"
@@ -290,9 +277,9 @@ const Colon = () => (
   </span>
 );
 
-/* ─── Top-right "Sneak Peek" card (like Chumbi's mini-game card) ─── */
+/* ─── Top-right "Sneak Peek" card ─── */
 const SneakPeekCard = () => {
-  const featuredId = 'S2_050'; // Godtier Shiba Serum
+  const featuredId = 'S2_050';
   const meta = INGREDIENT_ICONS[featuredId];
   return (
     <div
@@ -325,13 +312,12 @@ const OrbitingIngredients = () => {
     idx,
   })).filter((x) => x.meta?.icon);
 
-  // 3 visible on each side at sm+, hidden on mobile
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 z-0 hidden md:block">
       {items.map((it, i) => {
         const side = i % 2 === 0 ? 'left' : 'right';
-        const top = 18 + (i * 13) % 60; // %
-        const offset = 4 + (i * 3) % 10; // %
+        const top = 18 + (i * 13) % 60;
+        const offset = 4 + (i * 3) % 10;
         const size = 56 + (i % 3) * 14;
         return (
           <div
@@ -354,10 +340,10 @@ const OrbitingIngredients = () => {
   );
 };
 
-/* ─── Continuous marquee strip of all Season 2 ingredients ─── */
+/* ─── Continuous marquee strip ─── */
 const IngredientMarquee = () => {
   const all = ALL_S2_IDS.map((id) => ({ id, meta: INGREDIENT_ICONS[id] })).filter((x) => x.meta?.icon);
-  const doubled = [...all, ...all]; // duplicate for seamless loop
+  const doubled = [...all, ...all];
   return (
     <section
       data-testid="ingredient-marquee"
@@ -393,244 +379,223 @@ const IngredientMarquee = () => {
   );
 };
 
-/* ─── Inline page styles ─── */
-const LandingStyles = () => (
-  <style>{`
-    .welcome-grid {
-      background-image:
-        linear-gradient(rgba(56,189,248,0.07) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(56,189,248,0.07) 1px, transparent 1px);
-      background-size: 56px 56px;
-      mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
-    }
-    @keyframes welcome-particle {
-      0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 1; }
-      100% { transform: translateY(-10vh) translateX(20px); opacity: 0; }
-    }
-    .welcome-particle {
-      position: absolute;
-      bottom: -10px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(186,230,253,0.95), rgba(56,189,248,0.3) 60%, transparent 100%);
-      box-shadow: 0 0 8px rgba(56,189,248,0.7);
-      animation: welcome-particle linear infinite;
-      pointer-events: none;
-    }
-    .welcome-particle-gold {
-      background: radial-gradient(circle, rgba(254,243,199,0.95), rgba(250,204,21,0.4) 60%, transparent 100%);
-      box-shadow: 0 0 10px rgba(250,204,21,0.7);
-    }
-    @keyframes spin-slow { from { transform: rotate(0); } to { transform: rotate(360deg); } }
-    .animate-spin-slow { animation: spin-slow 12s linear infinite; }
-
-    /* ─── Cartoon wordmark (chunky 3D extrusion, Chumbi-style) ─── */
+/* ─── All CSS as a plain string constant — never re-injected after mount ─── */
+const LANDING_CSS = `
+  .welcome-grid {
+    background-image:
+      linear-gradient(rgba(56,189,248,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,189,248,0.07) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
+  }
+  @keyframes welcome-particle {
+    0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateY(-10vh) translateX(20px); opacity: 0; }
+  }
+  .welcome-particle {
+    position: absolute;
+    bottom: -10px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(186,230,253,0.95), rgba(56,189,248,0.3) 60%, transparent 100%);
+    box-shadow: 0 0 8px rgba(56,189,248,0.7);
+    animation: welcome-particle linear infinite;
+    pointer-events: none;
+  }
+  .welcome-particle-gold {
+    background: radial-gradient(circle, rgba(254,243,199,0.95), rgba(250,204,21,0.4) 60%, transparent 100%);
+    box-shadow: 0 0 10px rgba(250,204,21,0.7);
+  }
+  @keyframes spin-slow { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  .animate-spin-slow { animation: spin-slow 12s linear infinite; }
+  .hero-word {
+    font-weight: 400;
+    position: relative;
+    display: inline-block;
+    -webkit-text-stroke: 3px #0b1738;
+    paint-order: stroke fill;
+    text-shadow:
+      0 3px 0 #0b1738,
+      0 6px 0 #0b1738,
+      0 9px 0 #0b1738,
+      0 11px 18px rgba(0,0,0,0.55),
+      0 0 28px rgba(56,189,248,0.4);
+  }
+  .hero-tilt-1 { transform: rotate(-1.5deg); }
+  .hero-tilt-2 { transform: rotate(1deg); }
+  @media (min-width: 640px) {
+    .hero-tilt-1 { transform: rotate(-2.5deg); }
+    .hero-tilt-2 { transform: rotate(1.5deg); }
     .hero-word {
-      font-weight: 400;
-      position: relative;
-      display: inline-block;
-      -webkit-text-stroke: 3px #0b1738;
-      paint-order: stroke fill;
-      /* Stacked dark copies create the 3D extrusion. Final blurred shadow = ground shadow. */
+      -webkit-text-stroke: 5px #0b1738;
       text-shadow:
-        0 3px 0 #0b1738,
-        0 6px 0 #0b1738,
-        0 9px 0 #0b1738,
-        0 11px 18px rgba(0,0,0,0.55),
-        0 0 28px rgba(56,189,248,0.4);
+        0 4px 0 #0b1738,
+        0 8px 0 #0b1738,
+        0 12px 0 #0b1738,
+        0 16px 0 #0b1738,
+        0 18px 22px rgba(0,0,0,0.55),
+        0 0 40px rgba(56,189,248,0.45);
     }
-    /* Mobile gets less aggressive tilt so the wordmark uses the full viewport width */
-    .hero-tilt-1 { transform: rotate(-1.5deg); }
-    .hero-tilt-2 { transform: rotate(1deg); }
-    @media (min-width: 640px) {
-      .hero-tilt-1 { transform: rotate(-2.5deg); }
-      .hero-tilt-2 { transform: rotate(1.5deg); }
-      .hero-word {
-        -webkit-text-stroke: 5px #0b1738;
-        text-shadow:
-          0 4px 0 #0b1738,
-          0 8px 0 #0b1738,
-          0 12px 0 #0b1738,
-          0 16px 0 #0b1738,
-          0 18px 22px rgba(0,0,0,0.55),
-          0 0 40px rgba(56,189,248,0.45);
-      }
-    }
-    .hero-word-blue   { color: #38bdf8; }
-    .hero-word-yellow { color: #facc15; }
-    /* Glossy highlight overlay using a duplicated span sitting on top */
-    .hero-word::after {
-      content: attr(data-text);
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      -webkit-text-stroke: 0;
-      text-shadow: none;
-      color: transparent;
-      background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 45%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      mix-blend-mode: screen;
-    }
-    @keyframes hero-wobble {
-      0%,100% { transform: rotate(-2.5deg) translateY(0); }
-      50%     { transform: rotate(-1.5deg) translateY(-4px); }
-    }
-    @keyframes hero-wobble-2 {
-      0%,100% { transform: rotate(1.5deg) translateY(0); }
-      50%     { transform: rotate(2.5deg) translateY(-3px); }
-    }
-    /* Wobble animation only on tablet+ so mobile keeps the small-tilt static look */
-    @media (min-width: 640px) {
-      .hero-word-blue   { animation: hero-wobble   5s ease-in-out infinite; }
-      .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
-    }
-
-    /* ─── PLAY button — Fixed-pixel wrapper locks the circle no matter what the parent does ─── */
+  }
+  .hero-word-blue   { color: #38bdf8; }
+  .hero-word-yellow { color: #facc15; }
+  .hero-word::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    -webkit-text-stroke: 0;
+    text-shadow: none;
+    color: transparent;
+    background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 45%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    mix-blend-mode: screen;
+  }
+  @keyframes hero-wobble {
+    0%,100% { transform: rotate(-2.5deg) translateY(0); }
+    50%     { transform: rotate(-1.5deg) translateY(-4px); }
+  }
+  @keyframes hero-wobble-2 {
+    0%,100% { transform: rotate(1.5deg) translateY(0); }
+    50%     { transform: rotate(2.5deg) translateY(-3px); }
+  }
+  @media (min-width: 640px) {
+    .hero-word-blue   { animation: hero-wobble   5s ease-in-out infinite; }
+    .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
+  }
+  .play-cta-wrap {
+    position: relative;
+    margin-top: 20px;
+    width: 144px;
+    height: 144px;
+    flex: 0 0 144px;
+    z-index: 50;
+  }
+  @media (min-width: 640px) {
     .play-cta-wrap {
-      position: relative;
-      margin-top: 20px;
-      width: 144px;
-      height: 144px;
-      flex: 0 0 144px;
-      z-index: 50;
-      /* Fixed pixels (not rem) bypass any zoom/font-size differences across webviews */
+      margin-top: 28px;
+      width: 176px;
+      height: 176px;
+      flex: 0 0 176px;
     }
-    @media (min-width: 640px) {
-      .play-cta-wrap {
-        margin-top: 28px;
-        width: 176px;
-        height: 176px;
-        flex: 0 0 176px;
-      }
+  }
+  .play-cta {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+    box-sizing: border-box;
+    background: #0284c7;
+    background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
+    border: 7px solid #f59e0b;
+    box-shadow:
+      0 0 0 3px #b45309,
+      0 10px 24px -6px rgba(2,8,23,0.55),
+      0 0 24px rgba(56,189,248,0.35);
+    transition: transform 0.18s ease, filter 0.18s ease;
+    overflow: hidden;
+  }
+  .play-cta-shine {
+    position: absolute;
+    pointer-events: none;
+  }
+  .play-cta-shine-1 {
+    top: 10%;
+    left: 16%;
+    width: 56%;
+    height: 28%;
+    border-radius: 50%;
+    background: linear-gradient(180deg,
+      rgba(255,255,255,0.8) 0%,
+      rgba(255,255,255,0.35) 55%,
+      rgba(255,255,255,0) 100%);
+  }
+  .play-cta-dot {
+    position: absolute;
+    pointer-events: none;
+    background: #ffffff;
+    border-radius: 50%;
+  }
+  .play-cta-dot-1 { top: 26%; left: 22%; width: 7px; height: 7px; opacity: 0.85; }
+  .play-cta-dot-2 { top: 56%; right: 18%; width: 5px; height: 5px; opacity: 0.65; }
+  .play-cta-dot-3 { bottom: 24%; left: 30%; width: 4px; height: 4px; opacity: 0.55; }
+  .play-cta-text {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    text-align: center;
+    z-index: 2;
+    font-size: 34px;
+    line-height: 1;
+    color: #ffffff;
+    text-shadow:
+      -2px -2px 0 #0c4a6e,
+       2px -2px 0 #0c4a6e,
+      -2px  2px 0 #0c4a6e,
+       2px  2px 0 #0c4a6e,
+       0    3px 0 #075985,
+       0    4px 6px rgba(0,0,0,0.45);
+  }
+  @media (min-width: 640px) {
+    .play-cta-text { font-size: 42px; }
+  }
+  .play-cta-coin {
+    position: absolute;
+    bottom: -4px;
+    right: -6px;
+    width: 36px;
+    height: 36px;
+    z-index: 3;
+    object-fit: contain;
+  }
+  @media (min-width: 640px) {
+    .play-cta-coin { width: 46px; height: 46px; bottom: -6px; right: -8px; }
+  }
+  .play-cta:hover {
+    transform: scale(1.05);
+    filter: brightness(1.06);
+  }
+  .play-cta:active {
+    transform: scale(0.96);
+    filter: brightness(0.95);
+  }
+  @keyframes coin-bounce {
+    0%,100% { transform: translateY(0) rotate(0); }
+    50%     { transform: translateY(-3px) rotate(8deg); }
+  }
+  .animate-coin-bounce { animation: coin-bounce 2.2s ease-in-out infinite; }
+  @keyframes cd-pulse {
+    0%,100% { box-shadow: 0 10px 30px -10px rgba(56,189,248,0.5), inset 0 0 25px rgba(56,189,248,0.12); }
+    50%     { box-shadow: 0 15px 40px -10px rgba(56,189,248,0.9), inset 0 0 35px rgba(56,189,248,0.22); }
+  }
+  .animate-cd-pulse { animation: cd-pulse 1s ease-in-out infinite; }
+  @keyframes orbit-float {
+    0%,100% { transform: translateY(0) rotate(-2deg); }
+    50%     { transform: translateY(-14px) rotate(2deg); }
+  }
+  .orbit-tile { animation: orbit-float 8s ease-in-out infinite; }
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .animate-marquee { animation: marquee 60s linear infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .welcome-particle, .orbit-tile, .animate-spin-slow, .animate-cd-pulse,
+    .animate-marquee, .animate-coin-bounce,
+    .hero-word-blue, .hero-word-yellow {
+      animation: none !important;
     }
-    /* The button completely fills its fixed-pixel wrapper */
-    .play-cta {
-      position: relative;
-      display: block;
-      width: 100%;
-      height: 100%;
-      padding: 0;
-      border-radius: 50%;
-      cursor: pointer;
-      outline: none;
-      user-select: none;
-      box-sizing: border-box;
-      /* Solid color first — guaranteed render */
-      background: #0284c7;
-      /* Then layer simple vertical gradient (universally supported since 2010) */
-      background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
-      /* Thick gold ring + dark rim shadow */
-      border: 7px solid #f59e0b;
-      box-shadow:
-        0 0 0 3px #b45309,
-        0 10px 24px -6px rgba(2,8,23,0.55),
-        0 0 24px rgba(56,189,248,0.35);
-      transition: transform 0.18s ease, filter 0.18s ease;
-      overflow: hidden;
-    }
-    /* Big top glossy reflection */
-    .play-cta-shine {
-      position: absolute;
-      pointer-events: none;
-    }
-    .play-cta-shine-1 {
-      top: 10%;
-      left: 16%;
-      width: 56%;
-      height: 28%;
-      border-radius: 50%;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.8) 0%,
-        rgba(255,255,255,0.35) 55%,
-        rgba(255,255,255,0) 100%);
-    }
-    /* Decorative white bubble dots */
-    .play-cta-dot {
-      position: absolute;
-      pointer-events: none;
-      background: #ffffff;
-      border-radius: 50%;
-    }
-    .play-cta-dot-1 { top: 26%; left: 22%; width: 7px; height: 7px; opacity: 0.85; }
-    .play-cta-dot-2 { top: 56%; right: 18%; width: 5px; height: 5px; opacity: 0.65; }
-    .play-cta-dot-3 { bottom: 24%; left: 30%; width: 4px; height: 4px; opacity: 0.55; }
-    /* PLAY text — NO -webkit-text-stroke (broken in older WebKit) — use solid color + heavy text-shadow instead */
-    .play-cta-text {
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      transform: translateY(-50%);
-      text-align: center;
-      z-index: 2;
-      font-size: 34px;
-      line-height: 1;
-      color: #ffffff;
-      text-shadow:
-        -2px -2px 0 #0c4a6e,
-         2px -2px 0 #0c4a6e,
-        -2px  2px 0 #0c4a6e,
-         2px  2px 0 #0c4a6e,
-         0    3px 0 #075985,
-         0    4px 6px rgba(0,0,0,0.45);
-    }
-    @media (min-width: 640px) {
-      .play-cta-text { font-size: 42px; }
-    }
-    /* Tiny $LAB coin in the bottom-right corner */
-    .play-cta-coin {
-      position: absolute;
-      bottom: -4px;
-      right: -6px;
-      width: 36px;
-      height: 36px;
-      z-index: 3;
-      object-fit: contain;
-    }
-    @media (min-width: 640px) {
-      .play-cta-coin { width: 46px; height: 46px; bottom: -6px; right: -8px; }
-    }
-    .play-cta:hover {
-      transform: scale(1.05);
-      filter: brightness(1.06);
-    }
-    .play-cta:active {
-      transform: scale(0.96);
-      filter: brightness(0.95);
-    }
-    @keyframes coin-bounce {
-      0%,100% { transform: translateY(0) rotate(0); }
-      50%     { transform: translateY(-3px) rotate(8deg); }
-    }
-    .animate-coin-bounce { animation: coin-bounce 2.2s ease-in-out infinite; }
-
-    @keyframes cd-pulse {
-      0%,100% { box-shadow: 0 10px 30px -10px rgba(56,189,248,0.5), inset 0 0 25px rgba(56,189,248,0.12); }
-      50%     { box-shadow: 0 15px 40px -10px rgba(56,189,248,0.9), inset 0 0 35px rgba(56,189,248,0.22); }
-    }
-    .animate-cd-pulse { animation: cd-pulse 1s ease-in-out infinite; }
-    @keyframes orbit-float {
-      0%,100% { transform: translateY(0) rotate(-2deg); }
-      50%     { transform: translateY(-14px) rotate(2deg); }
-    }
-    .orbit-tile { animation: orbit-float 8s ease-in-out infinite; }
-    @keyframes marquee {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-    .animate-marquee { animation: marquee 60s linear infinite; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .welcome-particle, .orbit-tile, .animate-spin-slow, .animate-cd-pulse,
-      .animate-marquee, .animate-coin-bounce,
-      .hero-word-blue, .hero-word-yellow {
-        animation: none !important;
-      }
-    }
-  `}</style>
-);
+  }
+`;
 
 export default WelcomeScreen;
