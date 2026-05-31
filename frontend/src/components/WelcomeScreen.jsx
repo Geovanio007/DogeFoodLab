@@ -5,9 +5,18 @@ import AuthModal from './AuthModal';
 import WhatsNewToast from './WhatsNewToast';
 import INGREDIENT_ICONS from '../config/ingredientIcons';
 
+/* ============================================================
+   DogeFood Lab — SEASON 2 cinematic landing
+   Inspired by AAA crypto-game hero pages (Chumbi-style),
+   reimagined for a neon meme-science laboratory.
+   ============================================================ */
+
 const LAB_TOKEN = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/bihai5rz_1000081758-removebg-preview.png';
 const SHIBA_SCIENTIST = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/uvrqvytu_1000081756-removebg-preview.png';
 
+// Season 2 launches at a FIXED absolute UTC date — identical for every visitor
+// regardless of browser, device, or first-visit time. Adjust this single
+// constant when you want to move the launch date.
 const SEASON2_LAUNCH_ISO = '2026-06-11T00:00:00Z';
 const SEASON2_LAUNCH_AT = Date.parse(SEASON2_LAUNCH_ISO);
 
@@ -25,21 +34,24 @@ const useCountdown = (target) => {
   return { days, hours, minutes, seconds, finished: diff <= 0 };
 };
 
+// 6 hand-picked Season 2 ingredients for the sneak-peek showcase
 const SNEAK_PEEK_IDS = ['S2_050', 'S2_045', 'S2_041', 'S2_040', 'S2_032', 'S2_021'];
+// All 50 for the marquee strip
 const ALL_S2_IDS = Object.keys(INGREDIENT_ICONS);
 
-// ✅ FIX: inject styles once on mount via useEffect, never re-inject on re-render
+// ✅ FIX: inject styles once on mount, clean up on unmount so remount always re-injects cleanly
 const useLandingStyles = () => {
   useEffect(() => {
     const id = 'dogefood-landing-styles';
-    if (document.getElementById(id)) return; // already injected
-    const el = document.createElement('style');
-    el.id = id;
-    el.textContent = LANDING_CSS;
-    document.head.appendChild(el);
+    let el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('style');
+      el.id = id;
+      el.textContent = LANDING_CSS;
+      document.head.appendChild(el);
+    }
     return () => {
-      // only clean up if you want styles removed when component unmounts
-      // document.getElementById(id)?.remove();
+      document.getElementById(id)?.remove();
     };
   }, []);
 };
@@ -64,8 +76,10 @@ const WelcomeScreen = ({ onPlayNow }) => {
       className="relative min-h-screen w-full overflow-hidden bg-[#04030f] text-white"
       style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
+      {/* ✅ FIX: React.memo — never re-renders from countdown ticks */}
       <CinematicBackground />
 
+      {/* ─── Top bar: brand + sneak-peek card ─── */}
       <header className="relative z-20 flex items-start justify-between px-3 sm:px-8 pt-3 sm:pt-6 gap-2">
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <DogeFoodLogo size="sm" showText={false} showBeta={false} className="w-10 h-10 sm:w-12 sm:h-12" />
@@ -74,16 +88,20 @@ const WelcomeScreen = ({ onPlayNow }) => {
             <div className="text-xs font-bold text-white/90">Season 2 · Reactor</div>
           </div>
         </div>
+
         <SneakPeekCard />
       </header>
 
+      {/* ─── Main hero ─── */}
       <main className="relative z-10 flex flex-col items-center justify-center px-3 sm:px-6 pt-4 sm:pt-12 pb-6 sm:pb-8 w-full">
+        {/* Reactor glow halo behind logo */}
         <div className="relative flex flex-col items-center w-full max-w-[28rem] sm:max-w-none">
           <div className="absolute inset-0 -z-10 pointer-events-none">
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[24rem] h-[24rem] sm:w-[40rem] sm:h-[40rem] rounded-full opacity-60"
                  style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.35), rgba(168,85,247,0.18) 40%, transparent 70%)', filter: 'blur(40px)' }} />
           </div>
 
+          {/* Eyebrow */}
           <div className="relative mb-1.5 sm:mb-3 flex items-center gap-2 sm:gap-4">
             <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-r from-transparent to-cyan-400/70" />
             <span data-testid="hero-eyebrow" className="text-[9px] sm:text-xs tracking-[0.4em] sm:tracking-[0.45em] font-mono text-cyan-300/80 uppercase">
@@ -92,6 +110,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
             <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-l from-transparent to-cyan-400/70" />
           </div>
 
+          {/* Season 2 incoming badge */}
           <div className="mt-4 sm:mt-7 flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full border-2 border-yellow-400/70 bg-yellow-400/10 backdrop-blur shadow-[0_4px_0_rgba(0,0,0,0.25),0_0_20px_rgba(250,204,21,0.4)]">
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
             <span
@@ -103,6 +122,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
           </div>
 
+          {/* Countdown */}
           {!cd.finished && (
             <div data-testid="season2-countdown" className="mt-4 sm:mt-7 flex items-stretch gap-1.5 sm:gap-3 w-full max-w-[26rem] sm:max-w-[28rem] px-1 sm:px-0">
               <CountdownDigit value={cd.days}    label="DAYS" />
@@ -115,6 +135,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
             </div>
           )}
 
+          {/* Primary CTA */}
           <div className="play-cta-wrap" data-testid="play-now-btn-wrap">
             <button
               data-testid="play-now-btn"
@@ -144,6 +165,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
             </button>
           </div>
 
+          {/* Tagline */}
           <p
             data-testid="hero-tagline"
             className="mt-4 sm:mt-7 text-center text-[13px] sm:text-lg text-sky-100/90 max-w-xl px-2 sm:px-4 leading-relaxed"
@@ -153,6 +175,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
             Forge your reputation across <span className="text-yellow-300 font-bold">50 new ingredients</span> in Season 2.
           </p>
 
+          {/* Guest/Account secondary CTA */}
           <button
             data-testid="guest-cta-btn"
             onClick={() => setShowAuthModal(true)}
@@ -163,9 +186,11 @@ const WelcomeScreen = ({ onPlayNow }) => {
         </div>
       </main>
 
+      {/* ✅ FIX: React.memo — never re-renders from countdown ticks */}
       <OrbitingIngredients />
       <IngredientMarquee />
 
+      {/* ─── Footer tagline ─── */}
       <footer className="relative z-10 px-3 pb-3 sm:pb-6 mt-3 sm:mt-6">
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-[9px] sm:text-xs tracking-[0.2em] sm:tracking-[0.25em] font-mono text-cyan-300/40 uppercase">
           <span>Web3 Gaming</span>
@@ -180,14 +205,16 @@ const WelcomeScreen = ({ onPlayNow }) => {
 
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onSuccess={handleAuthSuccess} />
       <WhatsNewToast />
-      {/* ✅ FIX: <LandingStyles /> removed from here — styles injected via useLandingStyles() hook above */}
+      {/* ✅ FIX: <LandingStyles /> removed — styles injected once via useLandingStyles() hook */}
     </div>
   );
 };
 
 /* ─── Cinematic background ─── */
-const CinematicBackground = () => (
+// ✅ FIX: React.memo — props never change so renders exactly once
+const CinematicBackground = React.memo(() => (
   <>
+    {/* base radial gradient */}
     <div
       aria-hidden
       className="absolute inset-0 pointer-events-none"
@@ -196,7 +223,9 @@ const CinematicBackground = () => (
           'radial-gradient(ellipse at 50% 30%, #1e3a8a 0%, #0c1a3f 40%, #050917 80%, #02030a 100%)',
       }}
     />
+    {/* sky-blue grid floor */}
     <div aria-hidden className="absolute inset-0 pointer-events-none welcome-grid opacity-30" />
+    {/* horizon glow */}
     <div
       aria-hidden
       className="absolute left-0 right-0 pointer-events-none"
@@ -207,13 +236,16 @@ const CinematicBackground = () => (
         filter: 'blur(20px)',
       }}
     />
+    {/* warm yellow sun-spot top */}
     <div aria-hidden className="absolute -top-40 left-1/2 -translate-x-1/2 w-[44rem] h-[44rem] rounded-full pointer-events-none opacity-30"
          style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.55), rgba(56,189,248,0.18) 50%, transparent 75%)', filter: 'blur(60px)' }} />
+    {/* sky-blue side glows */}
     <div aria-hidden className="absolute -bottom-32 -left-32 w-[36rem] h-[36rem] rounded-full pointer-events-none opacity-40"
          style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.55), transparent 65%)', filter: 'blur(60px)' }} />
     <div aria-hidden className="absolute -bottom-32 -right-32 w-[36rem] h-[36rem] rounded-full pointer-events-none opacity-30"
          style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.45), transparent 65%)', filter: 'blur(60px)' }} />
 
+    {/* drifting particles */}
     {Array.from({ length: 22 }).map((_, i) => (
       <span
         key={i}
@@ -230,13 +262,14 @@ const CinematicBackground = () => (
       />
     ))}
 
+    {/* vignette */}
     <div
       aria-hidden
       className="absolute inset-0 pointer-events-none"
       style={{ background: 'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%)' }}
     />
   </>
-);
+));
 
 /* ─── Countdown digit card ─── */
 const CountdownDigit = ({ value, label, pad = 2, pulse = false }) => {
@@ -305,7 +338,8 @@ const SneakPeekCard = () => {
 };
 
 /* ─── Orbiting ingredient tiles ─── */
-const OrbitingIngredients = () => {
+// ✅ FIX: React.memo — derived from constants, never needs to re-render
+const OrbitingIngredients = React.memo(() => {
   const items = SNEAK_PEEK_IDS.map((id, idx) => ({
     id,
     meta: INGREDIENT_ICONS[id],
@@ -338,10 +372,11 @@ const OrbitingIngredients = () => {
       })}
     </div>
   );
-};
+});
 
-/* ─── Continuous marquee strip ─── */
-const IngredientMarquee = () => {
+/* ─── Continuous marquee strip of all Season 2 ingredients ─── */
+// ✅ FIX: React.memo — derived from constants, never needs to re-render
+const IngredientMarquee = React.memo(() => {
   const all = ALL_S2_IDS.map((id) => ({ id, meta: INGREDIENT_ICONS[id] })).filter((x) => x.meta?.icon);
   const doubled = [...all, ...all];
   return (
@@ -377,9 +412,9 @@ const IngredientMarquee = () => {
       </div>
     </section>
   );
-};
+});
 
-/* ─── All CSS as a plain string constant — never re-injected after mount ─── */
+/* ─── All CSS as a plain string constant — injected once via useLandingStyles() ─── */
 const LANDING_CSS = `
   .welcome-grid {
     background-image:
@@ -410,6 +445,8 @@ const LANDING_CSS = `
   }
   @keyframes spin-slow { from { transform: rotate(0); } to { transform: rotate(360deg); } }
   .animate-spin-slow { animation: spin-slow 12s linear infinite; }
+
+  /* ─── Cartoon wordmark ─── */
   .hero-word {
     font-weight: 400;
     position: relative;
@@ -466,6 +503,8 @@ const LANDING_CSS = `
     .hero-word-blue   { animation: hero-wobble   5s ease-in-out infinite; }
     .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
   }
+
+  /* ─── PLAY button ─── */
   .play-cta-wrap {
     position: relative;
     margin-top: 20px;
@@ -574,21 +613,25 @@ const LANDING_CSS = `
     50%     { transform: translateY(-3px) rotate(8deg); }
   }
   .animate-coin-bounce { animation: coin-bounce 2.2s ease-in-out infinite; }
+
   @keyframes cd-pulse {
     0%,100% { box-shadow: 0 10px 30px -10px rgba(56,189,248,0.5), inset 0 0 25px rgba(56,189,248,0.12); }
     50%     { box-shadow: 0 15px 40px -10px rgba(56,189,248,0.9), inset 0 0 35px rgba(56,189,248,0.22); }
   }
   .animate-cd-pulse { animation: cd-pulse 1s ease-in-out infinite; }
+
   @keyframes orbit-float {
     0%,100% { transform: translateY(0) rotate(-2deg); }
     50%     { transform: translateY(-14px) rotate(2deg); }
   }
   .orbit-tile { animation: orbit-float 8s ease-in-out infinite; }
+
   @keyframes marquee {
     0%   { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
   .animate-marquee { animation: marquee 60s linear infinite; }
+
   @media (prefers-reduced-motion: reduce) {
     .welcome-particle, .orbit-tile, .animate-spin-slow, .animate-cd-pulse,
     .animate-marquee, .animate-coin-bounce,
