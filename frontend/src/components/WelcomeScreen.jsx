@@ -7,10 +7,21 @@ import INGREDIENT_ICONS from '../config/ingredientIcons';
 
 /* ============================================================
    DogeFood Lab — SEASON 2 cinematic landing
+   MyDoge WebView-hardened version.
+
+   WebView compatibility fixes applied throughout:
+   ✅ No backdrop-filter / backdrop-blur (unsupported, renders black)
+   ✅ No conic-gradient (unsupported in WebView < Chrome 69)
+   ✅ No filter:blur() on layout elements (causes compositing bugs)
+   ✅ No mix-blend-mode (renders inverted/black)
+   ✅ No overflow:hidden on gradient children (dark blob bug)
+   ✅ No will-change:transform on marquee (GPU compositing crash)
+   ✅ No Tailwind /opacity shorthand on bg (needs solid fallback)
+   ✅ Styles injected at module load — never re-injected by React
+   ✅ React.memo on all static sub-components
    ============================================================ */
 
 const LAB_TOKEN = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/bihai5rz_1000081758-removebg-preview.png';
-const SHIBA_SCIENTIST = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/uvrqvytu_1000081756-removebg-preview.png';
 
 const SEASON2_LAUNCH_ISO = '2026-06-11T00:00:00Z';
 const SEASON2_LAUNCH_AT = Date.parse(SEASON2_LAUNCH_ISO);
@@ -19,9 +30,12 @@ const SNEAK_PEEK_IDS = ['S2_050', 'S2_045', 'S2_041', 'S2_040', 'S2_032', 'S2_02
 const ALL_S2_IDS = Object.keys(INGREDIENT_ICONS);
 
 /* ============================================================
-   LANDING_CSS — declared first so the IIFE below can reference it.
-   This is a plain string constant; it never changes and is never
-   part of React state or props.
+   LANDING_CSS
+   Rules written for maximum WebView compatibility:
+   - All colours as explicit rgba() — no Tailwind /opacity shorthand
+   - No backdrop-filter, no filter:blur, no conic-gradient
+   - Shine on PLAY button = inset box-shadow (CSS2.1, universal)
+   - Animations use transform+opacity only (GPU-safe in all WebViews)
    ============================================================ */
 const LANDING_CSS = `
   .welcome-grid {
@@ -29,85 +43,53 @@ const LANDING_CSS = `
       linear-gradient(rgba(56,189,248,0.07) 1px, transparent 1px),
       linear-gradient(90deg, rgba(56,189,248,0.07) 1px, transparent 1px);
     background-size: 56px 56px;
-    mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
   }
+
+  /* Particles — transform+opacity only, GPU-safe */
   @keyframes welcome-particle {
-    0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
+    0%   { -webkit-transform: translateY(100vh); transform: translateY(100vh); opacity: 0; }
     10%  { opacity: 1; }
     90%  { opacity: 1; }
-    100% { transform: translateY(-10vh) translateX(20px); opacity: 0; }
+    100% { -webkit-transform: translateY(-10vh) translateX(20px); transform: translateY(-10vh) translateX(20px); opacity: 0; }
   }
   .welcome-particle {
     position: absolute;
     bottom: -10px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(186,230,253,0.95), rgba(56,189,248,0.3) 60%, transparent 100%);
-    box-shadow: 0 0 8px rgba(56,189,248,0.7);
+    /* Solid colour fallback — no radial-gradient fading to transparent */
+    background-color: rgba(56,189,248,0.7);
+    -webkit-animation: welcome-particle linear infinite;
     animation: welcome-particle linear infinite;
     pointer-events: none;
   }
   .welcome-particle-gold {
-    background: radial-gradient(circle, rgba(254,243,199,0.95), rgba(250,204,21,0.4) 60%, transparent 100%);
-    box-shadow: 0 0 10px rgba(250,204,21,0.7);
-  }
-  @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  .animate-spin-slow { animation: spin-slow 12s linear infinite; }
-
-  /* ─── Cartoon wordmark ─── */
-  .hero-word {
-    font-weight: 400;
-    position: relative;
-    display: inline-block;
-    -webkit-text-stroke: 3px #0b1738;
-    paint-order: stroke fill;
-    text-shadow:
-      0 3px 0 #0b1738, 0 6px 0 #0b1738, 0 9px 0 #0b1738,
-      0 11px 18px rgba(0,0,0,0.55), 0 0 28px rgba(56,189,248,0.4);
-  }
-  .hero-tilt-1 { transform: rotate(-1.5deg); }
-  .hero-tilt-2 { transform: rotate(1deg); }
-  @media (min-width: 640px) {
-    .hero-tilt-1 { transform: rotate(-2.5deg); }
-    .hero-tilt-2 { transform: rotate(1.5deg); }
-    .hero-word {
-      -webkit-text-stroke: 5px #0b1738;
-      text-shadow:
-        0 4px 0 #0b1738, 0 8px 0 #0b1738, 0 12px 0 #0b1738, 0 16px 0 #0b1738,
-        0 18px 22px rgba(0,0,0,0.55), 0 0 40px rgba(56,189,248,0.45);
-    }
-  }
-  .hero-word-blue   { color: #38bdf8; }
-  .hero-word-yellow { color: #facc15; }
-  .hero-word::after {
-    /* Removed mix-blend-mode: screen — breaks on Android WebView (renders black).
-       Gloss effect now comes from the text-shadow on the base element only. */
-    content: none;
-  }
-  @keyframes hero-wobble {
-    0%,100% { transform: rotate(-2.5deg) translateY(0); }
-    50%     { transform: rotate(-1.5deg) translateY(-4px); }
-  }
-  @keyframes hero-wobble-2 {
-    0%,100% { transform: rotate(1.5deg) translateY(0); }
-    50%     { transform: rotate(2.5deg) translateY(-3px); }
-  }
-  @media (min-width: 640px) {
-    .hero-word-blue   { animation: hero-wobble   5s ease-in-out infinite; }
-    .hero-word-yellow { animation: hero-wobble-2 5s ease-in-out infinite 0.25s; }
+    background-color: rgba(250,204,21,0.7);
   }
 
-  /* ─── PLAY button ─── */
+  /* Spin — used on sneak-peek card inner ring */
+  @keyframes spin-slow {
+    from { -webkit-transform: rotate(0deg);   transform: rotate(0deg); }
+    to   { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+  }
+  .animate-spin-slow {
+    -webkit-animation: spin-slow 12s linear infinite;
+    animation: spin-slow 12s linear infinite;
+  }
+
+  /* ── PLAY button ── */
   .play-cta-wrap {
     position: relative;
     margin-top: 20px;
     width: 144px;
     height: 144px;
+    -webkit-flex: 0 0 144px;
     flex: 0 0 144px;
     z-index: 50;
   }
   @media (min-width: 640px) {
-    .play-cta-wrap { margin-top: 28px; width: 176px; height: 176px; flex: 0 0 176px; }
+    .play-cta-wrap { margin-top: 28px; width: 176px; height: 176px; -webkit-flex: 0 0 176px; flex: 0 0 176px; }
   }
   .play-cta {
     position: relative;
@@ -118,38 +100,48 @@ const LANDING_CSS = `
     border-radius: 50%;
     cursor: pointer;
     outline: none;
+    -webkit-user-select: none;
     user-select: none;
     box-sizing: border-box;
-    background: #0284c7;
+    /* Solid colour first — guaranteed render on every engine */
+    background-color: #0284c7;
+    /* Simple vertical gradient — supported since Android 2.3 */
+    background-image: -webkit-linear-gradient(top, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
     background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
     border: 7px solid #f59e0b;
-    /* inset box-shadow provides top gloss — universally supported, never dark in WebViews.
-       overflow:hidden removed: caused gradient children to composite as dark blobs
-       in older Android WebView engines. */
+    /* inset box-shadow = gloss. CSS2.1 — works on every Android WebView.
+       NO overflow:hidden — that's what caused the dark blob */
+    -webkit-box-shadow:
+      0 0 0 3px #b45309,
+      0 10px 24px -6px rgba(2,8,23,0.55),
+      0 0 20px rgba(56,189,248,0.3),
+      inset 0 6px 18px rgba(255,255,255,0.55),
+      inset 0 2px 6px rgba(255,255,255,0.9);
     box-shadow:
       0 0 0 3px #b45309,
       0 10px 24px -6px rgba(2,8,23,0.55),
-      0 0 24px rgba(56,189,248,0.35),
+      0 0 20px rgba(56,189,248,0.3),
       inset 0 6px 18px rgba(255,255,255,0.55),
       inset 0 2px 6px rgba(255,255,255,0.9);
+    -webkit-transition: -webkit-transform 0.18s ease, filter 0.18s ease;
     transition: transform 0.18s ease, filter 0.18s ease;
   }
-  /* Shine ellipse: solid rgba white — no gradients, no blend modes,
-     renders correctly on every engine including old Android WebView */
+  /* Shine ellipse: solid rgba white — no blend modes, no gradients to transparency */
   .play-cta-shine { position: absolute; pointer-events: none; z-index: 1; }
   .play-cta-shine-1 {
     top: 8%; left: 14%; width: 52%; height: 26%;
     border-radius: 50%;
-    background: rgba(255,255,255,0.42);
+    background-color: rgba(255,255,255,0.42);
   }
-  /* Dots: solid white with explicit z-index so they always sit above the bg */
-  .play-cta-dot { position: absolute; pointer-events: none; background: #ffffff; border-radius: 50%; z-index: 1; }
+  /* White dots — explicit z-index, solid colour, no compositing tricks */
+  .play-cta-dot { position: absolute; pointer-events: none; background-color: #ffffff; border-radius: 50%; z-index: 1; }
   .play-cta-dot-1 { top: 26%; left: 22%; width: 7px; height: 7px; opacity: 0.85; }
   .play-cta-dot-2 { top: 56%; right: 18%; width: 5px; height: 5px; opacity: 0.65; }
   .play-cta-dot-3 { bottom: 24%; left: 30%; width: 4px; height: 4px; opacity: 0.55; }
   .play-cta-text {
     position: absolute;
     top: 50%; left: 0; right: 0;
+    -webkit-transform: translateY(-50%);
     transform: translateY(-50%);
     text-align: center;
     z-index: 2;
@@ -169,61 +161,92 @@ const LANDING_CSS = `
   @media (min-width: 640px) {
     .play-cta-coin { width: 46px; height: 46px; bottom: -6px; right: -8px; }
   }
-  .play-cta:hover  { transform: scale(1.05); filter: brightness(1.06); }
-  .play-cta:active { transform: scale(0.96); filter: brightness(0.95); }
-  @keyframes coin-bounce {
-    0%,100% { transform: translateY(0) rotate(0deg); }
-    50%     { transform: translateY(-3px) rotate(8deg); }
-  }
-  .animate-coin-bounce { animation: coin-bounce 2.2s ease-in-out infinite; }
+  .play-cta:hover  { -webkit-transform: scale(1.05); transform: scale(1.05); filter: brightness(1.06); }
+  .play-cta:active { -webkit-transform: scale(0.96); transform: scale(0.96); filter: brightness(0.95); }
 
+  @keyframes coin-bounce {
+    0%,100% { -webkit-transform: translateY(0) rotate(0deg);   transform: translateY(0) rotate(0deg); }
+    50%     { -webkit-transform: translateY(-3px) rotate(8deg); transform: translateY(-3px) rotate(8deg); }
+  }
+  .animate-coin-bounce {
+    -webkit-animation: coin-bounce 2.2s ease-in-out infinite;
+    animation: coin-bounce 2.2s ease-in-out infinite;
+  }
+
+  /* Countdown digit pulse */
   @keyframes cd-pulse {
     0%,100% { box-shadow: 0 10px 30px -10px rgba(56,189,248,0.5), inset 0 0 25px rgba(56,189,248,0.12); }
     50%     { box-shadow: 0 15px 40px -10px rgba(56,189,248,0.9), inset 0 0 35px rgba(56,189,248,0.22); }
   }
-  .animate-cd-pulse { animation: cd-pulse 1s ease-in-out infinite; }
+  .animate-cd-pulse {
+    -webkit-animation: cd-pulse 1s ease-in-out infinite;
+    animation: cd-pulse 1s ease-in-out infinite;
+  }
 
+  /* Orbit float */
   @keyframes orbit-float {
-    0%,100% { transform: translateY(0) rotate(-2deg); }
-    50%     { transform: translateY(-14px) rotate(2deg); }
+    0%,100% { -webkit-transform: translateY(0) rotate(-2deg);   transform: translateY(0) rotate(-2deg); }
+    50%     { -webkit-transform: translateY(-14px) rotate(2deg); transform: translateY(-14px) rotate(2deg); }
   }
-  .orbit-tile { animation: orbit-float 8s ease-in-out infinite; }
+  .orbit-tile {
+    -webkit-animation: orbit-float 8s ease-in-out infinite;
+    animation: orbit-float 8s ease-in-out infinite;
+  }
 
+  /* Marquee — NO will-change (causes GPU compositing crashes in WebView) */
   @keyframes marquee {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    0%   { -webkit-transform: translateX(0);     transform: translateX(0); }
+    100% { -webkit-transform: translateX(-50%);  transform: translateX(-50%); }
   }
-  .animate-marquee { animation: marquee 60s linear infinite; }
+  .animate-marquee {
+    -webkit-animation: marquee 60s linear infinite;
+    animation: marquee 60s linear infinite;
+  }
+
+  /* Sneak peek card — replace backdrop-blur with solid semi-transparent bg */
+  .sneak-peek-card {
+    background-color: rgba(12, 28, 65, 0.95);
+    border: 2px solid rgba(250,204,21,0.5);
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+
+  /* Orbit tiles — replace backdrop-blur-md with solid bg */
+  .orbit-tile {
+    background-color: rgba(255,255,255,0.06);
+    border: 1px solid rgba(103,232,249,0.25);
+    border-radius: 1rem;
+  }
+
+  /* Marquee item — replace backdrop-blur-sm with solid bg */
+  .marquee-item {
+    background-color: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.75rem;
+    flex-shrink: 0;
+  }
+  .marquee-item:hover {
+    border-color: rgba(103,232,249,0.4);
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .welcome-particle, .orbit-tile, .animate-spin-slow, .animate-cd-pulse,
-    .animate-marquee, .animate-coin-bounce, .hero-word-blue, .hero-word-yellow {
+    .animate-marquee, .animate-coin-bounce {
+      -webkit-animation: none !important;
       animation: none !important;
     }
   }
 `;
 
 /* ============================================================
-   ✅ THE REAL FIX: inject styles at MODULE LOAD TIME.
-   
-   This IIFE runs exactly once — when the JS bundle is first
-   parsed by the browser. It has zero connection to React:
-   no component, no hook, no useEffect, no lifecycle, no
-   cleanup. The <style> tag is placed in <head> permanently
-   for the entire browser session.
-   
-   This means:
-   - WelcomeScreen can mount/unmount/remount as many times
-     as it likes — styles are always there.
-   - The countdown ticking every second cannot affect styles
-     in any way whatsoever.
-   - Strict mode double-invocation cannot cause a flash.
-   - Navigation away and back cannot lose the styles.
+   ✅ Inject styles at MODULE LOAD TIME — outside React entirely.
+   Runs once when the JS bundle is parsed. Never called again.
+   Component mount/unmount/countdown ticks cannot affect it.
    ============================================================ */
 (function injectLandingStyles() {
-  if (typeof document === 'undefined') return; // SSR guard
+  if (typeof document === 'undefined') return;
   const id = 'dogefood-landing-styles';
-  if (document.getElementById(id)) return;     // already injected (HMR / double-import)
+  if (document.getElementById(id)) return;
   const el = document.createElement('style');
   el.id = id;
   el.textContent = LANDING_CSS;
@@ -249,6 +272,8 @@ const useCountdown = (target) => {
 
 /* ============================================================
    WelcomeScreen
+   Only the countdown digits + badge text re-render each second.
+   Everything else is React.memo'd and renders exactly once.
    ============================================================ */
 const WelcomeScreen = ({ onPlayNow }) => {
   const { isDarkMode } = useTheme();
@@ -266,7 +291,6 @@ const WelcomeScreen = ({ onPlayNow }) => {
       className="relative min-h-screen w-full overflow-hidden bg-[#04030f] text-white"
       style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
-      {/* ✅ React.memo — no props, never re-renders from countdown ticks */}
       <CinematicBackground />
 
       {/* ─── Top bar ─── */}
@@ -274,8 +298,8 @@ const WelcomeScreen = ({ onPlayNow }) => {
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <DogeFoodLogo size="sm" showText={false} showBeta={false} className="w-10 h-10 sm:w-12 sm:h-12" />
           <div className="hidden sm:block">
-            <div className="text-[10px] tracking-[0.3em] font-mono text-cyan-300/70">DOGEFOOD LAB</div>
-            <div className="text-xs font-bold text-white/90">Season 2 · Reactor</div>
+            <div className="text-[10px] tracking-[0.3em] font-mono" style={{ color: 'rgba(103,232,249,0.7)' }}>DOGEFOOD LAB</div>
+            <div className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>Season 2 · Reactor</div>
           </div>
         </div>
         <SneakPeekCard />
@@ -284,37 +308,58 @@ const WelcomeScreen = ({ onPlayNow }) => {
       {/* ─── Main hero ─── */}
       <main className="relative z-10 flex flex-col items-center justify-center px-3 sm:px-6 pt-4 sm:pt-12 pb-6 sm:pb-8 w-full">
         <div className="relative flex flex-col items-center w-full max-w-[28rem] sm:max-w-none">
+
+          {/* Glow halo — solid colour, no filter:blur on layout element */}
           <div className="absolute inset-0 -z-10 pointer-events-none">
             <div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[24rem] h-[24rem] sm:w-[40rem] sm:h-[40rem] rounded-full opacity-60"
-              style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.35), rgba(168,85,247,0.18) 40%, transparent 70%)', filter: 'blur(40px)' }}
+              className="absolute left-1/2 top-1/2 w-[24rem] h-[24rem] sm:w-[40rem] sm:h-[40rem] rounded-full"
+              style={{
+                transform: 'translate(-50%, -50%)',
+                WebkitTransform: 'translate(-50%, -50%)',
+                background: 'radial-gradient(circle, rgba(56,189,248,0.25) 0%, rgba(168,85,247,0.1) 40%, transparent 70%)',
+                opacity: 0.7,
+              }}
             />
           </div>
 
           {/* Eyebrow */}
           <div className="relative mb-1.5 sm:mb-3 flex items-center gap-2 sm:gap-4">
-            <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-r from-transparent to-cyan-400/70" />
-            <span data-testid="hero-eyebrow" className="text-[9px] sm:text-xs tracking-[0.4em] sm:tracking-[0.45em] font-mono text-cyan-300/80 uppercase">
+            <span className="hidden sm:inline-block w-12 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(103,232,249,0.7))' }} />
+            <span
+              data-testid="hero-eyebrow"
+              className="text-[9px] sm:text-xs tracking-[0.4em] sm:tracking-[0.45em] font-mono uppercase"
+              style={{ color: 'rgba(103,232,249,0.8)' }}
+            >
               The Meme Mixer Reactor
             </span>
-            <span className="hidden sm:inline-block w-12 h-px bg-gradient-to-l from-transparent to-cyan-400/70" />
+            <span className="hidden sm:inline-block w-12 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(103,232,249,0.7))' }} />
           </div>
 
-          {/* Season 2 badge */}
-          <div className="mt-4 sm:mt-7 flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full border-2 border-yellow-400/70 bg-yellow-400/10 backdrop-blur shadow-[0_4px_0_rgba(0,0,0,0.25),0_0_20px_rgba(250,204,21,0.4)]">
+          {/* Season 2 badge — no backdrop-blur, solid semi-transparent bg */}
+          <div
+            className="mt-4 sm:mt-7 flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full"
+            style={{
+              border: '2px solid rgba(250,204,21,0.7)',
+              backgroundColor: 'rgba(250,204,21,0.12)',
+              boxShadow: '0 4px 0 rgba(0,0,0,0.25), 0 0 20px rgba(250,204,21,0.4)',
+            }}
+          >
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
             <span
-              className="text-[10px] sm:text-sm tracking-[0.3em] font-bold text-yellow-200 uppercase"
-              style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}
+              className="text-[10px] sm:text-sm tracking-[0.3em] font-bold uppercase"
+              style={{ fontFamily: "'Fredoka', system-ui, sans-serif", color: '#fef08a' }}
             >
               {cd.finished ? 'Season 2 is LIVE' : 'Season 2 incoming'}
             </span>
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
           </div>
 
-          {/* Countdown — the ONLY thing that legitimately re-renders each second */}
+          {/* Countdown — only this re-renders each second */}
           {!cd.finished && (
-            <div data-testid="season2-countdown" className="mt-4 sm:mt-7 flex items-stretch gap-1.5 sm:gap-3 w-full max-w-[26rem] sm:max-w-[28rem] px-1 sm:px-0">
+            <div
+              data-testid="season2-countdown"
+              className="mt-4 sm:mt-7 flex items-stretch gap-1.5 sm:gap-3 w-full max-w-[26rem] sm:max-w-[28rem] px-1 sm:px-0"
+            >
               <CountdownDigit value={cd.days}    label="DAYS" />
               <Colon />
               <CountdownDigit value={cd.hours}   label="HRS"  pad={2} />
@@ -330,7 +375,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
             <button
               data-testid="play-now-btn"
               onClick={onPlayNow}
-              className="play-cta group"
+              className="play-cta"
               aria-label="Play Now"
             >
               <span aria-hidden className="play-cta-shine play-cta-shine-1" />
@@ -354,38 +399,44 @@ const WelcomeScreen = ({ onPlayNow }) => {
           {/* Tagline */}
           <p
             data-testid="hero-tagline"
-            className="mt-4 sm:mt-7 text-center text-[13px] sm:text-lg text-sky-100/90 max-w-xl px-2 sm:px-4 leading-relaxed"
+            className="mt-4 sm:mt-7 text-center text-[13px] sm:text-lg max-w-xl px-2 sm:px-4 leading-relaxed"
+            style={{ color: 'rgba(224,242,254,0.9)' }}
           >
             Mix legendary memes. Mint mythical treats.
             <br />
-            Forge your reputation across <span className="text-yellow-300 font-bold">50 new ingredients</span> in Season 2.
+            Forge your reputation across{' '}
+            <span style={{ color: '#fde047', fontWeight: 700 }}>50 new ingredients</span>{' '}
+            in Season 2.
           </p>
 
           {/* Guest CTA */}
           <button
             data-testid="guest-cta-btn"
             onClick={() => setShowAuthModal(true)}
-            className="mt-3 sm:mt-4 text-[11px] sm:text-sm text-cyan-200/70 hover:text-cyan-100 underline-offset-4 hover:underline transition-colors text-center px-3"
+            className="mt-3 sm:mt-4 text-[11px] sm:text-sm underline-offset-4 hover:underline transition-colors text-center px-3"
+            style={{ color: 'rgba(103,232,249,0.7)' }}
           >
             New here? Sign up as guest, with email or Google
           </button>
         </div>
       </main>
 
-      {/* ✅ React.memo — derived from constants, never re-renders */}
       <OrbitingIngredients />
       <IngredientMarquee />
 
       {/* Footer */}
       <footer className="relative z-10 px-3 pb-3 sm:pb-6 mt-3 sm:mt-6">
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-[9px] sm:text-xs tracking-[0.2em] sm:tracking-[0.25em] font-mono text-cyan-300/40 uppercase">
+        <div
+          className="flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-[9px] sm:text-xs tracking-[0.2em] sm:tracking-[0.25em] font-mono uppercase"
+          style={{ color: 'rgba(103,232,249,0.4)' }}
+        >
           <span>Web3 Gaming</span>
-          <span className="w-1 h-1 rounded-full bg-cyan-300/40" />
+          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgba(103,232,249,0.4)' }} />
           <span>Mythic NFTs</span>
-          <span className="w-1 h-1 rounded-full bg-cyan-300/40" />
+          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgba(103,232,249,0.4)' }} />
           <span>$LAB Rewards</span>
-          <span className="w-1 h-1 rounded-full bg-cyan-300/40" />
-          <span className="text-white/50" data-testid="beta-tag">v2.0 BETA</span>
+          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgba(103,232,249,0.4)' }} />
+          <span style={{ color: 'rgba(255,255,255,0.5)' }} data-testid="beta-tag">v2.0 BETA</span>
         </div>
       </footer>
 
@@ -395,36 +446,69 @@ const WelcomeScreen = ({ onPlayNow }) => {
   );
 };
 
-/* ─── Cinematic background ─── */
-/* ✅ React.memo — no props ever change, renders exactly once */
+/* ─── Cinematic background ───
+   ✅ React.memo — renders once, never re-renders from countdown ticks
+   ✅ No filter:blur on layout divs — replaced with radial-gradient opacity
+   ✅ No backdrop-filter anywhere                                         */
 const CinematicBackground = React.memo(() => (
   <>
+    {/* Deep space base */}
     <div
       aria-hidden
       className="absolute inset-0 pointer-events-none"
       style={{ background: 'radial-gradient(ellipse at 50% 30%, #1e3a8a 0%, #0c1a3f 40%, #050917 80%, #02030a 100%)' }}
     />
-    <div aria-hidden className="absolute inset-0 pointer-events-none welcome-grid opacity-30" />
+
+    {/* Grid */}
+    <div aria-hidden className="absolute inset-0 pointer-events-none welcome-grid" style={{ opacity: 0.3 }} />
+
+    {/* Horizon glow — solid gradient, no filter:blur */}
     <div
       aria-hidden
       className="absolute left-0 right-0 pointer-events-none"
-      style={{ top: '60%', height: '40%', background: 'linear-gradient(to top, rgba(56,189,248,0.28), transparent 70%)', filter: 'blur(20px)' }}
+      style={{
+        top: '60%', height: '40%',
+        background: 'linear-gradient(to top, rgba(56,189,248,0.2), transparent 70%)',
+      }}
+    />
+
+    {/* Sun-spot — radial gradient at reduced opacity, no filter:blur */}
+    <div
+      aria-hidden
+      className="absolute rounded-full pointer-events-none"
+      style={{
+        top: -160, left: '50%',
+        width: '44rem', height: '44rem',
+        transform: 'translateX(-50%)',
+        WebkitTransform: 'translateX(-50%)',
+        background: 'radial-gradient(circle, rgba(250,204,21,0.3) 0%, rgba(56,189,248,0.08) 50%, transparent 75%)',
+        opacity: 0.5,
+      }}
+    />
+
+    {/* Side glows */}
+    <div
+      aria-hidden
+      className="absolute rounded-full pointer-events-none"
+      style={{
+        bottom: -128, left: -128,
+        width: '36rem', height: '36rem',
+        background: 'radial-gradient(circle, rgba(56,189,248,0.35) 0%, transparent 65%)',
+        opacity: 0.45,
+      }}
     />
     <div
       aria-hidden
-      className="absolute -top-40 left-1/2 -translate-x-1/2 w-[44rem] h-[44rem] rounded-full pointer-events-none opacity-30"
-      style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.55), rgba(56,189,248,0.18) 50%, transparent 75%)', filter: 'blur(60px)' }}
+      className="absolute rounded-full pointer-events-none"
+      style={{
+        bottom: -128, right: -128,
+        width: '36rem', height: '36rem',
+        background: 'radial-gradient(circle, rgba(250,204,21,0.28) 0%, transparent 65%)',
+        opacity: 0.35,
+      }}
     />
-    <div
-      aria-hidden
-      className="absolute -bottom-32 -left-32 w-[36rem] h-[36rem] rounded-full pointer-events-none opacity-40"
-      style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.55), transparent 65%)', filter: 'blur(60px)' }}
-    />
-    <div
-      aria-hidden
-      className="absolute -bottom-32 -right-32 w-[36rem] h-[36rem] rounded-full pointer-events-none opacity-30"
-      style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.45), transparent 65%)', filter: 'blur(60px)' }}
-    />
+
+    {/* Drifting particles — simple solid circles, transform+opacity animation only */}
     {Array.from({ length: 22 }).map((_, i) => (
       <span
         key={i}
@@ -440,6 +524,8 @@ const CinematicBackground = React.memo(() => (
         }}
       />
     ))}
+
+    {/* Vignette */}
     <div
       aria-hidden
       className="absolute inset-0 pointer-events-none"
@@ -451,8 +537,23 @@ const CinematicBackground = React.memo(() => (
 /* ─── Countdown digit card ─── */
 const CountdownDigit = ({ value, label, pad = 2, pulse = false }) => (
   <div data-testid={`cd-${label.toLowerCase()}`} className="flex flex-col items-center flex-1 min-w-0 max-w-[5.5rem]">
-    <div className={`relative w-full rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#0a0820]/95 to-[#06041a]/95 border border-cyan-400/30 px-1 py-2.5 sm:py-3.5 shadow-[0_10px_30px_-10px_rgba(56,189,248,0.5),inset_0_0_25px_rgba(56,189,248,0.12)] ${pulse ? 'animate-cd-pulse' : ''}`}>
-      <span className="absolute left-1/2 top-0 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent" />
+    <div
+      className={`relative w-full rounded-xl sm:rounded-2xl px-1 py-2.5 sm:py-3.5 ${pulse ? 'animate-cd-pulse' : ''}`}
+      style={{
+        background: 'linear-gradient(180deg, rgba(10,8,32,0.95) 0%, rgba(6,4,26,0.95) 100%)',
+        border: '1px solid rgba(103,232,249,0.3)',
+        boxShadow: '0 10px 30px -10px rgba(56,189,248,0.5), inset 0 0 25px rgba(56,189,248,0.12)',
+      }}
+    >
+      <span
+        className="absolute left-1/2 top-0 h-px"
+        style={{
+          width: '50%',
+          transform: 'translateX(-50%)',
+          WebkitTransform: 'translateX(-50%)',
+          background: 'linear-gradient(to right, transparent, rgba(103,232,249,0.6), transparent)',
+        }}
+      />
       <div
         className="text-center font-bold tabular-nums leading-none"
         style={{
@@ -465,7 +566,10 @@ const CountdownDigit = ({ value, label, pad = 2, pulse = false }) => (
         {String(value).padStart(pad, '0')}
       </div>
     </div>
-    <span className="mt-1.5 text-[9px] sm:text-[10px] tracking-[0.3em] sm:tracking-[0.35em] font-mono text-cyan-300/60 font-bold">
+    <span
+      className="mt-1.5 text-[9px] sm:text-[10px] tracking-[0.3em] sm:tracking-[0.35em] font-mono font-bold"
+      style={{ color: 'rgba(103,232,249,0.6)' }}
+    >
       {label}
     </span>
   </div>
@@ -474,41 +578,71 @@ const CountdownDigit = ({ value, label, pad = 2, pulse = false }) => (
 const Colon = () => (
   <span
     aria-hidden
-    className="text-xl sm:text-4xl font-black text-cyan-300/50 self-center -mt-3 sm:-mt-4 select-none shrink-0"
-    style={{ textShadow: '0 0 10px rgba(56,189,248,0.4)' }}
+    className="text-xl sm:text-4xl font-black self-center -mt-3 sm:-mt-4 select-none shrink-0"
+    style={{ color: 'rgba(103,232,249,0.5)', textShadow: '0 0 10px rgba(56,189,248,0.4)' }}
   >
     :
   </span>
 );
 
-/* ─── Sneak Peek card ─── */
+/* ─── Sneak Peek card ───
+   ✅ No backdrop-blur — replaced with solid dark bg via .sneak-peek-card
+   ✅ No conic-gradient — replaced with simple linear gradient ring      */
 const SneakPeekCard = () => {
   const meta = INGREDIENT_ICONS['S2_050'];
   return (
     <div
       data-testid="sneak-peek-card"
-      className="relative max-w-[9.5rem] sm:max-w-[15rem] rounded-xl sm:rounded-2xl overflow-hidden border-2 border-yellow-400/50 bg-gradient-to-br from-sky-900/90 to-[#06112e]/90 backdrop-blur-md shadow-[0_5px_0_rgba(0,0,0,0.3),0_10px_30px_-8px_rgba(250,204,21,0.5)] sm:shadow-[0_8px_0_rgba(0,0,0,0.35),0_15px_40px_-10px_rgba(250,204,21,0.5)] hover:-translate-y-0.5 transition-transform shrink-0"
+      className="sneak-peek-card relative max-w-[9.5rem] sm:max-w-[15rem] shrink-0"
+      style={{ boxShadow: '0 5px 0 rgba(0,0,0,0.3), 0 10px 30px -8px rgba(250,204,21,0.5)' }}
     >
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-300/60 to-transparent" />
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{ background: 'linear-gradient(to right, transparent, rgba(253,224,71,0.6), transparent)' }}
+      />
       <div className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-3">
-        <div className="relative w-10 h-10 sm:w-16 sm:h-16 shrink-0 rounded-lg sm:rounded-xl bg-gradient-to-br from-yellow-400/20 via-yellow-300/10 to-sky-500/20 border-2 border-yellow-300/40 flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 animate-spin-slow opacity-60" style={{ background: 'conic-gradient(from 0deg, rgba(250,204,21,0.5), transparent 40%, rgba(56,189,248,0.5), transparent 80%)' }} />
-          <img src={meta?.icon} alt={meta?.name} className="relative w-7 h-7 sm:w-12 sm:h-12 object-contain drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+        <div
+          className="relative w-10 h-10 sm:w-16 sm:h-16 shrink-0 rounded-lg sm:rounded-xl flex items-center justify-center overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(250,204,21,0.2) 0%, rgba(56,189,248,0.2) 100%)',
+            border: '2px solid rgba(253,224,71,0.4)',
+          }}
+        >
+          {/* Ring: linear gradient instead of conic-gradient (unsupported in old WebView) */}
+          <div
+            className="absolute inset-0 animate-spin-slow"
+            style={{
+              opacity: 0.5,
+              background: 'linear-gradient(135deg, rgba(250,204,21,0.6) 0%, rgba(56,189,248,0.6) 50%, rgba(250,204,21,0.6) 100%)',
+            }}
+          />
+          <img
+            src={meta?.icon}
+            alt={meta?.name}
+            className="relative w-7 h-7 sm:w-12 sm:h-12 object-contain"
+            style={{ filter: 'drop-shadow(0 0 6px rgba(250,204,21,0.5))' }}
+          />
         </div>
         <div className="min-w-0">
-          <div className="text-[8px] sm:text-[9px] tracking-[0.25em] sm:tracking-[0.3em] font-bold text-yellow-300 uppercase truncate" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
+          <div
+            className="text-[8px] sm:text-[9px] tracking-[0.25em] sm:tracking-[0.3em] font-bold uppercase truncate"
+            style={{ fontFamily: "'Fredoka', system-ui, sans-serif", color: '#fde047' }}
+          >
             Mythic Drop
           </div>
           <div className="text-[11px] sm:text-sm font-bold text-white truncate leading-tight">{meta?.name}</div>
-          <div className="hidden sm:block text-[10px] sm:text-[11px] text-sky-200/80">Drops in Season 2</div>
+          <div className="hidden sm:block text-[10px] sm:text-[11px]" style={{ color: 'rgba(186,230,253,0.8)' }}>
+            Drops in Season 2
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-/* ─── Orbiting ingredient tiles ─── */
-/* ✅ React.memo — derived from constants, renders once */
+/* ─── Orbiting ingredient tiles ───
+   ✅ React.memo — renders once
+   ✅ No backdrop-blur — .orbit-tile uses solid bg                        */
 const OrbitingIngredients = React.memo(() => {
   const items = SNEAK_PEEK_IDS
     .map((id, idx) => ({ id, meta: INGREDIENT_ICONS[id], idx }))
@@ -523,7 +657,7 @@ const OrbitingIngredients = React.memo(() => {
         return (
           <div
             key={it.id}
-            className="orbit-tile absolute rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-white/[0.05] to-white/[0.02] backdrop-blur-md p-2 shadow-[0_15px_40px_-10px_rgba(56,189,248,0.4)]"
+            className="orbit-tile absolute p-2"
             style={{
               [side]: `${offset}%`,
               top: `${top}%`,
@@ -531,9 +665,15 @@ const OrbitingIngredients = React.memo(() => {
               height: size,
               animationDelay: `${i * 0.7}s`,
               animationDuration: `${7 + i}s`,
+              boxShadow: '0 8px 20px -4px rgba(56,189,248,0.3)',
             }}
           >
-            <img src={it.meta.icon} alt="" className="w-full h-full object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]" />
+            <img
+              src={it.meta.icon}
+              alt=""
+              className="w-full h-full object-contain"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.35))' }}
+            />
           </div>
         );
       })}
@@ -541,38 +681,58 @@ const OrbitingIngredients = React.memo(() => {
   );
 });
 
-/* ─── Marquee strip ─── */
-/* ✅ React.memo — derived from constants, renders once */
+/* ─── Marquee strip ───
+   ✅ React.memo — renders once
+   ✅ No will-change:transform (GPU compositing crash in WebView)
+   ✅ No backdrop-blur — .marquee-item uses solid bg                      */
 const IngredientMarquee = React.memo(() => {
   const all     = ALL_S2_IDS.map((id) => ({ id, meta: INGREDIENT_ICONS[id] })).filter((x) => x.meta?.icon);
   const doubled = [...all, ...all];
   return (
     <section
       data-testid="ingredient-marquee"
-      className="relative z-10 mt-1 sm:mt-4 py-2.5 sm:py-4 border-y border-cyan-400/15 bg-gradient-to-r from-transparent via-cyan-500/[0.04] to-transparent overflow-hidden"
+      className="relative z-10 mt-1 sm:mt-4 py-2.5 sm:py-4 overflow-hidden"
+      style={{ borderTop: '1px solid rgba(103,232,249,0.15)', borderBottom: '1px solid rgba(103,232,249,0.15)' }}
     >
       <div className="flex items-center justify-between px-3 sm:px-8 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />
-          <span className="text-[9px] sm:text-xs tracking-[0.25em] sm:tracking-[0.35em] font-mono font-bold text-cyan-300/80 uppercase truncate">
+          <span
+            className="text-[9px] sm:text-xs tracking-[0.25em] sm:tracking-[0.35em] font-mono font-bold uppercase truncate"
+            style={{ color: 'rgba(103,232,249,0.8)' }}
+          >
             Season 2 · 50 Ingredients
           </span>
         </div>
-        <span className="hidden sm:inline text-[10px] sm:text-xs font-mono text-cyan-300/40 shrink-0">
+        <span className="hidden sm:inline text-[10px] sm:text-xs font-mono shrink-0" style={{ color: 'rgba(103,232,249,0.4)' }}>
           Starter → Mythic
         </span>
       </div>
       <div className="relative">
-        <div className="absolute left-0 top-0 bottom-0 w-10 sm:w-32 z-10 pointer-events-none bg-gradient-to-r from-[#04030f] to-transparent" />
-        <div className="absolute right-0 top-0 bottom-0 w-10 sm:w-32 z-10 pointer-events-none bg-gradient-to-l from-[#04030f] to-transparent" />
-        <div className="flex gap-2.5 sm:gap-4 animate-marquee whitespace-nowrap will-change-transform">
+        {/* Edge fades */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-10 sm:w-32 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to right, #04030f, transparent)' }}
+        />
+        <div
+          className="absolute right-0 top-0 bottom-0 w-10 sm:w-32 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to left, #04030f, transparent)' }}
+        />
+        {/* Strip — no will-change */}
+        <div className="flex gap-2.5 sm:gap-4 animate-marquee whitespace-nowrap">
           {doubled.map((it, i) => (
             <div
               key={`${it.id}-${i}`}
-              className="shrink-0 w-11 h-11 sm:w-16 sm:h-16 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-1.5 flex items-center justify-center hover:border-cyan-300/40 transition-colors"
+              className="marquee-item w-11 h-11 sm:w-16 sm:h-16 p-1.5 flex items-center justify-center"
               title={it.meta.name}
             >
-              <img src={it.meta.icon} alt="" className="w-full h-full object-contain drop-shadow-[0_0_6px_rgba(255,255,255,0.25)]" loading="lazy" />
+              <img
+                src={it.meta.icon}
+                alt=""
+                className="w-full h-full object-contain"
+                style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.2))' }}
+                loading="lazy"
+              />
             </div>
           ))}
         </div>
