@@ -80,17 +80,9 @@ const LANDING_CSS = `
   .hero-word-blue   { color: #38bdf8; }
   .hero-word-yellow { color: #facc15; }
   .hero-word::after {
-    content: attr(data-text);
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    -webkit-text-stroke: 0;
-    text-shadow: none;
-    color: transparent;
-    background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 45%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    mix-blend-mode: screen;
+    /* Removed mix-blend-mode: screen — breaks on Android WebView (renders black).
+       Gloss effect now comes from the text-shadow on the base element only. */
+    content: none;
   }
   @keyframes hero-wobble {
     0%,100% { transform: rotate(-2.5deg) translateY(0); }
@@ -131,17 +123,27 @@ const LANDING_CSS = `
     background: #0284c7;
     background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
     border: 7px solid #f59e0b;
-    box-shadow: 0 0 0 3px #b45309, 0 10px 24px -6px rgba(2,8,23,0.55), 0 0 24px rgba(56,189,248,0.35);
+    /* inset box-shadow provides top gloss — universally supported, never dark in WebViews.
+       overflow:hidden removed: caused gradient children to composite as dark blobs
+       in older Android WebView engines. */
+    box-shadow:
+      0 0 0 3px #b45309,
+      0 10px 24px -6px rgba(2,8,23,0.55),
+      0 0 24px rgba(56,189,248,0.35),
+      inset 0 6px 18px rgba(255,255,255,0.55),
+      inset 0 2px 6px rgba(255,255,255,0.9);
     transition: transform 0.18s ease, filter 0.18s ease;
-    overflow: hidden;
   }
-  .play-cta-shine { position: absolute; pointer-events: none; }
+  /* Shine ellipse: solid rgba white — no gradients, no blend modes,
+     renders correctly on every engine including old Android WebView */
+  .play-cta-shine { position: absolute; pointer-events: none; z-index: 1; }
   .play-cta-shine-1 {
-    top: 10%; left: 16%; width: 56%; height: 28%;
+    top: 8%; left: 14%; width: 52%; height: 26%;
     border-radius: 50%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.35) 55%, rgba(255,255,255,0) 100%);
+    background: rgba(255,255,255,0.42);
   }
-  .play-cta-dot { position: absolute; pointer-events: none; background: #ffffff; border-radius: 50%; }
+  /* Dots: solid white with explicit z-index so they always sit above the bg */
+  .play-cta-dot { position: absolute; pointer-events: none; background: #ffffff; border-radius: 50%; z-index: 1; }
   .play-cta-dot-1 { top: 26%; left: 22%; width: 7px; height: 7px; opacity: 0.85; }
   .play-cta-dot-2 { top: 56%; right: 18%; width: 5px; height: 5px; opacity: 0.65; }
   .play-cta-dot-3 { bottom: 24%; left: 30%; width: 4px; height: 4px; opacity: 0.55; }
