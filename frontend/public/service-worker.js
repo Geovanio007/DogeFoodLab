@@ -1,22 +1,10 @@
-/* DogeFood Lab — Service Worker KILL SWITCH v3
+/* DogeFood Lab — Service Worker KILL SWITCH v4
  * --------------------------------------------------
- * Previous versions intercepted fetches and could return undefined when both
- * network AND cache failed → browser shows net::ERR_FAILED (MyDoge wallet
- * webview is particularly susceptible). This SW:
- *   1. Activates immediately (no waiting page)
- *   2. Claims all open clients so it controls them right now
- *   3. Deletes every cache
- *   4. Unregisters itself
- *   5. Reloads any open tabs so they fetch fresh through the network
- *   6. Has NO fetch handler → impossible to return undefined / break requests
- *
- * Future updates that need offline support should re-introduce a SW that
- * returns `new Response(null, { status: 504 })` (never undefined) on any
- * fetch failure.
+ * Activates immediately, wipes all caches, unregisters itself.
+ * NO reload — clients will be SW-free on their next natural navigation.
+ * NO fetch handler — every request goes directly to the network.
  */
-
-self.addEventListener('install', (event) => {
-  // Activate the new SW immediately, replacing the broken predecessor
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
@@ -34,11 +22,11 @@ self.addEventListener('activate', (event) => {
     // 3. Unregister so the next page load has no SW at all
     try { await self.registration.unregister(); } catch (e) { /* noop */ }
 
-    // 4. Force-reload every controlled tab so it fetches the page natively
-    try {
-      const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      wins.forEach((c) => { try { c.navigate(c.url); } catch (e) { /* noop */ } });
-    } catch (e) { /* noop */ }
+    // ✅ Step 4 (c.navigate / force-reload) deliberately removed.
+    // Reloading caused an infinite loop: the browser re-fetches the SW file,
+    // re-registers it, which activates again, which reloads again, forever.
+    // Claiming + unregistering is sufficient — clients are already SW-free
+    // and will remain so on all subsequent navigations.
   })());
 });
 
