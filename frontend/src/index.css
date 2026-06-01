@@ -6,36 +6,25 @@
    DOGEFOOD LAB - TYPOGRAPHY SYSTEM
    ================================ */
 
-/* Import Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap');
 
-/* Typography Scale:
-   - Display/Logo: Fredoka (fun, playful - for titles)
-   - Headers: Fredoka (bold, impactful)
-   - Body/UI: Nunito (clean, readable)
-   - Mono: System mono (for addresses, codes)
-*/
-
 :root {
-  /* Font Families */
   --font-display: 'Fredoka', 'Comic Sans MS', cursive;
   --font-heading: 'Fredoka', 'Comic Sans MS', sans-serif;
   --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
-  
-  /* Font Sizes */
-  --text-xs: 0.75rem;      /* 12px */
-  --text-sm: 0.875rem;     /* 14px */
-  --text-base: 1rem;       /* 16px */
-  --text-lg: 1.125rem;     /* 18px */
-  --text-xl: 1.25rem;      /* 20px */
-  --text-2xl: 1.5rem;      /* 24px */
-  --text-3xl: 1.875rem;    /* 30px */
-  --text-4xl: 2.25rem;     /* 36px */
-  --text-5xl: 3rem;        /* 48px */
-  --text-6xl: 3.75rem;     /* 60px */
-  
-  /* Light mode colors */
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+
   --bg-primary: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
   --bg-secondary: rgba(255, 255, 255, 0.9);
   --text-primary: #1f2937;
@@ -48,7 +37,6 @@
   --shadow-color: rgba(56, 189, 248, 0.4);
 }
 
-/* Dark mode colors */
 .dark-mode, .dark {
   --bg-primary: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
   --bg-secondary: rgba(15, 23, 42, 0.95);
@@ -66,10 +54,13 @@
    BASE TYPOGRAPHY
    ================================ */
 
-/* Global font reset */
-*, *::before, *::after {
-  font-family: var(--font-body);
-}
+/*
+  ✅ WEBVIEW FIX: The original global rule:
+       *, *::before, *::after { font-family: var(--font-body); }
+  was overriding ALL Tailwind font-utility classes (font-mono, etc.)
+  on MyDoge WebView's older engine. Removed. Font is applied
+  per-element via body, headings, and component classes below.
+*/
 
 html {
   font-size: 16px;
@@ -86,10 +77,10 @@ body {
   margin: 0;
   padding: 12px;
   color: var(--text-primary);
+  -webkit-transition: background 0.3s ease, color 0.3s ease;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Headings - Display Font */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   font-weight: 700;
@@ -97,37 +88,13 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0;
 }
 
-h1 {
-  font-size: var(--text-5xl);
-  font-weight: 700;
-}
+h1 { font-size: var(--text-5xl); font-weight: 700; }
+h2 { font-size: var(--text-3xl); font-weight: 700; }
+h3 { font-size: var(--text-2xl); font-weight: 600; }
+h4 { font-size: var(--text-xl);  font-weight: 600; }
+h5 { font-size: var(--text-lg);  font-weight: 600; }
+h6 { font-size: var(--text-base);font-weight: 600; }
 
-h2 {
-  font-size: var(--text-3xl);
-  font-weight: 700;
-}
-
-h3 {
-  font-size: var(--text-2xl);
-  font-weight: 600;
-}
-
-h4 {
-  font-size: var(--text-xl);
-  font-weight: 600;
-}
-
-h5 {
-  font-size: var(--text-lg);
-  font-weight: 600;
-}
-
-h6 {
-  font-size: var(--text-base);
-  font-weight: 600;
-}
-
-/* Paragraphs */
 p {
   font-family: var(--font-body);
   font-size: var(--text-base);
@@ -136,25 +103,16 @@ p {
   margin: 0;
 }
 
-/* Small text */
-small, .text-sm {
-  font-size: var(--text-sm);
-}
+small, .text-sm { font-size: var(--text-sm); }
+.text-xs { font-size: var(--text-xs); }
 
-.text-xs {
-  font-size: var(--text-xs);
-}
-
-/* Mono text (addresses, codes) */
-.font-mono, code, pre {
-  font-family: var(--font-mono);
-}
+/* Mono: explicit class only — not * override */
+.font-mono, code, pre { font-family: var(--font-mono); }
 
 /* ================================
    COMPONENT TYPOGRAPHY CLASSES
    ================================ */
 
-/* Game Logo/Title - Big and playful */
 .game-title {
   font-family: var(--font-display);
   font-size: var(--text-6xl);
@@ -163,7 +121,6 @@ small, .text-sm {
   letter-spacing: 1px;
 }
 
-/* Page Headers */
 .page-header {
   font-family: var(--font-heading);
   font-size: var(--text-3xl);
@@ -171,35 +128,30 @@ small, .text-sm {
   text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
-/* Section Headers */
 .section-header {
   font-family: var(--font-heading);
   font-size: var(--text-xl);
   font-weight: 600;
 }
 
-/* Card Titles */
 .card-title {
   font-family: var(--font-heading);
   font-size: var(--text-lg);
   font-weight: 600;
 }
 
-/* Button Text */
 button, .btn, [role="button"] {
   font-family: var(--font-heading);
   font-weight: 600;
   letter-spacing: 0.5px;
 }
 
-/* Labels */
 label, .label {
   font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: 600;
 }
 
-/* Stats/Numbers - Bold display */
 .stat-value {
   font-family: var(--font-heading);
   font-weight: 700;
@@ -213,7 +165,7 @@ label, .label {
   font-family: var(--font-display);
   font-weight: 700;
   color: var(--text-accent);
-  text-shadow: 4px 4px 8px rgba(0,0,0,0.4), 
+  text-shadow: 4px 4px 8px rgba(0,0,0,0.4),
                2px 2px 4px rgba(139, 69, 19, 0.3),
                0 0 20px var(--text-accent);
   letter-spacing: 1px;
@@ -226,12 +178,8 @@ label, .label {
   text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
-.playful-text {
-  font-family: var(--font-heading);
-  font-weight: 600;
-}
+.playful-text { font-family: var(--font-heading); font-weight: 600; }
 
-/* Welcome Screen */
 .welcome-title {
   font-family: var(--font-display);
   font-size: var(--text-6xl);
@@ -254,7 +202,6 @@ label, .label {
   text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
 }
 
-/* Loading Screen */
 .loading-title {
   font-family: var(--font-display);
   font-size: var(--text-5xl);
@@ -282,47 +229,19 @@ label, .label {
    ================================ */
 
 @media (max-width: 768px) {
-  body {
-    padding: 8px;
-  }
-  
-  h1, .game-title, .welcome-title {
-    font-size: var(--text-4xl);
-  }
-  
-  h2, .page-header {
-    font-size: var(--text-2xl);
-  }
-  
-  h3, .section-header {
-    font-size: var(--text-xl);
-  }
-  
-  .welcome-subtitle {
-    font-size: var(--text-xl);
-  }
-  
-  .welcome-description {
-    font-size: var(--text-base);
-  }
-  
-  .loading-title {
-    font-size: var(--text-4xl);
-  }
+  body { padding: 8px; }
+  h1, .game-title, .welcome-title { font-size: var(--text-4xl); }
+  h2, .page-header { font-size: var(--text-2xl); }
+  h3, .section-header { font-size: var(--text-xl); }
+  .welcome-subtitle { font-size: var(--text-xl); }
+  .welcome-description { font-size: var(--text-base); }
+  .loading-title { font-size: var(--text-4xl); }
 }
 
 @media (max-width: 480px) {
-  h1, .game-title, .welcome-title {
-    font-size: var(--text-3xl);
-  }
-  
-  h2, .page-header {
-    font-size: var(--text-xl);
-  }
-  
-  .loading-title {
-    font-size: var(--text-3xl);
-  }
+  h1, .game-title, .welcome-title { font-size: var(--text-3xl); }
+  h2, .page-header { font-size: var(--text-xl); }
+  .loading-title { font-size: var(--text-3xl); }
 }
 
 /* ================================
@@ -332,16 +251,18 @@ label, .label {
 @layer components {
   .glass-panel {
     background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     border: 2px solid var(--card-border);
-    box-shadow: 0 20px 40px var(--shadow-color), 
+    box-shadow: 0 20px 40px var(--shadow-color),
                 0 15px 25px var(--shadow-color),
                 inset 0 -3px 0 rgba(255, 255, 255, 0.3),
                 inset 0 3px 0 rgba(255, 255, 255, 0.1);
     border-radius: 20px;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
   }
-  
+
   .doge-button {
     background: var(--button-gradient);
     color: white;
@@ -356,69 +277,95 @@ label, .label {
     box-shadow: 0 8px 25px var(--shadow-color),
                 inset 0 -2px 0 rgba(0, 0, 0, 0.2),
                 inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    -webkit-transform: translateY(0);
     transform: translateY(0);
+    -webkit-transition: all 0.2s ease;
     transition: all 0.2s ease;
   }
-  
+
   .doge-button:hover {
+    -webkit-transform: translateY(-2px) scale(1.05);
     transform: translateY(-2px) scale(1.05);
     box-shadow: 0 15px 35px var(--shadow-color),
                 inset 0 -3px 0 rgba(0, 0, 0, 0.3),
                 inset 0 3px 0 rgba(255, 255, 255, 0.3);
   }
-  
+
   .doge-button:active {
+    -webkit-transform: scale(0.95);
     transform: scale(0.95);
     box-shadow: 0 5px 15px var(--shadow-color),
                 inset 0 -1px 0 rgba(0, 0, 0, 0.2),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
-  
+
+  /*
+    ✅ WEBVIEW FIX: -webkit-text-fill-color can cause invisible text on
+    some Android WebViews when the engine doesn't honour the clip.
+    Wrapped in @supports so it only fires on capable engines.
+    Solid colour fallback ensures text is always readable.
+  */
   .doge-gradient {
-    background: linear-gradient(to right, #f59e0b, #ea580c, #dc2626);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(2px 2px 4px rgba(234, 88, 12, 0.4));
+    color: #f59e0b; /* solid fallback */
   }
-  
+
+  @supports (-webkit-background-clip: text) {
+    .doge-gradient {
+      background: linear-gradient(to right, #f59e0b, #ea580c, #dc2626);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(2px 2px 4px rgba(234, 88, 12, 0.4));
+    }
+  }
+
   .dark .doge-gradient {
-    background: linear-gradient(to right, #fbbf24, #f97316, #fbbf24);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(2px 2px 4px rgba(251, 191, 36, 0.4));
+    color: #fbbf24; /* solid fallback */
   }
-  
+
+  @supports (-webkit-background-clip: text) {
+    .dark .doge-gradient {
+      background: linear-gradient(to right, #fbbf24, #f97316, #fbbf24);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(2px 2px 4px rgba(251, 191, 36, 0.4));
+    }
+  }
+
   .vip-badge {
     @apply bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold px-4 py-2 shadow-lg;
     font-family: var(--font-heading);
     border-radius: 20px;
     box-shadow: 0 5px 15px rgba(168, 85, 247, 0.4);
   }
-  
+
   .game-card {
     background: var(--card-bg);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     border: 4px solid var(--card-border);
     border-radius: 25px;
-    box-shadow: 
-      0 25px 50px var(--shadow-color), 
+    box-shadow:
+      0 25px 50px var(--shadow-color),
       0 20px 30px var(--shadow-color),
       inset 0 -8px 0 rgba(30, 58, 138, 0.6),
       inset 0 8px 0 rgba(255, 255, 255, 0.4),
       inset -4px 0 0 rgba(30, 58, 138, 0.3),
       inset 4px 0 0 rgba(255, 255, 255, 0.2),
       0 0 30px var(--shadow-color);
+    -webkit-transform-style: preserve-3d;
     transform-style: preserve-3d;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     cursor: pointer;
   }
-  
+
   .game-card:hover {
+    -webkit-transform: translateY(-10px) scale(1.05);
     transform: translateY(-10px) scale(1.05);
-    box-shadow: 
-      0 35px 70px var(--shadow-color), 
+    box-shadow:
+      0 35px 70px var(--shadow-color),
       0 30px 50px var(--shadow-color),
       inset 0 -10px 0 rgba(30, 58, 138, 0.7),
       inset 0 10px 0 rgba(255, 255, 255, 0.5),
@@ -426,24 +373,24 @@ label, .label {
       inset 6px 0 0 rgba(255, 255, 255, 0.3),
       0 0 50px var(--shadow-color);
   }
-  
+
   .ingredient-card {
-    @apply bg-gradient-to-br from-emerald-400/90 to-teal-500/90 backdrop-blur-sm border-2 border-emerald-300/50 p-4 transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer;
+    @apply bg-gradient-to-br from-emerald-400/90 to-teal-500/90 border-2 border-emerald-300/50 p-4 transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer;
     border-radius: 18px;
     box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
   }
-  
+
   .ingredient-card.selected {
     @apply bg-gradient-to-br from-yellow-400/95 to-orange-500/95 border-yellow-400 ring-4 ring-yellow-300 shadow-lg scale-105;
     box-shadow: 0 15px 30px rgba(255, 193, 7, 0.5);
   }
-  
+
   .treat-card {
-    @apply bg-gradient-to-br from-indigo-400/90 to-purple-500/90 backdrop-blur-md border-2 border-indigo-300/50 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl;
+    @apply bg-gradient-to-br from-indigo-400/90 to-purple-500/90 border-2 border-indigo-300/50 p-6 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl;
     border-radius: 20px;
     box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
   }
-  
+
   .stat-card {
     @apply glass-panel p-5 text-center transition-all duration-300 hover:scale-105;
     border-radius: 18px;
@@ -455,14 +402,14 @@ label, .label {
    ================================ */
 
 .theme-toggle {
-  box-shadow: 0 4px 15px var(--shadow-color), 
+  box-shadow: 0 4px 15px var(--shadow-color),
               inset 0 -2px 0 rgba(0, 0, 0, 0.2),
               inset 0 2px 0 rgba(255, 255, 255, 0.2);
 }
 
 .dark-mode .playful-title {
   color: #fbbf24;
-  text-shadow: 4px 4px 8px rgba(0,0,0,0.8), 
+  text-shadow: 4px 4px 8px rgba(0,0,0,0.8),
                2px 2px 4px rgba(251, 191, 36, 0.5),
                0 0 20px rgba(251, 191, 36, 0.3);
 }
@@ -495,13 +442,14 @@ label, .label {
 
 .loading-screen {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   z-index: 9999;
   overflow: hidden;
@@ -522,24 +470,28 @@ label, .label {
   font-size: var(--text-lg);
 }
 
-/* Thermometer Styles */
 .thermometer-container {
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
   margin: 2rem 0;
 }
 
 .thermometer {
   position: relative;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
 }
 
 .thermometer-tube {
-  width: 40px;
-  height: 180px;
+  width: 40px; height: 180px;
   background: linear-gradient(to right, #1e293b, #334155, #1e293b);
   border-radius: 20px 20px 0 0;
   border: 3px solid #64748b;
@@ -550,97 +502,69 @@ label, .label {
 
 .thermometer-scale {
   position: absolute;
-  left: -35px;
-  top: 0;
-  bottom: 0;
+  left: -35px; top: 0; bottom: 0;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column-reverse;
   flex-direction: column-reverse;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
   padding: 5px 0;
 }
 
-.scale-line {
-  font-size: 10px;
-  color: #94a3b8;
-  font-family: var(--font-body);
-}
+.scale-line { font-size: 10px; color: #94a3b8; font-family: var(--font-body); }
 
 .liquid-container {
   position: absolute;
-  bottom: 0;
-  left: 4px;
-  right: 4px;
-  top: 4px;
+  bottom: 0; left: 4px; right: 4px; top: 4px;
   border-radius: 16px 16px 0 0;
   overflow: hidden;
 }
 
 .liquid-fill {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   background: linear-gradient(to top, #ef4444, #f97316, #eab308);
   border-radius: 12px 12px 0 0;
+  -webkit-transition: height 0.3s ease-out;
   transition: height 0.3s ease-out;
 }
 
 .liquid-surface {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 8px;
   background: linear-gradient(to bottom, rgba(255,255,255,0.4), transparent);
   border-radius: 50%;
+  -webkit-animation: liquidWave 1s ease-in-out infinite;
   animation: liquidWave 1s ease-in-out infinite;
 }
 
 @keyframes liquidWave {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(1.2); }
+  0%, 100% { -webkit-transform: scaleY(1); transform: scaleY(1); }
+  50%       { -webkit-transform: scaleY(1.2); transform: scaleY(1.2); }
 }
 
 .bubble-inside {
   position: absolute;
   background: rgba(255,255,255,0.3);
   border-radius: 50%;
+  -webkit-animation: bubbleRise 2s ease-in-out infinite;
   animation: bubbleRise 2s ease-in-out infinite;
 }
 
-.bubble-inside-1 {
-  width: 6px;
-  height: 6px;
-  left: 20%;
-  bottom: 10%;
-  animation-delay: 0s;
-}
-
-.bubble-inside-2 {
-  width: 4px;
-  height: 4px;
-  left: 50%;
-  bottom: 20%;
-  animation-delay: 0.5s;
-}
-
-.bubble-inside-3 {
-  width: 5px;
-  height: 5px;
-  left: 70%;
-  bottom: 5%;
-  animation-delay: 1s;
-}
+.bubble-inside-1 { width: 6px; height: 6px; left: 20%; bottom: 10%; animation-delay: 0s; }
+.bubble-inside-2 { width: 4px; height: 4px; left: 50%; bottom: 20%; animation-delay: 0.5s; }
+.bubble-inside-3 { width: 5px; height: 5px; left: 70%; bottom: 5%;  animation-delay: 1s; }
 
 @keyframes bubbleRise {
-  0% { transform: translateY(0); opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { transform: translateY(-60px); opacity: 0; }
+  0%   { -webkit-transform: translateY(0); transform: translateY(0); opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { -webkit-transform: translateY(-60px); transform: translateY(-60px); opacity: 0; }
 }
 
 .thermometer-bulb {
-  width: 55px;
-  height: 55px;
+  width: 55px; height: 55px;
   background: linear-gradient(135deg, #ef4444, #dc2626);
   border-radius: 50%;
   border: 3px solid #64748b;
@@ -651,27 +575,25 @@ label, .label {
 
 .bulb-inner {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
+  -webkit-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
-  width: 35px;
-  height: 35px;
+  width: 35px; height: 35px;
   background: linear-gradient(135deg, #f97316, #ef4444);
   border-radius: 50%;
+  -webkit-animation: bulbPulse 1.5s ease-in-out infinite;
   animation: bulbPulse 1.5s ease-in-out infinite;
 }
 
 @keyframes bulbPulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+  0%, 100% { -webkit-transform: translate(-50%, -50%) scale(1);   transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+  50%       { -webkit-transform: translate(-50%, -50%) scale(1.1); transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
 }
 
 .bulb-shine {
   position: absolute;
-  top: 8px;
-  left: 12px;
-  width: 12px;
-  height: 12px;
+  top: 8px; left: 12px;
+  width: 12px; height: 12px;
   background: rgba(255,255,255,0.4);
   border-radius: 50%;
 }
@@ -686,12 +608,15 @@ label, .label {
   font-weight: 700;
   border: none;
   cursor: pointer;
+  -webkit-transform: scale(1);
   transform: scale(1);
+  -webkit-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   margin: 20px;
   background: none;
   outline: none;
   z-index: 999;
+  display: -webkit-inline-flex;
   display: inline-flex;
   visibility: visible;
   opacity: 1;
@@ -699,176 +624,92 @@ label, .label {
   min-width: 200px;
 }
 
-.play-now-button:hover {
-  transform: scale(1.1) translateY(-5px);
-}
-
-.play-now-button:active {
-  transform: scale(0.95);
-}
-
-.play-now-button span {
-  font-family: var(--font-display);
-  color: #facc15;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-}
+.play-now-button:hover { -webkit-transform: scale(1.1) translateY(-5px); transform: scale(1.1) translateY(-5px); }
+.play-now-button:active { -webkit-transform: scale(0.95); transform: scale(0.95); }
+.play-now-button span { font-family: var(--font-display); color: #facc15; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
 
 /* ================================
    TIMER & NOTIFICATION STYLES
    ================================ */
 
-.timer-info {
-  font-family: var(--font-body);
-  text-align: center;
-}
-
-.treat-name {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  color: #374151;
-}
-
-.time-display {
-  font-family: var(--font-heading);
-  font-weight: 700;
-}
-
-.notification {
-  font-family: var(--font-body);
-  border-radius: 15px;
-}
-
-.notification-title {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.notification-message {
-  font-family: var(--font-body);
-  font-weight: 500;
-  color: #4b5563;
-}
+.timer-info { font-family: var(--font-body); text-align: center; }
+.treat-name { font-family: var(--font-heading); font-weight: 700; color: #374151; }
+.time-display { font-family: var(--font-heading); font-weight: 700; }
+.notification { font-family: var(--font-body); border-radius: 15px; }
+.notification-title { font-family: var(--font-heading); font-weight: 700; color: #1f2937; }
+.notification-message { font-family: var(--font-body); font-weight: 500; color: #4b5563; }
 
 /* ================================
    FORM STYLES
    ================================ */
 
-.step-title {
-  font-family: var(--font-heading);
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  color: #1e40af;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-}
-
-.step-description {
-  font-family: var(--font-body);
-  font-size: var(--text-lg);
-  color: #64748b;
-}
-
-.form-label {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  color: #1e40af;
-  font-size: var(--text-lg);
-}
-
-.nickname-input {
-  font-family: var(--font-body);
-  font-size: var(--text-lg);
-  font-weight: 500;
-}
-
-.register-button {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: var(--text-lg);
-}
-
-.success-title {
-  font-family: var(--font-heading);
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  color: #059669;
-}
-
-.success-message {
-  font-family: var(--font-body);
-  font-size: var(--text-lg);
-  color: #64748b;
-}
+.step-title { font-family: var(--font-heading); font-size: var(--text-2xl); font-weight: 700; color: #1e40af; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+.step-description { font-family: var(--font-body); font-size: var(--text-lg); color: #64748b; }
+.form-label { font-family: var(--font-heading); font-weight: 700; color: #1e40af; font-size: var(--text-lg); }
+.nickname-input { font-family: var(--font-body); font-size: var(--text-lg); font-weight: 500; }
+.register-button { font-family: var(--font-heading); font-weight: 700; font-size: var(--text-lg); }
+.success-title { font-family: var(--font-heading); font-size: var(--text-2xl); font-weight: 700; color: #059669; }
+.success-message { font-family: var(--font-body); font-size: var(--text-lg); color: #64748b; }
 
 /* ================================
    ANIMATIONS
    ================================ */
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  25% { transform: translateY(-15px) rotate(5deg); }
-  50% { transform: translateY(-10px) rotate(-3deg); }
-  75% { transform: translateY(-20px) rotate(3deg); }
+  0%, 100% { -webkit-transform: translateY(0px) rotate(0deg);   transform: translateY(0px) rotate(0deg); }
+  25%       { -webkit-transform: translateY(-15px) rotate(5deg); transform: translateY(-15px) rotate(5deg); }
+  50%       { -webkit-transform: translateY(-10px) rotate(-3deg);transform: translateY(-10px) rotate(-3deg); }
+  75%       { -webkit-transform: translateY(-20px) rotate(3deg); transform: translateY(-20px) rotate(3deg); }
 }
 
 @keyframes sparkle {
-  0%, 100% { opacity: 0; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
+  0%, 100% { opacity: 0; -webkit-transform: scale(0.8); transform: scale(0.8); }
+  50%       { opacity: 1; -webkit-transform: scale(1.2); transform: scale(1.2); }
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-10px); }
-  60% { transform: translateY(-5px); }
+  0%, 20%, 50%, 80%, 100% { -webkit-transform: translateY(0);    transform: translateY(0); }
+  40%                      { -webkit-transform: translateY(-10px);transform: translateY(-10px); }
+  60%                      { -webkit-transform: translateY(-5px); transform: translateY(-5px); }
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.1); opacity: 1; }
+  0%, 100% { -webkit-transform: scale(1);   transform: scale(1);   opacity: 0.7; }
+  50%       { -webkit-transform: scale(1.1); transform: scale(1.1); opacity: 1; }
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0%   { -webkit-transform: translateX(-100%); transform: translateX(-100%); }
+  100% { -webkit-transform: translateX(100%);  transform: translateX(100%); }
 }
 
 @keyframes confetti-fall {
-  0% { top: -20px; opacity: 1; transform: translateX(0) rotate(0deg); }
-  100% { top: 100vh; opacity: 0; transform: translateX(100px) rotate(720deg); }
+  0%   { top: -20px; opacity: 1; -webkit-transform: translateX(0) rotate(0deg);     transform: translateX(0) rotate(0deg); }
+  100% { top: 100vh; opacity: 0; -webkit-transform: translateX(100px) rotate(720deg);transform: translateX(100px) rotate(720deg); }
 }
 
-.animate-float { animation: float 4s ease-in-out infinite; }
-.animate-bounce { animation: bounce 2s infinite; }
-.animate-pulse { animation: pulse 2s infinite; }
+.animate-float  { -webkit-animation: float  4s ease-in-out infinite; animation: float  4s ease-in-out infinite; }
+.animate-bounce { -webkit-animation: bounce 2s infinite;              animation: bounce 2s infinite; }
+.animate-pulse  { -webkit-animation: pulse  2s infinite;              animation: pulse  2s infinite; }
 
-/* Loading Spinner */
 .loading-spinner {
   @apply inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full;
+  -webkit-animation: spin 1s linear infinite;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0%   { -webkit-transform: rotate(0deg);   transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
 }
 
 /* ================================
    SCROLLBAR STYLES
    ================================ */
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  @apply bg-white/10 rounded-full;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-white/40 rounded-full hover:bg-white/60;
-}
-
-
+.custom-scrollbar::-webkit-scrollbar { width: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { @apply bg-white/10 rounded-full; }
+.custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-white/40 rounded-full hover:bg-white/60; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -883,18 +724,14 @@ label, .label {
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-html.telegram-webapp,
-body.telegram-webapp {
+html.telegram-webapp, body.telegram-webapp {
   height: var(--tg-viewport-height, 100vh);
   min-height: var(--tg-viewport-height, 100vh);
   max-height: var(--tg-viewport-height, 100vh);
   overflow: hidden;
   position: fixed;
-  width: 100%;
-  top: 0;
-  left: 0;
-  margin: 0;
-  padding: 0;
+  width: 100%; top: 0; left: 0;
+  margin: 0; padding: 0;
 }
 
 body.telegram-webapp {
@@ -912,12 +749,8 @@ body.telegram-webapp {
   overscroll-behavior: none;
 }
 
-body.telegram-mobile {
-  font-size: 16px;
-}
-
-body.telegram-mobile button,
-body.telegram-mobile .doge-button {
+body.telegram-mobile { font-size: 16px; }
+body.telegram-mobile button, body.telegram-mobile .doge-button {
   min-height: 44px;
   font-family: var(--font-heading);
   font-weight: 700;
@@ -928,55 +761,22 @@ body.telegram-mobile .doge-button {
    ================================ */
 
 @media (max-width: 640px) {
-  .glass-panel {
-    @apply mx-2;
-  }
-  
-  .treat-card {
-    @apply p-4;
-  }
-  
-  button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  input, textarea, select {
-    font-size: 16px; /* Prevent zoom on iOS */
-  }
+  .glass-panel { @apply mx-2; }
+  .treat-card  { @apply p-4; }
+  button  { min-height: 44px; min-width: 44px; }
+  input, textarea, select { font-size: 16px; }
 }
 
 @media (max-width: 480px) {
-  body {
-    font-size: 14px;
-    line-height: 1.5;
-  }
-  
-  .glass-panel {
-    margin: 0.5rem;
-    padding: 1rem;
-  }
-  
-  .game-card {
-    margin: 0.25rem;
-    border-radius: 15px;
-  }
-  
-  button {
-    padding: 0.75rem 1rem;
-  }
+  body { font-size: 14px; line-height: 1.5; }
+  .glass-panel { margin: 0.5rem; padding: 1rem; }
+  .game-card   { margin: 0.25rem; border-radius: 15px; }
+  button { padding: 0.75rem 1rem; }
 }
 
-/* Reduce animations on mobile for performance */
 @media (max-width: 768px), (prefers-reduced-motion: reduce) {
-  .animate-bounce,
-  .animate-pulse {
-    animation-duration: 0s;
-  }
-  
-  .floating-elements {
-    display: none;
-  }
+  .animate-bounce, .animate-pulse { animation-duration: 0s; }
+  .floating-elements { display: none; }
 }
 
 /* ================================
@@ -984,24 +784,17 @@ body.telegram-mobile .doge-button {
    ================================ */
 
 @media (max-width: 768px) {
-  .text-white\/90 {
-    color: rgba(255, 255, 255, 0.95);
-  }
-  
-  .text-white\/80 {
-    color: rgba(255, 255, 255, 0.9);
-  }
-  
+  .text-white\/90 { color: rgba(255, 255, 255, 0.95); }
+  .text-white\/80 { color: rgba(255, 255, 255, 0.9); }
   .touch-target {
-    min-height: 44px;
-    min-width: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    min-height: 44px; min-width: 44px;
+    display: -webkit-flex; display: flex;
+    -webkit-align-items: center; align-items: center;
+    -webkit-justify-content: center; justify-content: center;
   }
 }
 
-   /* ================================
+/* ================================
    CHARACTER SELECTION OVERRIDE
    ================================ */
 
@@ -1023,29 +816,18 @@ html body .character-selection-screen div {
 .character-selection-screen h5,
 .character-selection-screen h6 {
   color: #ffffff !important;
-     }
+}
 
 /* ================================
    DOGEOS / HEROUI MODAL OVERRIDE
-   ================================
-   The DogeOS SDK renders its connect modal inside a `.light` themed portal
-   (`#modal-container > .light`) with a white card background, relying on
-   HeroUI design tokens (`--heroui-foreground`, etc.) for text colors.
-   Our host app forces `<html class="dark dark-mode">` and sets aggressive
-   global rules (`body { color: var(--text-primary) }` etc.) that bleed
-   white text into the modal — producing white-on-white invisibility.
-   Scope the override STRICTLY to the modal portal so it doesn't disturb
-   the host's dark-mode styles elsewhere (the SDK also wraps the *whole
-   app* in a `.light` div for utility-token purposes — we don't want to
-   touch that). */
+   ================================ */
+
 #modal-container [role="dialog"],
 #modal-container [role="dialog"] * {
   color: hsl(var(--heroui-foreground, 240 40% 11.76%) / 1) !important;
   -webkit-text-fill-color: hsl(var(--heroui-foreground, 240 40% 11.76%) / 1) !important;
 }
-/* Let the SDK's own muted/utility classes override the broad reset above
-   so secondary text (legal copy, "or continue with", etc.) keeps its
-   intended gray. We allow inheritance so SDK utilities win on children. */
+
 #modal-container [role="dialog"] [class*="text-default"],
 #modal-container [role="dialog"] [class*="text-foreground"],
 #modal-container [role="dialog"] [class*="text-content"],
