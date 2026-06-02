@@ -108,17 +108,17 @@ const LANDING_CSS = `
     /* Simple vertical gradient — supported since Android 2.3 */
     background-image: -webkit-linear-gradient(top, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
     background-image: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 40%, #0284c7 75%, #075985 100%);
-    border: 7px solid #f59e0b;
+    border: 7px solid #fef08a;
     /* inset box-shadow = gloss. CSS2.1 — works on every Android WebView.
        NO overflow:hidden — that's what caused the dark blob */
     -webkit-box-shadow:
-      0 0 0 3px #b45309,
+      0 0 0 3px #fde68a,
       0 10px 24px -6px rgba(2,8,23,0.55),
       0 0 20px rgba(56,189,248,0.3),
       inset 0 6px 18px rgba(255,255,255,0.55),
       inset 0 2px 6px rgba(255,255,255,0.9);
     box-shadow:
-      0 0 0 3px #b45309,
+      0 0 0 3px #fde68a,
       0 10px 24px -6px rgba(2,8,23,0.55),
       0 0 20px rgba(56,189,248,0.3),
       inset 0 6px 18px rgba(255,255,255,0.55),
