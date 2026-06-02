@@ -9,13 +9,21 @@ const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 /* ============================================================
    DogeFood Lab — LAB ARENA (Phase 1)
-   Live 24h leaderboard, prize pool, chat, predictions, heat events.
-   Streaming UI is a tease-card until Phase 2.
+   MyDoge WebView-hardened version.
+
+   Fixes applied:
+   ✅ No backdrop-filter / backdrop-blur (black on old WebView)
+   ✅ No filter:blur() on layout elements (compositing crash)
+   ✅ No mix-blend-mode (renders inverted/black)
+   ✅ No Tailwind /opacity shorthand where WebView misreads it
+   ✅ All transforms prefixed with -webkit-
+   ✅ Flex prefixed with -webkit-flex where needed
+   ✅ ArenaStyles inline CSS hardened with -webkit- prefixes
    ============================================================ */
 
 const RANK_BADGE = {
   1: { bg: 'from-yellow-300 to-amber-500', text: '#0b1738' },
-  2: { bg: 'from-slate-200 to-slate-400', text: '#0b1738' },
+  2: { bg: 'from-slate-200 to-slate-400',  text: '#0b1738' },
   3: { bg: 'from-orange-300 to-amber-700', text: '#0b1738' },
 };
 
@@ -36,17 +44,17 @@ const useNow = (everyMs = 1000) => {
   return now;
 };
 
-// ─── Hook: polled fetch ──────────────────────────────────────
+/* ─── Hook: polled fetch ─── */
 const usePoll = (url, intervalMs, options) => {
   const [data, setData] = useState(null);
-  const [err, setErr] = useState(null);
+  const [err, setErr]   = useState(null);
   const aliveRef = useRef(true);
   useEffect(() => {
     aliveRef.current = true;
     if (!url) return undefined;
     const tick = async () => {
       try {
-        const res = await fetch(url, options);
+        const res  = await fetch(url, options);
         if (!res.ok) throw new Error('http ' + res.status);
         const json = await res.json();
         if (aliveRef.current) setData(json);
@@ -65,13 +73,13 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
   const navigate = useNavigate();
   const [showStreamModal, setShowStreamModal] = useState(false);
 
-  const arenaPoll = usePoll(`${API_URL}/api/arena/leaderboard?limit=50`, 4000);
-  const heatPoll = usePoll(`${API_URL}/api/arena/heat`, 15000);
+  const arenaPoll      = usePoll(`${API_URL}/api/arena/leaderboard?limit=50`, 4000);
+  const heatPoll       = usePoll(`${API_URL}/api/arena/heat`, 15000);
   const predictionPoll = usePoll(`${API_URL}/api/arena/prediction/${playerAddress}`, 8000);
 
-  const arena = arenaPoll.data?.arena;
-  const entries = arenaPoll.data?.entries || [];
-  const heat = heatPoll.data?.event;
+  const arena      = arenaPoll.data?.arena;
+  const entries    = arenaPoll.data?.entries || [];
+  const heat       = heatPoll.data?.event;
   const myPrediction = predictionPoll.data?.prediction;
 
   const isJoined = useMemo(
@@ -88,29 +96,37 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
         <button
           data-testid="arena-back-btn"
           onClick={() => navigate('/')}
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center transition-colors"
+          style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }}
           aria-label="Back to menu"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="min-w-0 flex-1">
-          <div className="text-[9px] sm:text-[10px] tracking-[0.35em] font-mono text-yellow-300/80 uppercase">
+          <div className="text-[9px] sm:text-[10px] tracking-[0.35em] font-mono uppercase"
+               style={{ color: 'rgba(253,224,71,0.8)' }}>
             Lab Arena · Live
           </div>
           <h1
             className="text-xl sm:text-3xl font-bold leading-tight truncate"
             style={{ fontFamily: "'Bowlby One', 'Fredoka', system-ui, sans-serif", fontWeight: 400 }}
           >
-            Arena<span className="text-yellow-400">.</span>
+            Arena<span style={{ color: '#facc15' }}>.</span>
           </h1>
         </div>
         <LiveDot />
       </header>
 
       {/* Heat banner */}
-      {heat && <HeatEventBanner heat={heat} startedAt={heatPoll.data?.started_at} duration={heatPoll.data?.duration_min} />}
+      {heat && (
+        <HeatEventBanner
+          heat={heat}
+          startedAt={heatPoll.data?.started_at}
+          duration={heatPoll.data?.duration_min}
+        />
+      )}
 
-      {/* Top: arena banner + prize pool */}
+      {/* Arena banner + prize pool */}
       <div className="relative z-10 px-3 sm:px-6">
         <ArenaBanner
           arena={arena}
@@ -129,13 +145,13 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
         />
       </div>
 
-      {/* Streams placeholder section */}
+      {/* Streams placeholder */}
       <div className="relative z-10 px-3 sm:px-6 mt-4 sm:mt-6">
         <SectionHeader icon={<Radio className="w-3.5 h-3.5" />} label="Active Streams" hint="Preview · launching v2.1" />
         <StreamTeaseStrip onClick={() => setShowStreamModal(true)} />
       </div>
 
-      {/* Main 2-col grid: leaderboard | chat + predictions */}
+      {/* Main 2-col grid */}
       <div className="relative z-10 px-3 sm:px-6 mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-3 sm:gap-4 pb-24">
         <div className="space-y-4">
           <LeaderboardCard entries={entries} myAddress={playerAddress} />
@@ -167,17 +183,36 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
   );
 };
 
-/* ─── Atmospheric background ─── */
-const ArenaBackground = ({ heatColor }) => (
+/* ─── Atmospheric background ───
+   ✅ No filter:blur on layout divs — glow uses opacity only
+   ✅ No mix-blend-mode on scanline overlay                   */
+const ArenaBackground = React.memo(({ heatColor }) => (
   <>
-    <div aria-hidden className="absolute inset-0 pointer-events-none"
-         style={{ background: 'radial-gradient(ellipse at 50% 0%, #11203f 0%, #050917 55%, #02030a 100%)' }} />
-    <div aria-hidden className="absolute inset-0 pointer-events-none arena-grid opacity-25" />
-    <div aria-hidden className="absolute -top-32 left-1/2 -translate-x-1/2 w-[36rem] h-[36rem] rounded-full opacity-25 pointer-events-none"
-         style={{ background: `radial-gradient(circle, ${heatColor || 'rgba(250,204,21,0.5)'}, transparent 65%)`, filter: 'blur(60px)' }} />
-    <div aria-hidden className="absolute inset-0 arena-scanline opacity-20 pointer-events-none mix-blend-overlay" />
+    {/* Deep space base */}
+    <div
+      aria-hidden
+      className="absolute inset-0 pointer-events-none"
+      style={{ background: 'radial-gradient(ellipse at 50% 0%, #11203f 0%, #050917 55%, #02030a 100%)' }}
+    />
+    {/* Grid */}
+    <div aria-hidden className="absolute inset-0 pointer-events-none arena-grid" style={{ opacity: 0.25 }} />
+    {/* Top glow — radial gradient, reduced opacity, NO filter:blur */}
+    <div
+      aria-hidden
+      className="absolute rounded-full pointer-events-none"
+      style={{
+        top: -128, left: '50%',
+        width: '36rem', height: '36rem',
+        WebkitTransform: 'translateX(-50%)',
+        transform: 'translateX(-50%)',
+        background: `radial-gradient(circle, ${heatColor || 'rgba(250,204,21,0.4)'} 0%, transparent 65%)`,
+        opacity: 0.3,
+      }}
+    />
+    {/* Scanline — NO mix-blend-mode (renders black in WebView) */}
+    <div aria-hidden className="absolute inset-0 arena-scanline pointer-events-none" style={{ opacity: 0.15 }} />
   </>
-);
+));
 
 /* ─── Heat Event Banner ─── */
 const HeatEventBanner = ({ heat, startedAt, duration }) => {
@@ -189,68 +224,127 @@ const HeatEventBanner = ({ heat, startedAt, duration }) => {
   const remainingSec = endsAt ? Math.max(0, Math.floor((endsAt - now) / 1000)) : 0;
 
   return (
-    <div data-testid="heat-banner" className="relative z-10 mx-3 sm:mx-6 mb-3 rounded-2xl border-2 overflow-hidden"
-         style={{ borderColor: heat.color + 'aa', background: `linear-gradient(90deg, ${heat.color}25, transparent 60%)` }}>
-      <div className="absolute inset-0 opacity-30 pointer-events-none arena-pulse"
-           style={{ background: `radial-gradient(ellipse at left, ${heat.color}55, transparent 70%)` }} />
+    <div
+      data-testid="heat-banner"
+      className="relative z-10 mx-3 sm:mx-6 mb-3 rounded-2xl overflow-hidden"
+      style={{
+        border: `2px solid ${heat.color}aa`,
+        background: `linear-gradient(90deg, ${heat.color}25, transparent 60%)`,
+      }}
+    >
+      {/* Left glow — solid gradient, no filter:blur */}
+      <div
+        className="absolute inset-0 pointer-events-none arena-pulse"
+        style={{ background: `radial-gradient(ellipse at left, ${heat.color}40, transparent 70%)`, opacity: 0.35 }}
+      />
       <div className="relative flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3">
-        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
-             style={{ background: heat.color + '33', border: `1.5px solid ${heat.color}` }}>
+        <div
+          className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: heat.color + '33', border: `1.5px solid ${heat.color}` }}
+        >
           <Flame className="w-5 h-5" style={{ color: heat.color }} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] sm:text-[10px] tracking-[0.3em] font-mono font-bold uppercase" style={{ color: heat.color }}>
+            <span
+              className="text-[9px] sm:text-[10px] tracking-[0.3em] font-mono font-bold uppercase"
+              style={{ color: heat.color }}
+            >
               Heat Event
             </span>
-            <span className="text-[9px] sm:text-[10px] font-mono text-white/40">{heat.intensity?.toUpperCase()}</span>
+            <span className="text-[9px] sm:text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {heat.intensity?.toUpperCase()}
+            </span>
           </div>
           <div className="text-sm sm:text-base font-bold text-white truncate">{heat.name}</div>
-          <div className="text-[11px] sm:text-xs text-white/70 truncate">{heat.blurb}</div>
+          <div className="text-[11px] sm:text-xs truncate" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            {heat.blurb}
+          </div>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-[9px] tracking-[0.3em] font-mono text-white/40 uppercase">Ends in</div>
-          <div className="font-mono font-bold tabular-nums text-yellow-200">{formatHMS(remainingSec)}</div>
+          <div className="text-[9px] tracking-[0.3em] font-mono uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            Ends in
+          </div>
+          <div className="font-mono font-bold tabular-nums" style={{ color: '#fef9c3' }}>
+            {formatHMS(remainingSec)}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-/* ─── Arena Banner (countdown + prize pool + join) ─── */
+/* ─── Arena Banner ───
+   ✅ No backdrop-blur-md — solid dark bg
+   ✅ No filter:blur on decorative glow div                   */
 const ArenaBanner = ({ arena, isJoined, onJoin }) => {
-  const now = useNow(1000);
-  const endsAt = arena?.ends_at ? new Date(arena.ends_at).getTime() : null;
+  const now      = useNow(1000);
+  const endsAt   = arena?.ends_at ? new Date(arena.ends_at).getTime() : null;
   const remaining = endsAt ? Math.max(0, Math.floor((endsAt - now) / 1000)) : 0;
 
   return (
-    <section data-testid="arena-banner"
-             className="relative rounded-3xl border-2 border-yellow-400/40 overflow-hidden bg-gradient-to-br from-[#0d1430]/95 via-[#0a0f24]/95 to-[#06091a]/95 backdrop-blur-md shadow-[0_8px_0_rgba(0,0,0,0.35),0_20px_50px_-15px_rgba(250,204,21,0.4)]">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-300/80 to-transparent" />
-      <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-30 pointer-events-none"
-           style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.6), transparent 70%)', filter: 'blur(40px)' }} />
+    <section
+      data-testid="arena-banner"
+      className="relative rounded-3xl overflow-hidden"
+      style={{
+        border: '2px solid rgba(250,204,21,0.4)',
+        background: 'linear-gradient(135deg, rgba(13,20,48,0.98) 0%, rgba(10,15,36,0.98) 50%, rgba(6,9,26,0.98) 100%)',
+        boxShadow: '0 8px 0 rgba(0,0,0,0.35), 0 20px 50px -15px rgba(250,204,21,0.4)',
+      }}
+    >
+      {/* Top shimmer line */}
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{ background: 'linear-gradient(to right, transparent, rgba(253,224,71,0.8), transparent)' }}
+      />
+      {/* Corner glow — radial gradient, NO filter:blur */}
+      <div
+        className="absolute pointer-events-none rounded-full"
+        style={{
+          top: -80, right: -80,
+          width: 256, height: 256,
+          background: 'radial-gradient(circle, rgba(250,204,21,0.45) 0%, transparent 70%)',
+          opacity: 0.35,
+        }}
+      />
       <div className="relative grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-            <span className="text-[10px] sm:text-xs tracking-[0.3em] font-mono font-bold text-yellow-300 uppercase">
+            <span
+              className="text-[10px] sm:text-xs tracking-[0.3em] font-mono font-bold uppercase"
+              style={{ color: '#fde047' }}
+            >
               24h Arena · {arena?.entries_count || 0} competitors
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1 leading-tight"
-              style={{ fontFamily: "'Bowlby One', 'Fredoka', system-ui, sans-serif", fontWeight: 400 }}>
+          <h2
+            className="text-2xl sm:text-3xl font-bold text-white mb-1 leading-tight"
+            style={{ fontFamily: "'Bowlby One', 'Fredoka', system-ui, sans-serif", fontWeight: 400 }}
+          >
             Prize Pool
           </h2>
           <div className="flex items-baseline gap-2 mb-2">
-            <span className="text-4xl sm:text-5xl font-bold tabular-nums text-yellow-400"
-                  style={{ fontFamily: "'JetBrains Mono', monospace", textShadow: '0 0 20px rgba(250,204,21,0.5)' }}>
+            <span
+              className="text-4xl sm:text-5xl font-bold tabular-nums"
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                color: '#facc15',
+                textShadow: '0 0 20px rgba(250,204,21,0.5)',
+              }}
+            >
               {(arena?.prize_pool || 0).toLocaleString()}
             </span>
-            <span className="text-sm sm:text-base font-mono font-bold text-white/60">PTS</span>
+            <span className="text-sm sm:text-base font-mono font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              PTS
+            </span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] sm:text-xs text-white/60">
+          <div className="flex items-center gap-2 text-[11px] sm:text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
             <Clock className="w-3.5 h-3.5" />
-            <span>Resets in <span className="text-white font-mono font-bold">{formatHMS(remaining)}</span></span>
+            <span>
+              Resets in{' '}
+              <span className="text-white font-mono font-bold">{formatHMS(remaining)}</span>
+            </span>
           </div>
         </div>
 
@@ -259,7 +353,7 @@ const ArenaBanner = ({ arena, isJoined, onJoin }) => {
             data-testid="arena-join-btn"
             onClick={onJoin}
             disabled={isJoined}
-            className={`arena-join-btn relative px-5 sm:px-7 py-3 sm:py-3.5 rounded-2xl font-bold text-sm sm:text-base transition-all whitespace-nowrap ${isJoined ? 'opacity-60 cursor-not-allowed' : ''}`}
+            className={`arena-join-btn relative px-5 sm:px-7 py-3 sm:py-3.5 rounded-2xl font-bold text-sm sm:text-base whitespace-nowrap ${isJoined ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
             <span className="relative z-10 flex items-center justify-center gap-2">
               <Trophy className="w-4 h-4" />
@@ -267,7 +361,12 @@ const ArenaBanner = ({ arena, isJoined, onJoin }) => {
             </span>
           </button>
           {!isJoined && (
-            <div className="text-[10px] text-white/50 text-center sm:text-right font-mono">Entry fee adds to pool</div>
+            <div
+              className="text-[10px] text-center sm:text-right font-mono"
+              style={{ color: 'rgba(255,255,255,0.5)' }}
+            >
+              Entry fee adds to pool
+            </div>
           )}
         </div>
       </div>
@@ -275,44 +374,61 @@ const ArenaBanner = ({ arena, isJoined, onJoin }) => {
   );
 };
 
-/* ─── Leaderboard ─── */
-const LeaderboardCard = ({ entries, myAddress }) => {
-  return (
-    <section data-testid="arena-leaderboard"
-             className="rounded-2xl border border-white/10 bg-[#0a0f24]/80 backdrop-blur overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-yellow-400" />
-          <span className="text-xs sm:text-sm font-bold tracking-wider uppercase text-white">Live Leaderboard</span>
-        </div>
-        <span className="text-[10px] font-mono text-white/40">{entries.length} live</span>
+/* ─── Leaderboard ───
+   ✅ No backdrop-blur — solid dark bg                        */
+const LeaderboardCard = ({ entries, myAddress }) => (
+  <section
+    data-testid="arena-leaderboard"
+    className="rounded-2xl overflow-hidden"
+    style={{ border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(10,15,36,0.92)' }}
+  >
+    <div
+      className="flex items-center justify-between px-4 py-3"
+      style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+    >
+      <div className="flex items-center gap-2">
+        <Trophy className="w-4 h-4 text-yellow-400" />
+        <span className="text-xs sm:text-sm font-bold tracking-wider uppercase text-white">Live Leaderboard</span>
       </div>
-      {entries.length === 0 ? (
-        <div className="py-10 text-center text-white/40 text-sm">
-          <Users className="w-6 h-6 mx-auto mb-2 opacity-50" />
-          No competitors yet. Be the first to enter.
-        </div>
-      ) : (
-        <ul className="divide-y divide-white/5">
-          {entries.map((e) => (
-            <LeaderboardRow key={e.id} entry={e} isMe={e.player_address === myAddress} />
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-};
+      <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        {entries.length} live
+      </span>
+    </div>
+    {entries.length === 0 ? (
+      <div className="py-10 text-center text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <Users className="w-6 h-6 mx-auto mb-2" style={{ opacity: 0.5 }} />
+        No competitors yet. Be the first to enter.
+      </div>
+    ) : (
+      <ul style={{ borderTop: 'none' }}>
+        {entries.map((e) => (
+          <LeaderboardRow key={e.id} entry={e} isMe={e.player_address === myAddress} />
+        ))}
+      </ul>
+    )}
+  </section>
+);
 
 const LeaderboardRow = ({ entry, isMe }) => {
   const badge = RANK_BADGE[entry.rank];
   return (
     <li
       data-testid={`arena-row-${entry.rank}`}
-      className={`flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 transition-colors ${isMe ? 'bg-yellow-400/[0.06]' : 'hover:bg-white/[0.03]'}`}
+      className="flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 transition-colors"
+      style={{
+        backgroundColor: isMe ? 'rgba(250,204,21,0.06)' : 'transparent',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+      }}
     >
-      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm
-        ${badge ? `bg-gradient-to-br ${badge.bg}` : 'bg-white/5 border border-white/10 text-white/80'}`}
-        style={badge ? { color: badge.text } : undefined}>
+      <div
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm
+          ${badge ? `bg-gradient-to-br ${badge.bg}` : ''}`}
+        style={
+          badge
+            ? { color: badge.text }
+            : { backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }
+        }
+      >
         {entry.rank}
       </div>
       <div className="min-w-0 flex-1">
@@ -320,56 +436,104 @@ const LeaderboardRow = ({ entry, isMe }) => {
           <span className="text-sm sm:text-[15px] font-bold text-white truncate">
             {entry.nickname || entry.player_address?.slice(0, 8)}
           </span>
-          {isMe && <span className="text-[9px] tracking-[0.2em] font-bold text-yellow-300 bg-yellow-400/15 border border-yellow-400/30 rounded px-1.5 py-0.5">YOU</span>}
+          {isMe && (
+            <span
+              className="text-[9px] tracking-[0.2em] font-bold rounded px-1.5 py-0.5"
+              style={{ color: '#fde047', backgroundColor: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}
+            >
+              YOU
+            </span>
+          )}
           {entry.is_streaming && (
-            <span className="flex items-center gap-1 text-[9px] tracking-[0.2em] font-bold text-red-300 bg-red-500/15 border border-red-500/30 rounded px-1.5 py-0.5 uppercase">
+            <span
+              className="flex items-center gap-1 text-[9px] tracking-[0.2em] font-bold rounded px-1.5 py-0.5 uppercase"
+              style={{ color: '#fca5a5', backgroundColor: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}
+            >
               <span className="w-1 h-1 rounded-full bg-red-400 animate-pulse" /> Live
             </span>
           )}
         </div>
         {entry.win_streak > 0 && (
-          <div className="text-[10px] text-orange-300/80 font-mono mt-0.5 flex items-center gap-1">
+          <div className="text-[10px] font-mono mt-0.5 flex items-center gap-1" style={{ color: 'rgba(253,186,116,0.8)' }}>
             <Flame className="w-3 h-3" /> {entry.win_streak} streak
           </div>
         )}
       </div>
       <div className="text-right shrink-0">
-        <div className="font-mono font-bold tabular-nums text-yellow-200 text-base sm:text-lg leading-none">
+        <div
+          className="font-mono font-bold tabular-nums text-base sm:text-lg leading-none"
+          style={{ color: '#fef9c3' }}
+        >
           {(entry.points || 0).toLocaleString()}
         </div>
-        <div className="text-[9px] tracking-[0.25em] font-mono text-white/40 uppercase mt-0.5">pts</div>
+        <div
+          className="text-[9px] tracking-[0.25em] font-mono uppercase mt-0.5"
+          style={{ color: 'rgba(255,255,255,0.4)' }}
+        >
+          pts
+        </div>
       </div>
     </li>
   );
 };
 
-/* ─── Prediction Panel ─── */
+/* ─── Prediction Panel ───
+   ✅ No backdrop-blur — solid dark bg                        */
 const PredictionPanel = ({ entries, myAddress, myPrediction, onPredict }) => {
   const candidates = entries.filter((e) => e.player_address !== myAddress).slice(0, 6);
   return (
-    <section data-testid="arena-predictions" className="rounded-2xl border border-white/10 bg-[#0a0f24]/80 backdrop-blur overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+    <section
+      data-testid="arena-predictions"
+      className="rounded-2xl overflow-hidden"
+      style={{ border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(10,15,36,0.92)' }}
+    >
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+      >
         <div className="flex items-center gap-2">
-          <Target className="w-4 h-4 text-amber-300" />
+          <Target className="w-4 h-4" style={{ color: '#fcd34d' }} />
           <span className="text-xs font-bold tracking-wider uppercase text-white">Predict Winner</span>
         </div>
-        <span className="text-[10px] font-mono text-amber-300/70">20 pts · 3x</span>
+        <span className="text-[10px] font-mono" style={{ color: 'rgba(253,211,77,0.7)' }}>
+          20 pts · 3x
+        </span>
       </div>
+
       {myPrediction ? (
         <div className="p-3.5">
-          <div className="text-[10px] tracking-[0.3em] font-mono text-white/40 uppercase mb-1">Your pick</div>
+          <div
+            className="text-[10px] tracking-[0.3em] font-mono uppercase mb-1"
+            style={{ color: 'rgba(255,255,255,0.4)' }}
+          >
+            Your pick
+          </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-white truncate">
-              {entries.find((e) => e.player_address === myPrediction.target_address)?.nickname || myPrediction.target_address?.slice(0, 10)}
+              {entries.find((e) => e.player_address === myPrediction.target_address)?.nickname
+                || myPrediction.target_address?.slice(0, 10)}
             </span>
-            <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${myPrediction.status === 'pending' ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' : myPrediction.status === 'won' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>
+            <span
+              className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full"
+              style={
+                myPrediction.status === 'pending'
+                  ? { color: '#fcd34d', backgroundColor: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }
+                  : myPrediction.status === 'won'
+                  ? { color: '#6ee7b7', backgroundColor: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.3)' }
+                  : { color: '#fca5a5', backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.3)' }
+              }
+            >
               {myPrediction.status}
             </span>
           </div>
-          <div className="text-[10px] text-white/50 mt-2">Settles at arena reset</div>
+          <div className="text-[10px] mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Settles at arena reset
+          </div>
         </div>
       ) : candidates.length === 0 ? (
-        <div className="py-6 px-4 text-center text-white/40 text-xs">Wait for more competitors to start predicting.</div>
+        <div className="py-6 px-4 text-center text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          Wait for more competitors to start predicting.
+        </div>
       ) : (
         <ul className="p-2 space-y-1.5 max-h-56 overflow-auto">
           {candidates.map((c) => (
@@ -377,12 +541,30 @@ const PredictionPanel = ({ entries, myAddress, myPrediction, onPredict }) => {
               <button
                 data-testid={`predict-btn-${c.rank}`}
                 onClick={() => onPredict(c.player_address)}
-                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/[0.03] hover:bg-amber-400/10 border border-white/10 hover:border-amber-400/40 transition-all text-left group"
+                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl transition-all text-left group"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(250,204,21,0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(250,204,21,0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                }}
               >
-                <span className="w-6 text-center text-[10px] font-mono text-white/40">#{c.rank}</span>
-                <span className="flex-1 text-sm font-bold text-white truncate">{c.nickname || c.player_address?.slice(0, 8)}</span>
-                <span className="font-mono text-xs tabular-nums text-yellow-200">{(c.points || 0).toLocaleString()}</span>
-                <Sparkles className="w-3.5 h-3.5 text-amber-300/0 group-hover:text-amber-300 transition-colors" />
+                <span className="w-6 text-center text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  #{c.rank}
+                </span>
+                <span className="flex-1 text-sm font-bold text-white truncate">
+                  {c.nickname || c.player_address?.slice(0, 8)}
+                </span>
+                <span className="font-mono text-xs tabular-nums" style={{ color: '#fef9c3' }}>
+                  {(c.points || 0).toLocaleString()}
+                </span>
+                <Sparkles className="w-3.5 h-3.5" style={{ color: 'rgba(253,211,77,0.7)' }} />
               </button>
             </li>
           ))}
@@ -392,14 +574,15 @@ const PredictionPanel = ({ entries, myAddress, myPrediction, onPredict }) => {
   );
 };
 
-/* ─── Arena Chat ─── */
+/* ─── Arena Chat ───
+   ✅ No backdrop-blur — solid dark bg                        */
 const ArenaChat = ({ playerAddress, playerNickname }) => {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState(null);
+  const [err,  setErr]  = useState(null);
   const { data } = usePoll(`${API_URL}/api/arena/chat?limit=40`, 3500);
   const messages = data?.messages || [];
-  const listRef = useRef(null);
+  const listRef  = useRef(null);
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -416,31 +599,51 @@ const ArenaChat = ({ playerAddress, playerNickname }) => {
         body: JSON.stringify({ address: playerAddress, nickname: playerNickname, text: trimmed }),
       });
       const j = await res.json();
-      if (!res.ok) { setErr(j.detail || 'Failed'); }
+      if (!res.ok) setErr(j.detail || 'Failed');
       else setText('');
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };
 
   return (
-    <section data-testid="arena-chat" className="rounded-2xl border border-white/10 bg-[#0a0f24]/80 backdrop-blur overflow-hidden flex flex-col h-[24rem]">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0">
+    <section
+      data-testid="arena-chat"
+      className="rounded-2xl overflow-hidden flex flex-col"
+      style={{
+        border: '1px solid rgba(255,255,255,0.1)',
+        backgroundColor: 'rgba(10,15,36,0.92)',
+        height: '24rem',
+      }}
+    >
+      <div
+        className="flex items-center justify-between px-4 py-3 shrink-0"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+      >
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-sky-300" />
+          <TrendingUp className="w-4 h-4" style={{ color: '#7dd3fc' }} />
           <span className="text-xs font-bold tracking-wider uppercase text-white">Arena Chat</span>
         </div>
-        <span className="text-[10px] font-mono text-white/40">{messages.length} msgs</span>
+        <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          {messages.length} msgs
+        </span>
       </div>
+
       <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5 hide-scrollbar">
         {messages.length === 0 ? (
-          <div className="text-center text-white/30 text-xs py-8">No messages yet. Say hi!</div>
-        ) : messages.map((m) => (
-          <ChatRow key={m.id} msg={m} isMe={m.player_address === playerAddress} />
-        ))}
+          <div className="text-center text-xs py-8" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            No messages yet. Say hi!
+          </div>
+        ) : (
+          messages.map((m) => (
+            <ChatRow key={m.id} msg={m} isMe={m.player_address === playerAddress} />
+          ))
+        )}
       </div>
+
       <form
         onSubmit={(e) => { e.preventDefault(); send(); }}
-        className="flex items-center gap-1.5 px-2 py-2 border-t border-white/5 shrink-0"
+        className="flex items-center gap-1.5 px-2 py-2 shrink-0"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
       >
         <input
           data-testid="arena-chat-input"
@@ -448,44 +651,77 @@ const ArenaChat = ({ playerAddress, playerNickname }) => {
           onChange={(e) => setText(e.target.value)}
           placeholder="Drop a message"
           maxLength={220}
-          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-yellow-400/50"
+          className="flex-1 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(250,204,21,0.5)'; }}
+          onBlur={(e)  => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
         />
         <button
           data-testid="arena-chat-send"
           type="submit"
           disabled={busy || !text.trim()}
-          className="px-3 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-[#0b1738] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+          className="px-3 py-2 rounded-xl font-bold shrink-0 transition-colors"
+          style={{ backgroundColor: '#facc15', color: '#0b1738' }}
+          onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = '#fde047'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#facc15'; }}
         >
           <Send className="w-4 h-4" />
         </button>
       </form>
-      {err && <div className="px-3 pb-2 text-[10px] text-red-300 font-mono shrink-0">{err}</div>}
+
+      {err && (
+        <div className="px-3 pb-2 text-[10px] font-mono shrink-0" style={{ color: '#fca5a5' }}>
+          {err}
+        </div>
+      )}
     </section>
   );
 };
 
 const ChatRow = ({ msg, isMe }) => (
   <div className={`flex items-start gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-    <div className={`max-w-[80%] rounded-xl px-2.5 py-1.5 ${isMe ? 'bg-yellow-400/15 border border-yellow-400/30' : 'bg-white/[0.04] border border-white/5'}`}>
+    <div
+      className="max-w-[80%] rounded-xl px-2.5 py-1.5"
+      style={
+        isMe
+          ? { backgroundColor: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }
+          : { backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }
+      }
+    >
       <div className="flex items-center gap-1.5 text-[10px] font-mono">
-        <span className={`font-bold truncate ${isMe ? 'text-yellow-200' : 'text-sky-300'}`}>
+        <span className={`font-bold truncate ${isMe ? '' : ''}`}
+              style={{ color: isMe ? '#fef9c3' : '#7dd3fc' }}>
           {msg.nickname || msg.player_address?.slice(0, 8)}
         </span>
-        <span className={`text-[8px] tracking-wider uppercase px-1 py-px rounded ${msg.badge === 'competitor' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-white/40'}`}>
+        <span
+          className="text-[8px] tracking-wider uppercase px-1 py-px rounded"
+          style={
+            msg.badge === 'competitor'
+              ? { backgroundColor: 'rgba(16,185,129,0.15)', color: '#6ee7b7' }
+              : { backgroundColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }
+          }
+        >
           {msg.badge}
         </span>
       </div>
-      <div className="text-[13px] text-white/90 leading-snug break-words">{msg.text}</div>
+      <div className="text-[13px] leading-snug break-words" style={{ color: 'rgba(255,255,255,0.9)' }}>
+        {msg.text}
+      </div>
     </div>
   </div>
 );
 
-/* ─── Stream Tease Strip + Modal (placeholder until Phase 2) ─── */
+/* ─── Stream Tease Strip ───
+   ✅ No backdrop-blur
+   ✅ Glow overlay uses solid rgba, no filter:blur              */
 const STREAM_TEASES = [
-  { name: 'RexLab',     rank: 1, viewers: 184, mic: true,  rarity: 'Mythic' },
-  { name: 'MaxScience', rank: 4, viewers: 92,  mic: true,  rarity: 'Legendary' },
-  { name: 'LunaShiba',  rank: 7, viewers: 41,  mic: false, rarity: 'Epic' },
-  { name: 'NeonPup',    rank: 12, viewers: 18, mic: true,  rarity: 'Rare' },
+  { name: 'RexLab',     rank: 1,  viewers: 184, mic: true,  rarity: 'Mythic' },
+  { name: 'MaxScience', rank: 4,  viewers: 92,  mic: true,  rarity: 'Legendary' },
+  { name: 'LunaShiba',  rank: 7,  viewers: 41,  mic: false, rarity: 'Epic' },
+  { name: 'NeonPup',    rank: 12, viewers: 18,  mic: true,  rarity: 'Rare' },
 ];
 
 const StreamTeaseStrip = ({ onClick }) => (
@@ -495,50 +731,112 @@ const StreamTeaseStrip = ({ onClick }) => (
         key={i}
         data-testid={`stream-tease-${i}`}
         onClick={onClick}
-        className="shrink-0 w-44 sm:w-56 group rounded-2xl border border-white/10 hover:border-yellow-400/40 bg-gradient-to-b from-white/[0.04] to-white/[0.01] overflow-hidden transition-all hover:-translate-y-0.5 text-left"
+        className="shrink-0 w-44 sm:w-56 rounded-2xl overflow-hidden transition-all text-left"
+        style={{ border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)' }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'rgba(250,204,21,0.4)';
+          e.currentTarget.style.WebkitTransform = 'translateY(-2px)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+          e.currentTarget.style.WebkitTransform = 'translateY(0)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}
       >
-        <div className="relative aspect-video bg-gradient-to-br from-sky-900/60 to-[#0a0820] overflow-hidden">
-          <div className="absolute inset-0 arena-pulse opacity-50"
-               style={{ background: 'radial-gradient(ellipse at 30% 40%, rgba(56,189,248,0.45), transparent 65%)' }} />
-          <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/85 text-white text-[9px] font-bold tracking-wider uppercase">
+        <div
+          className="relative overflow-hidden"
+          style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, rgba(12,40,70,0.8) 0%, rgba(10,8,32,1) 100%)' }}
+        >
+          {/* Glow — solid radial, no filter:blur */}
+          <div
+            className="absolute inset-0 arena-pulse"
+            style={{ background: 'radial-gradient(ellipse at 30% 40%, rgba(56,189,248,0.3) 0%, transparent 65%)', opacity: 0.5 }}
+          />
+          {/* LIVE badge */}
+          <div
+            className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded text-white text-[9px] font-bold tracking-wider uppercase"
+            style={{ backgroundColor: 'rgba(239,68,68,0.85)' }}
+          >
             <span className="w-1 h-1 rounded-full bg-white animate-pulse" /> Live
           </div>
-          <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-mono">
+          {/* Viewer count */}
+          <div
+            className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded text-white text-[10px] font-mono"
+            style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          >
             <Eye className="w-3 h-3" /> {s.viewers}
           </div>
+          {/* Mic indicator */}
           {s.mic && (
-            <div className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-emerald-500/80 flex items-center justify-center">
+            <div
+              className="absolute bottom-2 left-2 w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(16,185,129,0.8)' }}
+            >
               <Mic className="w-3 h-3 text-white" />
             </div>
           )}
-          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-amber-400/90 text-[#0b1738] text-[9px] font-bold tracking-wider uppercase">
+          {/* Rank badge */}
+          <div
+            className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase"
+            style={{ backgroundColor: 'rgba(250,204,21,0.9)', color: '#0b1738' }}
+          >
             #{s.rank}
           </div>
         </div>
         <div className="px-2.5 py-2">
           <div className="text-xs font-bold text-white truncate">{s.name}</div>
-          <div className="text-[10px] font-mono text-amber-300/80">Mixing {s.rarity}</div>
+          <div className="text-[10px] font-mono" style={{ color: 'rgba(253,211,77,0.8)' }}>
+            Mixing {s.rarity}
+          </div>
         </div>
       </button>
     ))}
   </div>
 );
 
+/* ─── Stream Coming Soon Modal ───
+   ✅ No backdrop-blur-sm — solid dark overlay                 */
 const StreamComingSoonModal = ({ onClose }) => (
-  <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-    <div className="w-full max-w-sm rounded-2xl border border-yellow-400/40 bg-[#0a0f24] p-5 sm:p-6 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
-      <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center mb-3">
-        <Radio className="w-7 h-7 text-[#0b1738]" />
+  <div
+    className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+    onClick={onClose}
+  >
+    <div
+      className="w-full max-w-sm rounded-2xl p-5 sm:p-6 text-center shadow-2xl"
+      style={{ border: '1px solid rgba(250,204,21,0.4)', backgroundColor: '#0a0f24' }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div
+        className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-3"
+        style={{ background: 'linear-gradient(135deg, #facc15 0%, #f59e0b 100%)' }}
+      >
+        <Radio className="w-7 h-7" style={{ color: '#0b1738' }} />
       </div>
-      <div className="text-[10px] tracking-[0.3em] font-mono font-bold text-yellow-300 uppercase mb-1">Coming v2.1</div>
-      <h3 className="text-xl font-bold text-white mb-2" style={{ fontFamily: "'Bowlby One', system-ui, sans-serif", fontWeight: 400 }}>Live Streaming</h3>
-      <p className="text-sm text-white/70 leading-relaxed">
-        Go Live with screen broadcast + mic voice chat. Real-time spectator rooms. Coming with LiveKit infrastructure in the next drop.
+      <div
+        className="text-[10px] tracking-[0.3em] font-mono font-bold uppercase mb-1"
+        style={{ color: '#fde047' }}
+      >
+        Coming v2.1
+      </div>
+      <h3
+        className="text-xl font-bold text-white mb-2"
+        style={{ fontFamily: "'Bowlby One', system-ui, sans-serif", fontWeight: 400 }}
+      >
+        Live Streaming
+      </h3>
+      <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+        Go Live with screen broadcast + mic voice chat. Real-time spectator rooms.
+        Coming with LiveKit infrastructure in the next drop.
       </p>
       <button
         data-testid="stream-modal-close"
         onClick={onClose}
-        className="mt-5 w-full py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-[#0b1738] font-bold transition-colors"
+        className="mt-5 w-full py-2.5 rounded-xl font-bold transition-colors"
+        style={{ backgroundColor: '#facc15', color: '#0b1738' }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fde047'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#facc15'; }}
       >
         Got it
       </button>
@@ -550,21 +848,36 @@ const StreamComingSoonModal = ({ onClose }) => (
 const SectionHeader = ({ icon, label, hint }) => (
   <div className="flex items-center justify-between mb-2 px-1">
     <div className="flex items-center gap-2">
-      <span className="text-yellow-400/80">{icon}</span>
+      <span style={{ color: 'rgba(250,204,21,0.8)' }}>{icon}</span>
       <span className="text-xs sm:text-sm font-bold tracking-[0.2em] uppercase text-white">{label}</span>
     </div>
-    {hint && <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider">{hint}</span>}
+    {hint && (
+      <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        {hint}
+      </span>
+    )}
   </div>
 );
 
 const LiveDot = () => (
-  <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-500/15 border border-red-500/40">
+  <div
+    className="flex items-center gap-1.5 px-2 py-1 rounded-full"
+    style={{ backgroundColor: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)' }}
+  >
     <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-    <span className="text-[9px] sm:text-[10px] tracking-[0.25em] font-mono font-bold text-red-300 uppercase">Live</span>
+    <span
+      className="text-[9px] sm:text-[10px] tracking-[0.25em] font-mono font-bold uppercase"
+      style={{ color: '#fca5a5' }}
+    >
+      Live
+    </span>
   </div>
 );
 
-/* ─── Inline styles ─── */
+/* ─── Inline styles ───
+   ✅ All animations use -webkit- prefixes
+   ✅ No mix-blend-mode on scanline
+   ✅ arena-join-btn uses -webkit-transform                    */
 const ArenaStyles = () => (
   <style>{`
     .arena-grid {
@@ -572,30 +885,57 @@ const ArenaStyles = () => (
         linear-gradient(rgba(250,204,21,0.06) 1px, transparent 1px),
         linear-gradient(90deg, rgba(250,204,21,0.06) 1px, transparent 1px);
       background-size: 48px 48px;
-      mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
       -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
     }
+    /* Scanline: NO mix-blend-mode (renders inverted/black in WebView) */
     .arena-scanline {
-      background: repeating-linear-gradient(to bottom, rgba(255,255,255,0) 0, rgba(255,255,255,0) 3px, rgba(255,255,255,0.03) 4px);
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0) 0,
+        rgba(255,255,255,0) 3px,
+        rgba(255,255,255,0.025) 4px
+      );
     }
     @keyframes arena-pulse {
       0%,100% { opacity: 0.4; }
       50%     { opacity: 0.7; }
     }
-    .arena-pulse { animation: arena-pulse 3.5s ease-in-out infinite; }
+    .arena-pulse {
+      -webkit-animation: arena-pulse 3.5s ease-in-out infinite;
+      animation: arena-pulse 3.5s ease-in-out infinite;
+    }
 
+    /* Join button — -webkit-transform for old WebView */
     .arena-join-btn {
+      background: -webkit-linear-gradient(top, #fde047 0%, #facc15 60%, #ca8a04 100%);
       background: linear-gradient(180deg, #fde047 0%, #facc15 60%, #ca8a04 100%);
       color: #0b1738;
       border: 3px solid #0b1738;
+      -webkit-box-shadow: 0 5px 0 #422006, 0 10px 20px -5px rgba(250,204,21,0.5);
       box-shadow: 0 5px 0 #422006, 0 10px 20px -5px rgba(250,204,21,0.5);
+      -webkit-transition: -webkit-transform 0.18s ease, box-shadow 0.18s ease;
       transition: transform 0.18s ease, box-shadow 0.18s ease;
     }
-    .arena-join-btn:not(:disabled):hover { transform: translateY(2px); box-shadow: 0 3px 0 #422006, 0 6px 14px -4px rgba(250,204,21,0.6); }
-    .arena-join-btn:not(:disabled):active { transform: translateY(5px); box-shadow: 0 0 0 #422006, 0 4px 8px -3px rgba(250,204,21,0.4); }
+    .arena-join-btn:not(:disabled):hover {
+      -webkit-transform: translateY(2px);
+      transform: translateY(2px);
+      -webkit-box-shadow: 0 3px 0 #422006, 0 6px 14px -4px rgba(250,204,21,0.6);
+      box-shadow: 0 3px 0 #422006, 0 6px 14px -4px rgba(250,204,21,0.6);
+    }
+    .arena-join-btn:not(:disabled):active {
+      -webkit-transform: translateY(5px);
+      transform: translateY(5px);
+      -webkit-box-shadow: 0 0 0 #422006, 0 4px 8px -3px rgba(250,204,21,0.4);
+      box-shadow: 0 0 0 #422006, 0 4px 8px -3px rgba(250,204,21,0.4);
+    }
 
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .arena-pulse { -webkit-animation: none !important; animation: none !important; }
+    }
   `}</style>
 );
 
