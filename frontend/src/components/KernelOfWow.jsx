@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Zap, Crown, AlertCircle, Gem } from 'lucide-react';
+import { Clock, Zap, Crown, AlertCircle } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 
-const KernelIcon = ({ className = "w-6 h-6" }) => (
-  <div className={`${className} bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center`}>
-    <Gem className="w-4 h-4 text-white" />
-  </div>
+const KERNEL_IMG = 'https://i.ibb.co/M5xsjsqX/728124a5b35866b4cc673e69b5613498ee4a793b3e9abfc975c39bc8cf358503.png';
+
+/* ─── KernelIcon ─────────────────────────────────────────────
+   Replaces the old <Gem> lucide icon with the custom kernel image.
+   Accepts the same `className` prop so all call sites stay unchanged.
+   ──────────────────────────────────────────────────────────── */
+const KernelIcon = ({ className = 'w-6 h-6' }) => (
+  <img
+    src={KERNEL_IMG}
+    alt="Kernel of Wow"
+    className={`${className} object-contain`}
+    style={{ imageRendering: 'crisp-edges' }}
+  />
 );
 
 const formatTimeRemaining = (seconds) => {
@@ -20,7 +29,8 @@ const formatTimeRemaining = (seconds) => {
 export const KernelOfWowBanner = ({ currentHolder, onClose }) => {
   if (!currentHolder || !currentHolder.has_holder) return null;
   const holder = currentHolder.holder;
-  const displayName = holder?.player_nickname ||
+  const displayName =
+    holder?.player_nickname ||
     `${holder?.player_address?.slice(0, 6)}...${holder?.player_address?.slice(-4)}`;
 
   return (
@@ -70,7 +80,7 @@ export const KernelOfWowStatus = ({ playerAddress, onStatusChange }) => {
   useEffect(() => {
     if (timeRemaining <= 0) return;
     const timer = setInterval(() => {
-      setTimeRemaining(prev => Math.max(0, prev - 1));
+      setTimeRemaining((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(timer);
   }, [timeRemaining]);
@@ -85,9 +95,7 @@ export const KernelOfWowStatus = ({ playerAddress, onStatusChange }) => {
       {/* Header bar */}
       <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 px-5 py-3 border-b border-amber-500/20 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
-            <Gem className="w-5 h-5 text-white" />
-          </div>
+          <KernelIcon className="w-10 h-10" />
           <div>
             <h3 className="text-white font-bold text-sm">Kernel of Wow Active</h3>
             <p className="text-amber-300/80 text-xs">Bonus points on all treats</p>
@@ -113,7 +121,9 @@ export const KernelOfWowStatus = ({ playerAddress, onStatusChange }) => {
         {/* Usage stat */}
         <div className="flex items-center gap-2 mb-4">
           <Zap className="w-3.5 h-3.5 text-sky-400" />
-          <span className="text-sky-300 text-xs font-medium">{status.used_count || 0} treats boosted</span>
+          <span className="text-sky-300 text-xs font-medium">
+            {status.used_count || 0} treats boosted
+          </span>
         </div>
 
         {/* Bonus tiers */}
@@ -154,9 +164,7 @@ export const KernelIngredientCard = ({ isSelected, onSelect, disabled }) => {
       `}
     >
       <div className="flex flex-col items-center gap-2">
-        <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
-          <Gem className="w-7 h-7 text-white" />
-        </div>
+        <KernelIcon className="w-12 h-12" />
         <div className="text-center">
           <div className="text-xs font-bold text-amber-400">Kernel of Wow</div>
           <div className="text-[10px] text-slate-500">Special</div>
@@ -171,9 +179,9 @@ export const KernelBonusResult = ({ bonusInfo }) => {
 
   const tierConfig = {
     legendary: { gradient: 'from-amber-500/20 to-yellow-500/20', border: 'border-amber-500/50', text: 'text-amber-400', Icon: Crown },
-    epic: { gradient: 'from-purple-500/20 to-pink-500/20', border: 'border-purple-500/50', text: 'text-purple-400', Icon: Gem },
-    rare: { gradient: 'from-blue-500/20 to-cyan-500/20', border: 'border-blue-500/50', text: 'text-blue-400', Icon: Zap },
-    common: { gradient: 'from-green-500/20 to-emerald-500/20', border: 'border-green-500/50', text: 'text-green-400', Icon: Zap }
+    epic:      { gradient: 'from-purple-500/20 to-pink-500/20',   border: 'border-purple-500/50', text: 'text-purple-400', Icon: Zap },
+    rare:      { gradient: 'from-blue-500/20 to-cyan-500/20',     border: 'border-blue-500/50',   text: 'text-blue-400',   Icon: Zap },
+    common:    { gradient: 'from-green-500/20 to-emerald-500/20', border: 'border-green-500/50',  text: 'text-green-400',  Icon: Zap },
   };
 
   const config = tierConfig[bonusInfo.tier] || tierConfig.common;
@@ -237,5 +245,5 @@ export default {
   KernelOfWowStatus,
   KernelIngredientCard,
   KernelBonusResult,
-  useKernelOfWow
+  useKernelOfWow,
 };
