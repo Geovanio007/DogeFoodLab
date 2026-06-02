@@ -16,26 +16,22 @@ root.render(
   </React.StrictMode>
 );
 
-// SW handling strategy:
-//   1. Unregister any pre-existing (potentially broken) SW.
-//   2. Then register the kill-switch SW at /service-worker.js.
+// SW strategy: unregister everything and never re-register.
 //
-// Registering — instead of just unregistering — gives the browser an explicit
-// opportunity to check for SW updates on every page load, which is what
-// actually replaces the old broken SW on affected users' devices.
-// The kill-switch SW activates immediately, claims clients, wipes caches,
-// then unregisters itself. After that no SW remains, page loads natively.
+// Previously this block called navigator.serviceWorker.register() on every
+// page load — which caused an infinite loop:
+//   register() → browser fetches /service-worker.js → kill-switch activates
+//   → unregisters itself → app re-registers on next load → repeat forever.
+//
+// The fix: only unregister. The permanent no-op /service-worker.js stays
+// deployed so browsers that cached the old SW URL don't get a 404 rejection,
+// but we never call register() again so no new SW is ever installed.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Best-effort cleanup of legacy registrations
-    navigator.serviceWorker.getRegistrations().then((regs) => {
-      regs.forEach((r) => { try { r.unregister(); } catch (e) { /* noop */ } });
-    }).catch(() => { /* noop */ });
-
-    // Then explicitly register the kill-switch so the browser refetches
-    // /service-worker.js and replaces any older broken version.
-    navigator.serviceWorker.register('/service-worker.js')
-      .then((r) => { try { r.update(); } catch (e) { /* noop */ } })
-      .catch(() => { /* noop — failures here are non-fatal */ });
+    navigator.serviceWorker.getRegistrations()
+      .then((regs) => {
+        regs.forEach((r) => { try { r.unregister(); } catch (e) { /* noop */ } });
+      })
+      .catch(() => { /* noop */ });
   });
 }
