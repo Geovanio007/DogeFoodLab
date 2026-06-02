@@ -3,7 +3,7 @@ import { Clock, Zap, Crown, AlertCircle } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 
-const KERNEL_IMG = 'https://i.ibb.co/M5xsjsqX/728124a5b35866b4cc673e69b5613498ee4a793b3e9abfc975c39bc8cf358503.png';
+const KERNEL_IMG = 'kernel-of-wow.png';
 
 /* ─── KernelIcon ─────────────────────────────────────────────
    Replaces the old <Gem> lucide icon with the custom kernel image.
