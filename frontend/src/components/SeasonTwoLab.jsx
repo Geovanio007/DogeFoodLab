@@ -7,6 +7,7 @@ import { useMusic } from '../contexts/MusicContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import HappyHourBanner from './HappyHourBanner';
 import SpinWheel from './SpinWheel';
+import DailyLimitTracker from './DailyLimitTracker';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -110,6 +111,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const [playerXPToNext, setPlayerXPToNext] = useState(100);
   const [playerPoints, setPlayerPoints] = useState(0);
   const [labBalance, setLabBalance] = useState(0);
+  const [dailyStatus, setDailyStatus] = useState(null);
   const [nickname, setNickname] = useState('Scientist');
 
   // --- character ---
@@ -324,6 +326,14 @@ const SeasonTwoLab = ({ playerAddress }) => {
     }
   };
 
+  // Handle daily status updates from DailyLimitTracker
+  const handleDailyStatusUpdate = useCallback((status) => {
+    setDailyStatus(status);
+  }, []);
+
+  // Check if daily limit is reached
+  const isDailyLimitReached = dailyStatus ? (dailyStatus.remaining_treats || 0) === 0 : false;
+
   // ============= RENDER =============
   // Character selection gate — same flow as legacy
   if (showCharacterSelection) {
@@ -390,6 +400,11 @@ const SeasonTwoLab = ({ playerAddress }) => {
         </main>
 
         <aside className="space-y-4">
+          {/* Extra Lives / Daily Limit Tracker — Season 1 feature restored for Season 2 */}
+          <DailyLimitTracker
+            playerAddress={playerAddress}
+            onStatusUpdate={handleDailyStatusUpdate}
+          />
           <ShibaAssistant tip={shibaTip} overload={overload} selectedCount={selectedIngredients.length} />
           <ComboDiscoveryHint ingredients={ingredients} selected={selectedIngredients} />
           <LiveMarketFeed items={marketFeed} />
@@ -401,8 +416,9 @@ const SeasonTwoLab = ({ playerAddress }) => {
         count={selectedIngredients.length}
         onClear={clearMix}
         onMix={handleMix}
-        canMix={selectedIngredients.length >= 2 && !isBrewing}
+        canMix={selectedIngredients.length >= 2 && !isBrewing && !isDailyLimitReached}
         isBrewing={isBrewing}
+        isDailyLimitReached={isDailyLimitReached}
       />
 
       {showBrewingAnim && <BrewingOverlay />}
@@ -785,7 +801,7 @@ const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading }) =
 
 /* ----- Bottom mix bar ----- */
 
-const BottomMixBar = ({ count, onClear, onMix, canMix, isBrewing }) => (
+const BottomMixBar = ({ count, onClear, onMix, canMix, isBrewing, isDailyLimitReached }) => (
   <div className="fixed inset-x-0 bottom-0 z-30 px-3 sm:px-4 pb-3 sm:pb-4 pt-2 pointer-events-none" data-testid="bottom-mix-bar">
     <div className="mx-auto max-w-3xl">
       <div className="pointer-events-auto rounded-3xl border border-cyan-400/30 bg-gradient-to-r from-[#0a0820]/95 via-[#0d0a2a]/95 to-[#0a0820]/95 backdrop-blur-lg shadow-[0_30px_80px_-10px_rgba(56,189,248,0.4)] p-2 sm:p-3 flex items-center gap-2">
@@ -814,7 +830,9 @@ const BottomMixBar = ({ count, onClear, onMix, canMix, isBrewing }) => (
               : 'text-white/50 bg-white/5 border border-white/10 cursor-not-allowed'
           )}
         >
-          <span className="relative z-10">{isBrewing ? 'Mixing…' : 'Mix Now'}</span>
+          <span className="relative z-10">
+            {isBrewing ? 'Mixing…' : isDailyLimitReached ? '♥ Need Extra Life?' : 'Mix Now'}
+          </span>
           {canMix && <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent translate-x-[-150%] animate-mix-shimmer" />}
         </button>
       </div>
