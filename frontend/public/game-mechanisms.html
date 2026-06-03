@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DogeFood Lab - Complete Game Guide</title>
+    <title>DogeFood Lab — Season 2 Game Guide</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -11,665 +11,638 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             line-height: 1.6;
             color: #e2e8f0;
-            background: #0f172a;
+            background: #04030f;
             min-height: 100vh;
         }
 
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 24px;
-        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
 
+        /* ── Header ── */
         .header {
             text-align: center;
             margin-bottom: 40px;
-            padding: 48px 24px;
-            background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
+            padding: 52px 24px 44px;
+            background: linear-gradient(135deg, #0c1a3f 0%, #0d1e4a 40%, #0a1530 100%);
             border-radius: 20px;
             color: white;
             position: relative;
             overflow: hidden;
+            border: 1px solid rgba(56,189,248,0.2);
         }
-
         .header::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.12) 0%, transparent 50%);
+            background: radial-gradient(ellipse at 50% 0%, rgba(250,204,21,0.18) 0%, transparent 60%);
         }
-
+        .header::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(56,189,248,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56,189,248,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .header-inner { position: relative; z-index: 1; }
+        .header .season-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(250,204,21,0.15);
+            border: 1px solid rgba(250,204,21,0.5);
+            border-radius: 50px;
+            padding: 6px 18px;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: #fde047;
+            margin-bottom: 16px;
+        }
+        .header .season-badge .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #facc15;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
         .header h1 {
-            font-size: 2.6em;
-            margin-bottom: 8px;
-            position: relative;
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 0%, #bae6fd 60%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
+        .header p { font-size: 1.1em; color: rgba(186,230,253,0.85); }
 
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-            position: relative;
-        }
-
+        /* ── Sections ── */
         .section {
-            margin-bottom: 32px;
+            margin-bottom: 28px;
             padding: 28px;
-            background: #1e293b;
+            background: #0d1224;
             border-radius: 16px;
             border-left: 4px solid #0ea5e9;
+            border: 1px solid rgba(56,189,248,0.12);
+            border-left: 4px solid #0ea5e9;
         }
+        .section.season2 { border-left-color: #facc15; border-color: rgba(250,204,21,0.2); border-left: 4px solid #facc15; }
 
         .section h2 {
             color: #38bdf8;
-            font-size: 1.7em;
+            font-size: 1.6em;
             margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
+        .section.season2 h2 { color: #fde047; }
 
         .section h3 {
             color: #7dd3fc;
-            font-size: 1.3em;
-            margin: 20px 0 10px 0;
-            border-bottom: 2px solid #0ea5e9;
+            font-size: 1.2em;
+            margin: 20px 0 10px;
+            border-bottom: 1px solid rgba(56,189,248,0.2);
             padding-bottom: 6px;
         }
-
-        .section p, .section li {
-            margin-bottom: 8px;
-            font-size: 1em;
-            color: #94a3b8;
-        }
-
+        .section p, .section li { margin-bottom: 8px; font-size: 0.97em; color: #94a3b8; }
         .section ul, .section ol { margin-left: 20px; margin-bottom: 16px; }
 
         .highlight {
-            background: #0c4a6e;
-            padding: 20px;
+            background: rgba(12,74,110,0.4);
+            padding: 18px 20px;
             border-radius: 12px;
             margin: 20px 0;
             border-left: 4px solid #38bdf8;
         }
-
         .highlight h3 { border-bottom: none; margin-top: 0; color: #7dd3fc; }
         .highlight li { color: #bae6fd; }
 
+        .highlight.gold {
+            background: rgba(120,80,0,0.25);
+            border-left-color: #facc15;
+        }
+        .highlight.gold h3 { color: #fde047; }
+        .highlight.gold li { color: #fef9c3; }
+
+        /* ── Feature grid ── */
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 14px;
             margin: 20px 0;
         }
-
         .feature-card {
-            background: #0f172a;
-            padding: 20px;
+            background: #060d1f;
+            padding: 18px;
             border-radius: 12px;
             text-align: center;
-            border: 1px solid #1e3a5f;
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            border: 1px solid rgba(30,58,95,0.8);
+            transition: transform 0.2s, border-color 0.2s;
         }
+        .feature-card:hover { transform: translateY(-2px); border-color: #0ea5e9; }
+        .feature-card h4 { font-size: 1em; margin-bottom: 8px; color: #e2e8f0; }
+        .feature-card p { color: #475569; font-size: 0.88em; margin: 0; }
 
-        .feature-card:hover {
-            transform: translateY(-2px);
-            border-color: #0ea5e9;
-        }
-
-        .feature-card h4 {
-            font-size: 1.05em;
-            margin-bottom: 8px;
-            color: #e2e8f0;
-        }
-
-        .feature-card p {
-            color: #64748b;
-            font-size: 0.9em;
-        }
-
-        /* Ingredient Cards */
-        .ingredient-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin: 16px 0;
-        }
-
-        .ingredient-card {
-            padding: 14px;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid;
-            transition: transform 0.2s ease;
-            background: #0f172a;
-        }
-
-        .ingredient-card:hover { transform: scale(1.02); }
-
-        .ingredient-card img {
-            width: 56px; height: 56px;
-            object-fit: contain;
-            margin-bottom: 6px;
-            border-radius: 8px;
-        }
-
-        .ingredient-card .name { font-weight: 600; font-size: 0.9em; margin-bottom: 4px; }
-
-        .ingredient-card .effect {
-            font-size: 0.75em;
-            padding: 2px 8px;
-            background: rgba(255,255,255,0.06);
-            border-radius: 4px;
-            display: inline-block;
-            color: #94a3b8;
-        }
-
-        .cat-core { border-color: #f59e0b; }
-        .cat-core .name { color: #fbbf24; }
-
-        .cat-elonverse { border-color: #3b82f6; }
-        .cat-elonverse .name { color: #60a5fa; }
-
-        .cat-space { border-color: #8b5cf6; }
-        .cat-space .name { color: #a78bfa; }
-
-        .cat-lab { border-color: #22c55e; }
-        .cat-lab .name { color: #4ade80; }
-
-        .cat-mythic { border-color: #f59e0b; }
-        .cat-mythic .name { color: #fbbf24; }
-
-        /* Category Section Headers */
-        .category-header {
+        /* ── Tier section headers ── */
+        .tier-header {
             display: flex;
             align-items: center;
             gap: 10px;
             padding: 10px 16px;
-            border-radius: 8px;
-            margin: 20px 0 12px 0;
-            font-weight: 600;
-            font-size: 1em;
-        }
-
-        .category-header.core { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
-        .category-header.elonverse { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
-        .category-header.space { background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2); }
-        .category-header.lab { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
-        .category-header.mythic { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
-
-        /* Rarity Table */
-        .rarity-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: #0f172a;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .rarity-table th, .rarity-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .rarity-table th {
-            background: linear-gradient(135deg, #0284c7, #0ea5e9);
-            color: white;
-            font-weight: 600;
-        }
-
-        .rarity-table td { color: #cbd5e1; }
-
-        .rarity-common { background-color: #475569; color: white; border-radius: 4px; padding: 3px 8px; font-size: 0.85em; }
-        .rarity-uncommon { background-color: #16a34a; color: white; border-radius: 4px; padding: 3px 8px; font-size: 0.85em; }
-        .rarity-rare { background-color: #2563eb; color: white; border-radius: 4px; padding: 3px 8px; font-size: 0.85em; }
-        .rarity-epic { background-color: #7c3aed; color: white; border-radius: 4px; padding: 3px 8px; font-size: 0.85em; }
-        .rarity-legendary { background-color: #d97706; color: white; border-radius: 4px; padding: 3px 8px; font-size: 0.85em; }
-        .rarity-mythic { background: linear-gradient(135deg, #d97706, #db2777); color: white; border-radius: 4px; padding: 3px 8px; font-size: 0.85em; }
-
-        /* Recipe Cards */
-        .recipe-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-            margin: 20px 0;
-        }
-
-        .recipe-card {
-            background: #0f172a;
-            border-radius: 12px;
-            padding: 18px;
-            border: 1px solid #1e3a5f;
-        }
-
-        .recipe-card h4 {
-            display: flex; align-items: center; gap: 8px;
-            margin-bottom: 10px; color: #e2e8f0;
-        }
-
-        .recipe-ingredients { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-
-        .recipe-ingredient {
-            background: #1e293b;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.85em;
-            color: #94a3b8;
-        }
-
-        .back-button {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: linear-gradient(135deg, #0284c7, #0ea5e9);
-            color: white;
-            border: none;
-            padding: 12px 22px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
+            border-radius: 10px;
+            margin: 24px 0 14px;
+            font-weight: 700;
             font-size: 0.95em;
-            box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
-            transition: all 0.2s ease;
-            z-index: 1000;
+            letter-spacing: 0.05em;
         }
-
-        .back-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+        .tier-header .count {
+            margin-left: auto;
+            font-size: 0.8em;
+            font-weight: 600;
+            opacity: 0.7;
         }
+        .tier-starter   { background: rgba(71,85,105,0.25); color: #94a3b8; border: 1px solid rgba(71,85,105,0.4); }
+        .tier-rare      { background: rgba(37,99,235,0.15); color: #60a5fa; border: 1px solid rgba(37,99,235,0.3); }
+        .tier-epic      { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+        .tier-legendary { background: rgba(217,119,6,0.15); color: #fbbf24; border: 1px solid rgba(217,119,6,0.3); }
+        .tier-mythic    { background: linear-gradient(90deg,rgba(217,119,6,0.15),rgba(219,39,119,0.15)); color: #f9a8d4; border: 1px solid rgba(219,39,119,0.35); }
 
-        .emoji { font-size: 1.3em; }
+        /* ── Ingredient grid ── */
+        .ingredient-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .ingredient-card {
+            padding: 12px 10px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background: #060d1f;
+            cursor: default;
+        }
+        .ingredient-card:hover { transform: scale(1.03); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .ingredient-card .icon-wrap {
+            width: 52px; height: 52px;
+            margin: 0 auto 8px;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+        }
+        .ingredient-card .icon-wrap img {
+            width: 100%; height: 100%;
+            object-fit: contain;
+        }
+        .ingredient-card .name { font-weight: 600; font-size: 0.82em; line-height: 1.3; margin-bottom: 4px; }
+        .ingredient-card .level { font-size: 0.72em; padding: 2px 7px; background: rgba(255,255,255,0.05); border-radius: 4px; color: #64748b; display: inline-block; }
 
+        /* Tier colours */
+        .t-starter   { border-color: rgba(71,85,105,0.5); }
+        .t-starter   .name { color: #94a3b8; }
+        .t-rare      { border-color: rgba(37,99,235,0.45); }
+        .t-rare      .name { color: #60a5fa; }
+        .t-epic      { border-color: rgba(124,58,237,0.45); }
+        .t-epic      .name { color: #a78bfa; }
+        .t-legendary { border-color: rgba(217,119,6,0.5); }
+        .t-legendary .name { color: #fbbf24; }
+        .t-mythic    { border-color: rgba(219,39,119,0.5); background: linear-gradient(135deg,#060d1f,rgba(90,20,50,0.25)); }
+        .t-mythic    .name { color: #f9a8d4; }
+
+        /* ── Rarity table ── */
+        .rarity-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #060d1f; border-radius: 12px; overflow: hidden; }
+        .rarity-table th, .rarity-table td { padding: 11px 14px; text-align: left; border-bottom: 1px solid rgba(30,41,59,0.8); }
+        .rarity-table th { background: linear-gradient(135deg,#0284c7,#0ea5e9); color: white; font-weight: 600; }
+        .rarity-table td { color: #cbd5e1; }
+        .rarity-table tr:last-child td { border-bottom: none; }
+
+        .badge { display: inline-block; border-radius: 4px; padding: 3px 9px; font-size: 0.82em; font-weight: 600; }
+        .b-starter   { background: #334155; color: #94a3b8; }
+        .b-rare      { background: #1e3a8a; color: #93c5fd; }
+        .b-epic      { background: #4c1d95; color: #c4b5fd; }
+        .b-legendary { background: #78350f; color: #fcd34d; }
+        .b-mythic    { background: linear-gradient(135deg,#78350f,#831843); color: #fce7f3; }
+
+        /* ── Recipe grid ── */
+        .recipe-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; margin: 20px 0; }
+        .recipe-card { background: #060d1f; border-radius: 12px; padding: 16px; border: 1px solid rgba(30,58,95,0.7); }
+        .recipe-card h4 { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #e2e8f0; flex-wrap: wrap; }
+        .recipe-ingredients { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+        .recipe-ingredient { background: rgba(30,41,59,0.8); padding: 4px 10px; border-radius: 6px; font-size: 0.82em; color: #94a3b8; }
+
+        /* ── Back button ── */
+        .back-button {
+            position: fixed; top: 20px; left: 20px;
+            background: linear-gradient(135deg,#0284c7,#0ea5e9);
+            color: white; border: none; padding: 11px 20px;
+            border-radius: 50px; cursor: pointer;
+            font-weight: 600; font-size: 0.9em;
+            box-shadow: 0 4px 16px rgba(14,165,233,0.35);
+            transition: all 0.2s; z-index: 1000;
+        }
+        .back-button:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(14,165,233,0.5); }
+
+        .emoji { font-size: 1.25em; }
+
+        /* ── Footer CTA ── */
         .footer-cta {
             text-align: center;
-            background: linear-gradient(135deg, #0284c7, #0ea5e9);
+            background: linear-gradient(135deg,#0c1a3f,#0a1530);
             color: white;
-            border-left: none !important;
+            border: 1px solid rgba(250,204,21,0.3) !important;
+            border-left: 4px solid #facc15 !important;
             border-radius: 16px;
-            padding: 40px 28px;
+            padding: 44px 28px;
         }
-
-        .footer-cta h2 { color: white !important; }
-        .footer-cta p { color: rgba(255,255,255,0.9) !important; font-size: 1.1em; margin-bottom: 24px; }
-
-        .footer-cta .back-button {
-            position: relative;
-            font-size: 1.05em;
-            padding: 14px 28px;
-            background: white;
-            color: #0284c7;
+        .footer-cta h2 { color: #fde047 !important; }
+        .footer-cta p { color: rgba(186,230,253,0.9) !important; font-size: 1.05em; margin-bottom: 24px; }
+        .footer-cta .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg,#facc15,#f59e0b);
+            color: #0b1738; border: none;
+            padding: 14px 32px; border-radius: 50px;
+            cursor: pointer; font-weight: 700; font-size: 1.05em;
+            box-shadow: 0 4px 20px rgba(250,204,21,0.4);
+            transition: all 0.2s;
         }
+        .footer-cta .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(250,204,21,0.55); }
 
         @media (max-width: 768px) {
-            .container { padding: 12px; }
-            .header h1 { font-size: 1.8em; }
-            .section { padding: 18px; }
-            .section h2 { font-size: 1.4em; }
-            .back-button { padding: 10px 16px; font-size: 0.85em; }
+            .container { padding: 10px; }
+            .header h1 { font-size: 1.9em; }
+            .section { padding: 16px; }
+            .section h2 { font-size: 1.3em; }
+            .back-button { padding: 9px 14px; font-size: 0.82em; top: 12px; left: 12px; }
+            .ingredient-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
         }
     </style>
 </head>
 <body>
-    <button class="back-button" onclick="goBack()">Back to Game</button>
+    <button class="back-button" onclick="goBack()">← Back to Game</button>
 
     <div class="container">
+
+        <!-- ── HEADER ── -->
         <div class="header">
-            <h1>DogeFood Lab</h1>
-            <p>Complete Game Mechanics Guide</p>
+            <div class="header-inner">
+                <div class="season-badge"><span class="dot"></span> Season 2 · Reactor · Now Live</div>
+                <h1>DogeFood Lab</h1>
+                <p>Complete Game Guide — 50 New Ingredients · New Tiers · $LAB Rewards</p>
+            </div>
         </div>
 
+        <!-- ── GAME OVERVIEW ── -->
         <div class="section">
-            <h2><span class="emoji">🎮</span>Game Overview</h2>
-            <p><strong>DogeFood Lab</strong> is a Web3-powered treat creation game where you become a scientist mixing cosmic ingredients to craft unique treats. Compete on leaderboards, level up, discover secret recipes, and prepare for $LAB token rewards!</p>
+            <h2><span class="emoji">🎮</span> Game Overview</h2>
+            <p><strong>DogeFood Lab</strong> is a Web3-powered treat creation game where you become a scientist mixing cosmic ingredients to craft unique treats. Season 2 — the Reactor update — introduces 50 all-new ingredients across 5 tiers, a new rarity system, the Arena, and the road to $LAB token rewards.</p>
             <div class="highlight">
                 <h3>Core Objectives</h3>
                 <ul>
-                    <li><strong>Create Treats:</strong> Mix 1-5 ingredients to craft treats with varying rarities</li>
-                    <li><strong>Level Up:</strong> Gain XP to unlock new ingredient categories</li>
-                    <li><strong>Compete:</strong> Climb the leaderboard by earning points</li>
+                    <li><strong>Create Treats:</strong> Mix 1–5 ingredients to craft treats with varying rarities</li>
+                    <li><strong>Level Up:</strong> Gain XP to unlock higher ingredient tiers</li>
+                    <li><strong>Compete:</strong> Climb the leaderboard and enter the 24h Arena</li>
                     <li><strong>Discover:</strong> Find secret recipes for bonus rewards</li>
-                    <li><strong>Collect:</strong> Build your collection of rare and Mythic treats</li>
+                    <li><strong>Collect:</strong> Build your collection of Legendary and Mythic treats</li>
                 </ul>
             </div>
         </div>
 
-        <div class="section">
-            <h2><span class="emoji">🧪</span>Complete Ingredient Guide</h2>
-            <p>Ingredients are organized into 5 categories, each unlocked at different levels.</p>
-
-            <div class="category-header core"><span>🦴</span> CORE INGREDIENTS (Level 1-5)</div>
-            <p>Your starter ingredients - the foundation of every great treat!</p>
-            <div class="ingredient-grid">
-                <div class="ingredient-card cat-core">
-                    <img src="https://i.ibb.co/hJnhLxKD/Chat-GPT-Image-Dec-29-2025-03-34-58-PM.png" alt="Crunchy Kibble">
-                    <div class="name">🦴 Crunchy Kibble</div>
-                    <div class="effect">Basic - Level 1</div>
-                </div>
-                <div class="ingredient-card cat-core">
-                    <img src="https://i.ibb.co/N6k24F30/Chat-GPT-Image-Dec-29-2025-03-38-01-PM.png" alt="Golden Bone Dust">
-                    <div class="name">Golden Bone Dust</div>
-                    <div class="effect">XP Boost - Level 2</div>
-                </div>
-                <div class="ingredient-card cat-core">
-                    <img src="https://i.ibb.co/gM0STr7K/Chat-GPT-Image-Dec-29-2025-03-38-54-PM.png" alt="Meme Meat Cubes">
-                    <div class="name">🥩 Meme Meat Cubes</div>
-                    <div class="effect">Basic - Level 1</div>
-                </div>
-                <div class="ingredient-card cat-core">
-                    <img src="https://i.ibb.co/jPyM954x/Chat-GPT-Image-Dec-29-2025-03-40-20-PM.png" alt="Shiba Crunch Flakes">
-                    <div class="name">🥣 Shiba Crunch Flakes</div>
-                    <div class="effect">Basic - Level 1</div>
-                </div>
-                <div class="ingredient-card cat-core">
-                    <img src="https://i.ibb.co/KpfGWYZ4/Chat-GPT-Image-Dec-29-2025-05-13-37-PM.png" alt="Woof Whey Powder">
-                    <div class="name">💪 Woof Whey Powder</div>
-                    <div class="effect">Minor XP Boost - Level 3</div>
-                </div>
-            </div>
-
-            <div class="category-header elonverse"><span>🚀</span> ELONVERSE INGREDIENTS (Level 6-10)</div>
-            <p>Tech-powered ingredients inspired by the future of space exploration!</p>
-            <div class="ingredient-grid">
-                <div class="ingredient-card cat-elonverse">
-                    <img src="https://i.ibb.co/p6FwwqCz/Chat-GPT-Image-Dec-29-2025-05-14-36-PM.png" alt="Rocket Fuel Syrup">
-                    <div class="name">🚀 Rocket Fuel Syrup</div>
-                    <div class="effect">Rarity Boost - Level 6</div>
-                </div>
-                <div class="ingredient-card cat-elonverse">
-                    <img src="https://i.ibb.co/C3DmPjvX/Chat-GPT-Image-Dec-29-2025-05-14-51-PM.png" alt="Neural Dust">
-                    <div class="name">🧠 Neural Dust</div>
-                    <div class="effect">XP Boost - Level 7</div>
-                </div>
-                <div class="ingredient-card cat-elonverse">
-                    <img src="https://i.ibb.co/tp0ZQWZG/Chat-GPT-Image-Dec-29-2025-05-15-03-PM.png" alt="Starship Alloy Shavings">
-                    <div class="name">⚙️ Starship Alloy Shavings</div>
-                    <div class="effect">Legendary Gate - Level 9</div>
-                </div>
-                <div class="ingredient-card cat-elonverse">
-                    <img src="https://i.ibb.co/Jj39z1mz/Chat-GPT-Image-Dec-29-2025-05-27-05-PM.png" alt="Solar Charge Crystals">
-                    <div class="name">☀️ Solar Charge Crystals</div>
-                    <div class="effect">Timer Reduction - Level 6</div>
-                </div>
-                <div class="ingredient-card cat-elonverse">
-                    <img src="https://i.ibb.co/WvsBkW0r/Chat-GPT-Image-Dec-29-2025-05-27-28-PM.png" alt="X-Signal Spice">
-                    <div class="name">📡 X-Signal Spice</div>
-                    <div class="effect">Visual Effect - Level 8</div>
-                </div>
-                <div class="ingredient-card cat-elonverse">
-                    <img src="https://i.ibb.co/YTRHfSGM/Chat-GPT-Image-Dec-29-2025-05-27-46-PM.png" alt="Mars Regolith Powder">
-                    <div class="name">🔴 Mars Regolith Powder</div>
-                    <div class="effect">Legendary Gate - Level 10</div>
-                </div>
-            </div>
-
-            <div class="category-header space"><span>🌌</span> SPACE INGREDIENTS (Level 11-15)</div>
-            <p>Cosmic ingredients harvested from the depths of space!</p>
-            <div class="ingredient-grid">
-                <div class="ingredient-card cat-space">
-                    <img src="https://i.ibb.co/N2YdDKTK/Chat-GPT-Image-Dec-29-2025-05-35-53-PM.png" alt="Moon Cheese">
-                    <div class="name">🌙 Moon Cheese</div>
-                    <div class="effect">Visual Glow - Level 11</div>
-                </div>
-                <div class="ingredient-card cat-space">
-                    <img src="https://i.ibb.co/bnKrW6z/Chat-GPT-Image-Dec-29-2025-05-36-42-PM.png" alt="Cosmic Ice Cubes">
-                    <div class="name">🧊 Cosmic Ice Cubes</div>
-                    <div class="effect">Timer Increase - Level 11</div>
-                </div>
-                <div class="ingredient-card cat-space">
-                    <img src="https://i.ibb.co/QF5t8Twh/Chat-GPT-Image-Dec-29-2025-05-36-57-PM.png" alt="Asteroid Protein">
-                    <div class="name">☄️ Asteroid Protein</div>
-                    <div class="effect">Points Boost - Level 12</div>
-                </div>
-                <div class="ingredient-card cat-space">
-                    <img src="https://i.ibb.co/G4Xp1fHf/Chat-GPT-Image-Dec-29-2025-06-05-41-PM.png" alt="Dark Matter Sprinkles">
-                    <div class="name">🌌 Dark Matter Sprinkles</div>
-                    <div class="effect">Legendary Gate - Level 14</div>
-                </div>
-                <div class="ingredient-card cat-space">
-                    <img src="https://i.ibb.co/67c4cpzW/Chat-GPT-Image-Dec-29-2025-05-47-22-PM.png" alt="Plasma Sugar">
-                    <div class="name">⚡ Plasma Sugar</div>
-                    <div class="effect">XP Boost - Level 12</div>
-                </div>
-                <div class="ingredient-card cat-space">
-                    <img src="https://i.ibb.co/DHtQZCDg/Chat-GPT-Image-Dec-29-2025-05-47-37-PM.png" alt="Zero-G Gel">
-                    <div class="name">🫧 Zero-G Gel</div>
-                    <div class="effect">Mythic Gate - Level 15</div>
-                </div>
-            </div>
-
-            <div class="category-header lab"><span>🧬</span> LAB INGREDIENTS (Level 11-15)</div>
-            <p>Experimental ingredients from cutting-edge laboratory research!</p>
-            <div class="ingredient-grid">
-                <div class="ingredient-card cat-lab">
-                    <img src="https://i.ibb.co/jP4ZB78c/Chat-GPT-Image-Dec-29-2025-05-56-01-PM.png" alt="Radioactive Carrots">
-                    <div class="name">🥕 Radioactive Carrots</div>
-                    <div class="effect">Mutation Chance - Level 11</div>
-                </div>
-                <div class="ingredient-card cat-lab">
-                    <img src="https://i.ibb.co/NngCmPyv/Chat-GPT-Image-Dec-29-2025-05-57-02-PM.png" alt="Quantum Sauce">
-                    <div class="name">🧪 Quantum Sauce</div>
-                    <div class="effect">RNG Boost - Level 13</div>
-                </div>
-                <div class="ingredient-card cat-lab">
-                    <img src="https://i.ibb.co/2Y7x1VCL/Chat-GPT-Image-Dec-29-2025-05-57-23-PM.png" alt="Time-Warp Yeast">
-                    <div class="name">⏰ Time-Warp Yeast</div>
-                    <div class="effect">Timer Randomizer - Level 12</div>
-                </div>
-                <div class="ingredient-card cat-lab">
-                    <img src="https://i.ibb.co/vxnphvHf/Chat-GPT-Image-Dec-29-2025-05-57-40-PM.png" alt="Glitch Spice">
-                    <div class="name">👾 Glitch Spice</div>
-                    <div class="effect">Visual Glitch - Level 14</div>
-                </div>
-                <div class="ingredient-card cat-lab">
-                    <img src="https://i.ibb.co/23f7fwgz/Chat-GPT-Image-Dec-29-2025-05-57-54-PM.png" alt="Nano Vitamins">
-                    <div class="name">💊 Nano Vitamins</div>
-                    <div class="effect">XP Boost - Level 11</div>
-                </div>
-            </div>
-
-            <div class="category-header mythic"><span>🌟</span> MYTHIC INGREDIENTS (Level 16+)</div>
-            <p>Ultra-rare legendary ingredients - required for Mythic-tier treats!</p>
-            <div class="ingredient-grid">
-                <div class="ingredient-card cat-mythic">
-                    <img src="https://i.ibb.co/b5J2fdK8/Chat-GPT-Image-Dec-29-2025-06-05-41-PM.png" alt="Doge Relic Fragment">
-                    <div class="name">🏺 Doge Relic Fragment</div>
-                    <div class="effect">Mythic Required - Level 16</div>
-                </div>
-                <div class="ingredient-card cat-mythic">
-                    <img src="https://i.ibb.co/4wxwLrjg/Chat-GPT-Image-Dec-29-2025-06-06-10-PM.png" alt="Genesis Biscuit">
-                    <div class="name">🍪 Genesis Biscuit</div>
-                    <div class="effect">Mythic Required - Level 18</div>
-                </div>
-                <div class="ingredient-card cat-mythic">
-                    <img src="https://i.ibb.co/qLLBcjDJ/Chat-GPT-Image-Dec-29-2025-06-06-25-PM.png" alt="Cosmic Shiba Hair">
-                    <div class="name">🐕 Cosmic Shiba Hair</div>
-                    <div class="effect">Mythic Required - Level 20</div>
-                </div>
-                <div class="ingredient-card cat-mythic">
-                    <img src="https://i.ibb.co/GLKn4m5/Chat-GPT-Image-Dec-29-2025-06-06-37-PM.png" alt="Singularity Syrup">
-                    <div class="name">🌀 Singularity Syrup</div>
-                    <div class="effect">Mythic Required - Level 25</div>
-                </div>
+        <!-- ── SEASON 2 HIGHLIGHTS ── -->
+        <div class="section season2">
+            <h2><span class="emoji">⚗️</span> Season 2 — What's New</h2>
+            <div class="feature-grid">
+                <div class="feature-card"><h4>🧪 50 New Ingredients</h4><p>Five tiers: Starter, Rare, Epic, Legendary & Mythic — all new art</p></div>
+                <div class="feature-card"><h4>🏟️ Lab Arena</h4><p>24h live leaderboard with prize pool, chat & predictions</p></div>
+                <div class="feature-card"><h4>🔥 Heat Events</h4><p>Timed challenges that boost point multipliers for active players</p></div>
+                <div class="feature-card"><h4>📡 Live Streaming</h4><p>Go live in the Arena with mic — launching v2.1</p></div>
+                <div class="feature-card"><h4>🪙 $LAB Token</h4><p>Points convert to $LAB — token launch incoming</p></div>
+                <div class="feature-card"><h4>👑 Kernel of Wow</h4><p>Daily special ingredient with tier-based point bonuses</p></div>
             </div>
         </div>
 
+        <!-- ── SEASON 2 INGREDIENT GUIDE ── -->
+        <div class="section season2">
+            <h2><span class="emoji">🧪</span> Season 2 — All 50 Ingredients</h2>
+            <p>All ingredients are new in Season 2. Icons are rendered live from the game's image assets.</p>
+
+            <!-- STARTER -->
+            <div class="tier-header tier-starter">
+                <span>⚗️</span> STARTER INGREDIENTS
+                <span class="count">S2_001 – S2_010 · Level 1–10</span>
+            </div>
+            <p style="color:#64748b;font-size:0.88em;margin-bottom:12px;">Your foundation — available from day one, used in every recipe tier.</p>
+            <div class="ingredient-grid">
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/pupcorn-bits.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='🍿'">🍿</div><div class="name">Pupcorn Bits</div><div class="level">Level 1</div></div>
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/dogeberry-syrup.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='🫐'">🫐</div><div class="name">Dogeberry Syrup</div><div class="level">Level 1</div></div>
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/bark-biscuit-crumbs.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='🍪'">🍪</div><div class="name">Bark Biscuit Crumbs</div><div class="level">Level 2</div></div>
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/meme-milk-capsules.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='🥛'">🥛</div><div class="name">Meme Milk Capsules</div><div class="level">Level 2</div></div>
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/cheddar-woof-chips.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='🧀'">🧀</div><div class="name">Cheddar Woof Chips</div><div class="level">Level 3</div></div>
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/rocket-ramen-strands.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='🍜'">🍜</div><div class="name">Rocket Ramen Strands</div><div class="level">Level 4</div></div>
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/frosted-paw-sugar.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='❄️'">❄️</div><div class="name">Frosted Paw Sugar</div><div class="level">Level 5</div></div>
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/moonbone-jelly.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='🌙'">🌙</div><div class="name">Moonbone Jelly</div><div class="level">Level 6</div></div>
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/turbo-tail-spice.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='🌶️'">🌶️</div><div class="name">Turbo Tail Spice</div><div class="level">Level 8</div></div>
+                <div class="ingredient-card t-starter"><div class="icon-wrap"><img src="/images/ingredients/pupperoni-slices.png" alt="" onerror="this.style.display='none';this.parentNode.innerText='🍕'">🍕</div><div class="name">Pupperoni Slices</div><div class="level">Level 10</div></div>
+            </div>
+
+            <!-- RARE -->
+            <div class="tier-header tier-rare">
+                <span>🔵</span> RARE INGREDIENTS
+                <span class="count">S2_011 – S2_020 · Level 11–20</span>
+            </div>
+            <p style="color:#64748b;font-size:0.88em;margin-bottom:12px;">Higher point weights — start unlocking Rare treats when combined.</p>
+            <div class="ingredient-grid">
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/galaxy-kibble.png" alt="">🌌</div><div class="name">Galaxy Kibble</div><div class="level">Level 11</div></div>
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/neon-nuggies.png" alt="">🟦</div><div class="name">Neon Nuggies</div><div class="level">Level 12</div></div>
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/alpha-bacon-strips.png" alt="">🥓</div><div class="name">Alpha Bacon Strips</div><div class="level">Level 12</div></div>
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/lunar-marshmallows.png" alt="">☁️</div><div class="name">Lunar Marshmallows</div><div class="level">Level 13</div></div>
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/boneblast-seasoning.png" alt="">💥</div><div class="name">Boneblast Seasoning</div><div class="level">Level 13</div></div>
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/crypto-caramel-drizzle.png" alt="">🍯</div><div class="name">Crypto Caramel Drizzle</div><div class="level">Level 14</div></div>
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/shiba-spice-cubes.png" alt="">🌶️</div><div class="name">Shiba Spice Cubes</div><div class="level">Level 15</div></div>
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/plasma-peanut-butter.png" alt="">🥜</div><div class="name">Plasma Peanut Butter</div><div class="level">Level 16</div></div>
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/byte-sized-sausages.png" alt="">🌭</div><div class="name">Byte-sized Sausages</div><div class="level">Level 18</div></div>
+                <div class="ingredient-card t-rare"><div class="icon-wrap"><img src="/images/ingredients/doge-dust-crunch.png" alt="">✨</div><div class="name">Doge Dust Crunch</div><div class="level">Level 20</div></div>
+            </div>
+
+            <!-- EPIC -->
+            <div class="tier-header tier-epic">
+                <span>🟣</span> EPIC INGREDIENTS
+                <span class="count">S2_021 – S2_030 · Level 21–30</span>
+            </div>
+            <p style="color:#64748b;font-size:0.88em;margin-bottom:12px;">Required ingredients for Epic and Legendary treat combinations.</p>
+            <div class="ingredient-grid">
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/cyber-corn-nuggets.png" alt="">🌽</div><div class="name">Cyber Corn Nuggets</div><div class="level">Level 21</div></div>
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/quantum-treat-flakes.png" alt="">🥣</div><div class="name">Quantum Treat Flakes</div><div class="level">Level 22</div></div>
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/mega-moo-protein-gel.png" alt="">🥤</div><div class="name">Mega Moo Protein Gel</div><div class="level">Level 23</div></div>
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/astro-syrup-drops.png" alt="">💧</div><div class="name">Astro Syrup Drops</div><div class="level">Level 23</div></div>
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/hyper-bone-broth.png" alt="">🍲</div><div class="name">Hyper Bone Broth</div><div class="level">Level 24</div></div>
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/electric-biscuit-chunks.png" alt="">⚡</div><div class="name">Electric Biscuit Chunks</div><div class="level">Level 25</div></div>
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/meme-pepper-sprinkles.png" alt="">🌶️</div><div class="name">Meme Pepper Sprinkles</div><div class="level">Level 26</div></div>
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/infinity-ice-cream-bits.png" alt="">🍨</div><div class="name">Infinity Ice Cream Bits</div><div class="level">Level 27</div></div>
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/darkmatter-donut-crumbs.png" alt="">🍩</div><div class="name">Darkmatter Donut Crumbs</div><div class="level">Level 28</div></div>
+                <div class="ingredient-card t-epic"><div class="icon-wrap"><img src="/images/ingredients/stellar-steak-cubes.png" alt="">🥩</div><div class="name">Stellar Steak Cubes</div><div class="level">Level 30</div></div>
+            </div>
+
+            <!-- LEGENDARY -->
+            <div class="tier-header tier-legendary">
+                <span>🌟</span> LEGENDARY INGREDIENTS
+                <span class="count">S2_031 – S2_040 · Level 31–40</span>
+            </div>
+            <p style="color:#64748b;font-size:0.88em;margin-bottom:12px;">Gate ingredients — include at least one to unlock Legendary treat potential.</p>
+            <div class="ingredient-grid">
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/golden-tail-granules.png" alt="">🌟</div><div class="name">Golden Tail Granules</div><div class="level">Level 31</div></div>
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/nebula-nacho-dust.png" alt="">🌠</div><div class="name">Nebula Nacho Dust</div><div class="level">Level 32</div></div>
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/titanium-taffy-chunks.png" alt="">🔱</div><div class="name">Titanium Taffy Chunks</div><div class="level">Level 33</div></div>
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/omega-bacon-powder.png" alt="">🥓</div><div class="name">Omega Bacon Powder</div><div class="level">Level 34</div></div>
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/celestial-cheese-melt.png" alt="">🧀</div><div class="name">Celestial Cheese Melt</div><div class="level">Level 35</div></div>
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/frostfang-yogurt-drops.png" alt="">🧊</div><div class="name">Frostfang Yogurt Drops</div><div class="level">Level 36</div></div>
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/meteor-meat-flakes.png" alt="">☄️</div><div class="name">Meteor Meat Flakes</div><div class="level">Level 37</div></div>
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/shiba-stardust-syrup.png" alt="">💫</div><div class="name">Shiba Stardust Syrup</div><div class="level">Level 38</div></div>
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/royal-rocket-crunch.png" alt="">🚀</div><div class="name">Royal Rocket Crunch</div><div class="level">Level 39</div></div>
+                <div class="ingredient-card t-legendary"><div class="icon-wrap"><img src="/images/ingredients/mythic-paw-crystals.png" alt="">🐾</div><div class="name">Mythic Paw Crystals</div><div class="level">Level 40</div></div>
+            </div>
+
+            <!-- MYTHIC -->
+            <div class="tier-header tier-mythic">
+                <span>👑</span> MYTHIC INGREDIENTS
+                <span class="count">S2_041 – S2_050 · Level 41–50</span>
+            </div>
+            <p style="color:#64748b;font-size:0.88em;margin-bottom:12px;">Ultra-rare. Required to craft Mythic treats. One of these in your mix unlocks maximum rarity potential.</p>
+            <div class="ingredient-grid">
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/infinity-bone-essence.png" alt="">♾️</div><div class="name">Infinity Bone Essence</div><div class="level">Level 41</div></div>
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/galactic-gravy-cubes.png" alt="">🌀</div><div class="name">Galactic Gravy Cubes</div><div class="level">Level 42</div></div>
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/ultra-woof-extract.png" alt="">🧪</div><div class="name">Ultra Woof Extract</div><div class="level">Level 43</div></div>
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/eclipse-energy-flakes.png" alt="">🌑</div><div class="name">Eclipse Energy Flakes</div><div class="level">Level 44</div></div>
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/phoenix-pepper-oil.png" alt="">🔥</div><div class="name">Phoenix Pepper Oil</div><div class="level">Level 45</div></div>
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/cosmic-kibble-core.png" alt="">🪐</div><div class="name">Cosmic Kibble Core</div><div class="level">Level 46</div></div>
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/dragon-tail-protein.png" alt="">🐉</div><div class="name">Dragon Tail Protein</div><div class="level">Level 47</div></div>
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/meme-core-crystals.png" alt="">💎</div><div class="name">Meme Core Crystals</div><div class="level">Level 48</div></div>
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/supernova-snack-dust.png" alt="">🌟</div><div class="name">Supernova Snack Dust</div><div class="level">Level 49</div></div>
+                <div class="ingredient-card t-mythic"><div class="icon-wrap"><img src="/images/ingredients/godtier-shiba-serum.png" alt="">👑</div><div class="name">Godtier Shiba Serum</div><div class="level">Level 50</div></div>
+            </div>
+        </div>
+
+        <!-- ── RARITY SYSTEM ── -->
         <div class="section">
-            <h2><span class="emoji">🎯</span>Rarity System</h2>
-            <p>Your treat's rarity determines its value, points, and XP rewards.</p>
+            <h2><span class="emoji">🎯</span> Rarity System</h2>
+            <p>Your treat's rarity is determined by the ingredients you mix and the tiers they belong to.</p>
             <table class="rarity-table">
                 <thead>
                     <tr>
                         <th>Rarity</th>
-                        <th>Min Ingredients</th>
+                        <th>Ingredients</th>
                         <th>Points</th>
                         <th>XP</th>
-                        <th>Requirements</th>
+                        <th>Requirement</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td><span class="rarity-common">Common</span></td><td>1</td><td>10-20</td><td>5-10</td><td>Any ingredient</td></tr>
-                    <tr><td><span class="rarity-uncommon">Uncommon</span></td><td>2</td><td>25-40</td><td>15-25</td><td>2+ ingredients</td></tr>
-                    <tr><td><span class="rarity-rare">Rare</span></td><td>3</td><td>50-80</td><td>30-50</td><td>3+ ingredients</td></tr>
-                    <tr><td><span class="rarity-epic">Epic</span></td><td>4</td><td>100-150</td><td>60-100</td><td>4+ ingredients</td></tr>
-                    <tr><td><span class="rarity-legendary">Legendary</span></td><td>5</td><td>200-300</td><td>120-200</td><td>5 ingredients + Legendary Gate</td></tr>
-                    <tr><td><span class="rarity-mythic">Mythic</span></td><td>5</td><td>500-1000</td><td>250-500</td><td>5 ingredients + Mythic ingredient</td></tr>
+                    <tr><td><span class="badge b-starter">Starter</span></td><td>1</td><td>10–20</td><td>5–10</td><td>Any ingredient</td></tr>
+                    <tr><td><span class="badge b-rare">Rare</span></td><td>2–3</td><td>50–80</td><td>30–50</td><td>1+ Rare tier ingredient</td></tr>
+                    <tr><td><span class="badge b-epic">Epic</span></td><td>3–4</td><td>100–150</td><td>60–100</td><td>1+ Epic tier ingredient</td></tr>
+                    <tr><td><span class="badge b-legendary">Legendary</span></td><td>4–5</td><td>200–300</td><td>120–200</td><td>1+ Legendary gate ingredient</td></tr>
+                    <tr><td><span class="badge b-mythic">Mythic</span></td><td>5</td><td>500–1000</td><td>250–500</td><td>1+ Mythic ingredient</td></tr>
                 </tbody>
             </table>
-            <div class="highlight">
+            <div class="highlight gold">
                 <h3>Rarity Boosting Tips</h3>
                 <ul>
-                    <li><strong>Legendary Gate:</strong> Use Starship Alloy, Mars Regolith, or Dark Matter to unlock Legendary potential</li>
-                    <li><strong>Mythic Gate:</strong> Zero-G Gel unlocks Mythic potential when combined with Mythic ingredients</li>
-                    <li><strong>Rarity Weight:</strong> Each ingredient has a rarity weight - higher weights boost your chances</li>
+                    <li><strong>Legendary Gate:</strong> Any ingredient from S2_031–S2_040 unlocks Legendary potential</li>
+                    <li><strong>Mythic Gate:</strong> Any ingredient from S2_041–S2_050 unlocks Mythic potential</li>
+                    <li><strong>More ingredients = higher rarity roll</strong> — always try to use 5</li>
+                    <li><strong>Tier mixing:</strong> Higher average tier across your 5 ingredients = better base roll</li>
                 </ul>
             </div>
         </div>
 
+        <!-- ── EXAMPLE RECIPES ── -->
         <div class="section">
-            <h2><span class="emoji">📖</span>Example Recipes</h2>
-            <p>Proven recipes to inspire your creations!</p>
+            <h2><span class="emoji">📖</span> Season 2 Example Recipes</h2>
+            <p>Proven combos to get you started. All use Season 2 ingredients.</p>
             <div class="recipe-grid">
                 <div class="recipe-card">
-                    <h4><span class="rarity-common">Common</span> Crunchy Woof Bite</h4>
+                    <h4><span class="badge b-starter">Starter</span> Pupcorn Crunch</h4>
                     <div class="recipe-ingredients">
-                        <span class="recipe-ingredient">🦴 Crunchy Kibble</span>
-                        <span class="recipe-ingredient">🥣 Shiba Crunch Flakes</span>
+                        <span class="recipe-ingredient">🍿 Pupcorn Bits</span>
+                        <span class="recipe-ingredient">🍪 Bark Biscuit Crumbs</span>
                     </div>
-                    <p style="color: #64748b; font-size: 0.9em;">A simple but satisfying treat for beginners.</p>
+                    <p style="color:#475569;font-size:0.88em;">Perfect first treat — no level requirements.</p>
                 </div>
                 <div class="recipe-card">
-                    <h4><span class="rarity-rare">Rare</span> Lunar Shiba Snack</h4>
+                    <h4><span class="badge b-rare">Rare</span> Galaxy Syrup Bite</h4>
                     <div class="recipe-ingredients">
-                        <span class="recipe-ingredient">🦴 Crunchy Kibble</span>
-                        <span class="recipe-ingredient">🌙 Moon Cheese</span>
-                        <span class="recipe-ingredient">⚡ Plasma Sugar</span>
+                        <span class="recipe-ingredient">🍿 Pupcorn Bits</span>
+                        <span class="recipe-ingredient">🫐 Dogeberry Syrup</span>
+                        <span class="recipe-ingredient">🌌 Galaxy Kibble</span>
                     </div>
-                    <p style="color: #64748b; font-size: 0.9em;">A glowing moon-powered delicacy!</p>
+                    <p style="color:#475569;font-size:0.88em;">First Rare-tier treat — needs Level 11.</p>
                 </div>
                 <div class="recipe-card">
-                    <h4><span class="rarity-epic">Epic</span> Rocket Woof Supreme</h4>
+                    <h4><span class="badge b-epic">Epic</span> Cyber Plasma Supreme</h4>
                     <div class="recipe-ingredients">
-                        <span class="recipe-ingredient">🥩 Meme Meat Cubes</span>
-                        <span class="recipe-ingredient">🚀 Rocket Fuel Syrup</span>
-                        <span class="recipe-ingredient">☀️ Solar Charge Crystals</span>
-                        <span class="recipe-ingredient">🧪 Quantum Sauce</span>
+                        <span class="recipe-ingredient">🥓 Alpha Bacon Strips</span>
+                        <span class="recipe-ingredient">🌌 Galaxy Kibble</span>
+                        <span class="recipe-ingredient">🌽 Cyber Corn Nuggets</span>
+                        <span class="recipe-ingredient">⚡ Electric Biscuit Chunks</span>
                     </div>
-                    <p style="color: #64748b; font-size: 0.9em;">Fuel your inner rocket dog!</p>
+                    <p style="color:#475569;font-size:0.88em;">Unlock at Level 25.</p>
                 </div>
                 <div class="recipe-card">
-                    <h4><span class="rarity-legendary">Legendary</span> Mars Alpha Biscuit</h4>
+                    <h4><span class="badge b-legendary">Legendary</span> Nebula Stardust Feast</h4>
                     <div class="recipe-ingredients">
-                        <span class="recipe-ingredient">⚙️ Starship Alloy</span>
-                        <span class="recipe-ingredient">🔴 Mars Regolith</span>
-                        <span class="recipe-ingredient">🌌 Dark Matter</span>
-                        <span class="recipe-ingredient">🧠 Neural Dust</span>
-                        <span class="recipe-ingredient">Golden Bone Dust</span>
+                        <span class="recipe-ingredient">🌠 Nebula Nacho Dust</span>
+                        <span class="recipe-ingredient">💫 Shiba Stardust Syrup</span>
+                        <span class="recipe-ingredient">🥩 Stellar Steak Cubes</span>
+                        <span class="recipe-ingredient">🍩 Darkmatter Donut Crumbs</span>
+                        <span class="recipe-ingredient">⚡ Electric Biscuit Chunks</span>
                     </div>
-                    <p style="color: #64748b; font-size: 0.9em;">The taste of Martian glory!</p>
+                    <p style="color:#475569;font-size:0.88em;">Requires 2 Legendary gate ingredients — Level 38.</p>
                 </div>
                 <div class="recipe-card">
-                    <h4><span class="rarity-mythic">Mythic</span> Genesis Doge Relic</h4>
+                    <h4><span class="badge b-mythic">Mythic</span> Godtier Reactor Core</h4>
                     <div class="recipe-ingredients">
-                        <span class="recipe-ingredient">🍪 Genesis Biscuit</span>
-                        <span class="recipe-ingredient">🏺 Doge Relic Fragment</span>
-                        <span class="recipe-ingredient">🐕 Cosmic Shiba Hair</span>
-                        <span class="recipe-ingredient">🌀 Singularity Syrup</span>
-                        <span class="recipe-ingredient">🫧 Zero-G Gel</span>
+                        <span class="recipe-ingredient">👑 Godtier Shiba Serum</span>
+                        <span class="recipe-ingredient">🔥 Phoenix Pepper Oil</span>
+                        <span class="recipe-ingredient">💎 Meme Core Crystals</span>
+                        <span class="recipe-ingredient">🐾 Mythic Paw Crystals</span>
+                        <span class="recipe-ingredient">🌠 Nebula Nacho Dust</span>
                     </div>
-                    <p style="color: #64748b; font-size: 0.9em;">The legendary first treat - requires Level 25!</p>
+                    <p style="color:#475569;font-size:0.88em;">Highest rarity possible — requires Level 50.</p>
                 </div>
             </div>
         </div>
 
-        <div class="section">
-            <h2><span class="emoji">🌽</span>Kernel of Wow - Daily Special</h2>
-            <p>Every 24 hours, one lucky player is chosen to receive the <strong style="color: #fbbf24;">Kernel of Wow</strong> - a legendary special ingredient!</p>
+        <!-- ── LAB ARENA ── -->
+        <div class="section season2">
+            <h2><span class="emoji">🏟️</span> Lab Arena</h2>
+            <p>The Arena is a 24-hour live competition that resets daily. Join, compete, predict winners, and earn from the prize pool.</p>
             <div class="feature-grid">
-                <div class="feature-card"><h4>🎲 Random Selection</h4><p>Active players are automatically entered into the daily drawing</p></div>
-                <div class="feature-card"><h4>⏰ 16-Hour Duration</h4><p>Use it before it expires to maximize your bonus!</p></div>
-                <div class="feature-card"><h4>🎯 Point Multipliers</h4><p>Earn bonus points on treats created while holding the Kernel</p></div>
-                <div class="feature-card"><h4>🏆 Global Banner</h4><p>The current holder is displayed to all players!</p></div>
+                <div class="feature-card"><h4>🏆 Prize Pool</h4><p>Entry fee of 50 pts goes into the pool — top players win a share</p></div>
+                <div class="feature-card"><h4>🔥 Heat Events</h4><p>Timed boosts that multiply points for active Arena players</p></div>
+                <div class="feature-card"><h4>🎯 Predictions</h4><p>Pick the winner before reset — correct guess pays 3x your stake</p></div>
+                <div class="feature-card"><h4>💬 Arena Chat</h4><p>Live chat with all competitors during the 24h window</p></div>
+                <div class="feature-card"><h4>📡 Live Streams</h4><p>Top players can broadcast their mixing session (v2.1)</p></div>
+                <div class="feature-card"><h4>🔴 Live Rankings</h4><p>Leaderboard updates every 4 seconds in real time</p></div>
             </div>
-            <div class="highlight">
-                <h3>Kernel Bonus Combos</h3>
+        </div>
+
+        <!-- ── KERNEL OF WOW ── -->
+        <div class="section">
+            <h2><span class="emoji">🌽</span> Kernel of Wow — Daily Special</h2>
+            <p>Every 24 hours one active player receives the <strong style="color:#fbbf24;">Kernel of Wow</strong> — a special ingredient that applies point bonuses to every treat created while held.</p>
+            <div class="feature-grid">
+                <div class="feature-card"><h4>🎲 Random Selection</h4><p>Active players are automatically entered each day</p></div>
+                <div class="feature-card"><h4>⏰ 16-Hour Duration</h4><p>Use it before it expires to maximise your bonus</p></div>
+                <div class="feature-card"><h4>🎯 Tier Multipliers</h4><p>Bonus scales with the rarity of the treat you create</p></div>
+                <div class="feature-card"><h4>🏆 Global Banner</h4><p>Current holder is shown to every player in the app</p></div>
+            </div>
+            <div class="highlight gold">
+                <h3>Kernel Bonus Tiers</h3>
                 <ul>
-                    <li><strong>Basic WOW Combo (2+ ingredients):</strong> Small points boost</li>
-                    <li><strong>Super WOW Combo (4+ ingredients):</strong> Medium points boost</li>
-                    <li><strong>Ultra WOW Combo (5 ingredients + Mythic):</strong> Maximum points boost!</li>
+                    <li><strong>+5% Common treats</strong> — small but consistent gain</li>
+                    <li><strong>+15% Rare treats</strong> — good passive boost</li>
+                    <li><strong>+20% Epic treats</strong> — worth planning your mixes around</li>
+                    <li><strong>+30% Legendary treats</strong> — maximum bonus — save your best combos!</li>
                 </ul>
             </div>
         </div>
 
+        <!-- ── POINTS & XP ── -->
         <div class="section">
-            <h2><span class="emoji">🏪</span>Marketplace</h2>
-            <p>List your treats for sale and browse other players' creations!</p>
+            <h2><span class="emoji">📊</span> Points & XP</h2>
+            <div class="highlight">
+                <h3>How Points Work</h3>
+                <ul>
+                    <li>Points are earned every time you create a treat</li>
+                    <li>Higher rarity = more points per treat</li>
+                    <li>Arena entry costs 50 pts but top finishes return far more</li>
+                    <li>Heat Events apply a temporary multiplier to all point gains</li>
+                    <li>Kernel of Wow adds a flat % bonus on top of the base value</li>
+                    <li>Points will convert to <strong>$LAB tokens</strong> at Season 2 end</li>
+                </ul>
+            </div>
+            <div class="highlight">
+                <h3>How XP Works</h3>
+                <ul>
+                    <li>XP is earned alongside points on every treat</li>
+                    <li>Level up to unlock higher-tier ingredients</li>
+                    <li>Max level is 50 (unlocks Godtier Shiba Serum)</li>
+                    <li>XP does not reset between seasons — your progress carries forward</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ── NFT + MARKETPLACE ── -->
+        <div class="section">
+            <h2><span class="emoji">🏪</span> Marketplace & NFT Benefits</h2>
             <div class="feature-grid">
-                <div class="feature-card"><h4>📝 List Treats</h4><p>Set prices in DOGE or $LAB tokens (coming soon)</p></div>
+                <div class="feature-card"><h4>📝 List Treats</h4><p>Set prices in DOGE or $LAB tokens (launching with token)</p></div>
                 <div class="feature-card"><h4>🔍 Browse & Filter</h4><p>Filter by rarity, price, and ingredients</p></div>
                 <div class="feature-card"><h4>💰 Trading Fee</h4><p>4.20% fee on successful sales</p></div>
-                <div class="feature-card"><h4>🔒 Secure</h4><p>Trading goes live with $LAB token launch</p></div>
+                <div class="feature-card"><h4>🎁 NFT Holders</h4><p>500 bonus points + VIP badge on leaderboard</p></div>
+                <div class="feature-card"><h4>💎 $LAB Priority</h4><p>NFT holders get priority access to $LAB airdrops</p></div>
+                <div class="feature-card"><h4>🎨 NFT Minting</h4><p>Convert treats to ERC-721 tokens — coming soon</p></div>
             </div>
         </div>
 
+        <!-- ── FAIR PLAY ── -->
         <div class="section">
-            <h2><span class="emoji">👑</span>NFT Holder Benefits</h2>
-            <p>DogeFood NFT holders receive exclusive VIP benefits!</p>
-            <div class="feature-grid">
-                <div class="feature-card"><h4>🎁 500 Bonus Points</h4><p>Instant bonus upon wallet verification</p></div>
-                <div class="feature-card"><h4>⭐ VIP Badge</h4><p>Special VIP status displayed on leaderboards</p></div>
-                <div class="feature-card"><h4>💎 Future Rewards</h4><p>Priority access to $LAB token airdrops</p></div>
-                <div class="feature-card"><h4>🏆 Leaderboard Priority</h4><p>NFT holders get special recognition</p></div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2><span class="emoji">🛡️</span>Fair Play & Daily Limits</h2>
+            <h2><span class="emoji">🛡️</span> Fair Play & Daily Limits</h2>
             <div class="feature-grid">
                 <div class="feature-card"><h4>📊 Daily Treat Limit</h4><p>Maximum treats per day to ensure fair competition</p></div>
-                <div class="feature-card"><h4>⏱️ Rate Limiting</h4><p>Cooldown between treat creations</p></div>
-                <div class="feature-card"><h4>🔍 Server Validation</h4><p>All actions verified server-side</p></div>
-                <div class="feature-card"><h4>💊 Extra Lives</h4><p>Purchase additional treats with $LAB (coming soon)</p></div>
+                <div class="feature-card"><h4>⏱️ Cooldown</h4><p>Short cooldown between treat creations</p></div>
+                <div class="feature-card"><h4>🔍 Server Validation</h4><p>All actions verified server-side — no client exploits</p></div>
+                <div class="feature-card"><h4>💊 Extra Lives</h4><p>Purchase additional treats with $LAB tokens (coming soon)</p></div>
             </div>
         </div>
 
+        <!-- ── TELEGRAM ── -->
         <div class="section">
-            <h2><span class="emoji">🔔</span>Telegram Notifications</h2>
-            <p>Never miss a treat! Enable notifications through our Telegram bot.</p>
+            <h2><span class="emoji">🔔</span> Telegram Notifications</h2>
             <div class="feature-grid">
-                <div class="feature-card"><h4>🍖 Treat Ready</h4><p>Get notified when your treat is done cooking</p></div>
+                <div class="feature-card"><h4>🍖 Treat Ready</h4><p>Alert when your treat finishes cooking</p></div>
                 <div class="feature-card"><h4>🔄 Daily Reset</h4><p>Know when your daily limit resets</p></div>
-                <div class="feature-card"><h4>🌽 Kernel of Wow</h4><p>Alert if you're selected as the holder</p></div>
-                <div class="feature-card"><h4>⚙️ Customizable</h4><p>Toggle each notification type in settings</p></div>
+                <div class="feature-card"><h4>🌽 Kernel of Wow</h4><p>Instant alert if you are selected as the holder</p></div>
+                <div class="feature-card"><h4>🏟️ Arena Events</h4><p>Heat event start/end and Arena result notifications</p></div>
             </div>
             <div class="highlight">
                 <h3>Setup Instructions</h3>
                 <ol>
-                    <li>Open Telegram and search for <strong>@Dogefoodlabbot</strong></li>
+                    <li>Open Telegram and search <strong>@Dogefoodlabbot</strong></li>
                     <li>Start the bot and link your game account</li>
                     <li>Go to Settings in the game and enable notifications</li>
-                    <li>Customize which alerts you want to receive</li>
+                    <li>Toggle individual alert types to your preference</li>
                 </ol>
             </div>
         </div>
 
-        <div class="section">
-            <h2><span class="emoji">🚀</span>Coming Soon</h2>
+        <!-- ── COMING SOON ── -->
+        <div class="section season2">
+            <h2><span class="emoji">🚀</span> Coming Soon</h2>
             <div class="feature-grid">
-                <div class="feature-card"><h4>🪙 $LAB Token</h4><p>Convert points to tradeable tokens</p></div>
-                <div class="feature-card"><h4>🏆 Tournaments</h4><p>Compete in 48-hour bracket tournaments</p></div>
-                <div class="feature-card"><h4>🎨 NFT Minting</h4><p>Convert treats to ERC-721 tokens</p></div>
-                <div class="feature-card"><h4>📈 Season 2</h4><p>New ingredients, features, and rewards</p></div>
+                <div class="feature-card"><h4>🪙 $LAB Token</h4><p>Convert points to tradeable tokens — Season 2 end</p></div>
+                <div class="feature-card"><h4>📡 Live Streaming</h4><p>Arena broadcasts with mic — v2.1 drop</p></div>
+                <div class="feature-card"><h4>🏆 Tournaments</h4><p>48-hour bracket competitions with bracket prizes</p></div>
+                <div class="feature-card"><h4>🎨 NFT Minting</h4><p>Convert your rarest treats to on-chain NFTs</p></div>
             </div>
         </div>
 
+        <!-- ── FOOTER CTA ── -->
         <div class="section footer-cta">
-            <h2>Ready to Create?</h2>
-            <p>Now you know everything - time to become the ultimate treat scientist!</p>
-            <button class="back-button" onclick="goBack()">Back to DogeFood Lab</button>
+            <h2>Ready to Mix?</h2>
+            <p>You know every ingredient, every tier, every trick — now go craft the first Mythic treat of Season 2.</p>
+            <button class="cta-btn" onclick="goBack()">Back to DogeFood Lab →</button>
         </div>
-    </div>
+
+    </div><!-- /container -->
 
     <script>
         function goBack() {
@@ -677,6 +650,21 @@
             else if (window.history.length > 1) { window.history.back(); }
             else { window.location.href = '/'; }
         }
+
+        // Progressive image enhancement — swap emoji fallback for real PNG once loaded
+        document.querySelectorAll('.icon-wrap img').forEach(img => {
+            img.addEventListener('load', () => {
+                // Image loaded — hide the emoji text node behind it
+                img.style.display = 'block';
+                const wrap = img.parentNode;
+                wrap.childNodes.forEach(n => {
+                    if (n.nodeType === 3) n.textContent = ''; // clear text node (emoji fallback)
+                });
+            });
+            img.addEventListener('error', () => {
+                img.style.display = 'none'; // show emoji fallback
+            });
+        });
     </script>
 </body>
 </html>
