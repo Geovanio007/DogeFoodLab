@@ -313,8 +313,8 @@ const PointsSwapWidget = ({ playerPoints = 0, isLoggedIn = false, effectiveAddre
                 : 'bg-white/[0.05] border border-white/[0.06] text-slate-500 cursor-not-allowed'
               }`}
             style={canSwap ? {
-              background: 'linear-gradient(135deg, #facc15 0%, #f59e0b 60%, #d97706 100%)',
-              boxShadow: '0 4px 20px rgba(250,204,21,0.3), inset 0 1px 0 rgba(255,255,255,0.25)',
+              background: 'linear-gradient(135deg, #fef08a 0%, #fde047 40%, #facc15 100%)',
+              boxShadow: '0 4px 20px rgba(254,240,138,0.35), inset 0 1px 0 rgba(255,255,255,0.3)',
             } : {}}
           >
             {canSwap && (
