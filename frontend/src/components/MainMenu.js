@@ -18,6 +18,7 @@ import {
   ArrowRight, ChevronLeft, Users, MessageCircle, Send,
   Rocket, Reply, Smile
 } from 'lucide-react';
+import PointsSwapWidget from './PointsSwapWidget';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const SEASON_1_END = new Date('2026-04-31T00:00:00Z').getTime();
@@ -1210,6 +1211,13 @@ const MainMenu = () => {
               <FeatureCard icon={Crown} label="Tourney" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/tournament" testId="feature-tournament" />
             </div>
           </div>
+
+          {/* ── Points Swap Widget ── */}
+          <PointsSwapWidget
+            playerPoints={effectivePoints || 0}
+            isLoggedIn={!!isLoggedIn}
+            effectiveAddress={effectiveAddress}
+          />
 
           {/* ── Live Activity Table ── */}
           <div className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden">
