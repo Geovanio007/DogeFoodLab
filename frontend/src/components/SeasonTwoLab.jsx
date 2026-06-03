@@ -20,12 +20,16 @@ const API_URL = process.env.REACT_APP_BACKEND_URL || '';
    hints, reactor overload meter, live market feed.
    ============================================================ */
 
+// Tier styles keyed by the `category` field the backend sends.
+// Season 2 uses Starter/Rare/Epic/Legendary/Mythic — no "Common".
 const RARITY = {
+  Starter:   { hex: '#f59e0b', glow: 'rgba(245,158,11,.55)',  label: 'Starter' },
+  Rare:      { hex: '#38bdf8', glow: 'rgba(56,189,248,.6)',   label: 'Rare' },
+  Epic:      { hex: '#a855f7', glow: 'rgba(168,85,247,.6)',   label: 'Epic' },
+  Legendary: { hex: '#fbbf24', glow: 'rgba(251,191,36,.65)',  label: 'Legendary' },
+  Mythic:    { hex: '#ec4899', glow: 'rgba(236,72,153,.7)',   label: 'Mythic' },
+  // Legacy fallback — should never appear in Season 2 but kept so nothing crashes
   Common:    { hex: '#9ca3af', glow: 'rgba(156,163,175,.55)', label: 'Common' },
-  Rare:      { hex: '#38bdf8', glow: 'rgba(56,189,248,.6)',  label: 'Rare' },
-  Epic:      { hex: '#a855f7', glow: 'rgba(168,85,247,.6)',  label: 'Epic' },
-  Legendary: { hex: '#f59e0b', glow: 'rgba(245,158,11,.65)', label: 'Legendary' },
-  Mythic:    { hex: '#ec4899', glow: 'rgba(236,72,153,.7)',  label: 'Mythic' },
 };
 
 const CATEGORY_TINT = {
@@ -255,8 +259,8 @@ const SeasonTwoLab = ({ playerAddress }) => {
     const base = Math.min(100, selectedIngredients.length * 22);
     const rarityBoost = selectedIngredients.reduce((acc, id) => {
       const ing = ingredients.find((i) => i.id === id);
-      const r = ing?.rarity || 'Common';
-      const bump = { Common: 0, Rare: 6, Epic: 12, Legendary: 18, Mythic: 24 }[r] || 0;
+      const r = ing?.category || ing?.rarity || 'Starter';
+      const bump = { Starter: 0, Common: 0, Rare: 6, Epic: 12, Legendary: 18, Mythic: 24 }[r] || 0;
       return acc + bump;
     }, 0);
     return Math.min(100, base + rarityBoost);
@@ -828,7 +832,9 @@ const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading }) =
       {ingredients.map((ing) => {
         const meta = ingredientMeta(ing.id, ing.name);
         const tint = tintFor(ing.category);
-        const rar = RARITY[ing.rarity] || RARITY.Common;
+        // Backend sends `category` (Starter/Rare/Epic/Legendary/Mythic) — not `rarity`.
+        // Use category for the tier badge; fall back to Starter if unrecognised.
+        const rar = RARITY[ing.category] || RARITY.Starter;
         const isPicked = selectedIngredients.includes(ing.id);
         return (
           <button
