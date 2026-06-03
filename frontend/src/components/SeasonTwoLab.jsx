@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beaker, Sparkles, Zap, ChevronLeft, X, TrendingUp, Bot, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
+import { Beaker, Zap, ChevronLeft, X, TrendingUp, Bot, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
 import INGREDIENT_ICONS from '../config/ingredientIcons';
 import { useAudio } from '../contexts/AudioContext';
 import { useMusic } from '../contexts/MusicContext';
@@ -476,7 +476,7 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
       }}
     >
       {/* ── Row 1: identity + stats ── */}
-      <div className="flex items-center gap-2 px-2 pt-2 pb-1 sm:px-3 sm:pt-3">
+      <div className="flex items-center gap-2 px-2 pt-2 pb-1 sm:px-3 sm:pt-3 overflow-hidden">
 
         {/* Back button */}
         <button
@@ -560,10 +560,7 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
       <div className="px-2 pb-2 sm:px-3 sm:pb-3">
         {/* Labels row */}
         <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3 text-cyan-400" />
-            <span className="text-[10px] font-bold font-mono uppercase tracking-widest text-cyan-300/80">XP</span>
-          </div>
+          <span className="text-[10px] font-bold font-mono uppercase tracking-widest text-cyan-300/80">XP</span>
           <span className="text-[10px] font-mono text-cyan-200/50 tabular-nums">
             {Number(xp).toLocaleString()} / {Number(xpToNext).toLocaleString()}
           </span>
@@ -608,11 +605,16 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
 const Stat = ({ label, value, accent, testid }) => (
   <div
     className="shrink-0 px-2 py-1 rounded-xl text-center"
-    style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}
+    style={{
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      border: '1px solid rgba(255,255,255,0.09)',
+      minWidth: 0,
+      maxWidth: 64,
+    }}
     data-testid={testid}
   >
-    <div className="text-[8px] uppercase tracking-widest leading-none mb-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</div>
-    <div className="text-xs sm:text-sm font-bold font-mono leading-none tabular-nums" style={{ color: accent }}>
+    <div className="text-[8px] uppercase tracking-widest leading-none mb-0.5 truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</div>
+    <div className="text-xs font-bold font-mono leading-none tabular-nums truncate" style={{ color: accent }}>
       {Number(value || 0).toLocaleString()}
     </div>
   </div>
