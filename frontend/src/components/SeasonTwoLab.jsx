@@ -479,85 +479,79 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
         boxShadow: '0 8px 30px -10px rgba(56,189,248,0.4)',
       }}
     >
-      {/* ── Row 1: identity + stats ── */}
-      <div className="flex items-center gap-2 px-2 pt-2 pb-1 sm:px-3 sm:pt-3 overflow-hidden">
+      {/* ── Row 1: identity + stats ──
+           Left:  back btn | avatar | name | level badge
+           Right: $LAB pill | PTS pill | sound btn
+           Both sides are flex-contained — nothing can overflow the card.
+      ── */}
+      <div className="flex items-center justify-between gap-2 px-2 pt-2 pb-1 sm:px-3 sm:pt-3">
 
-        {/* Back button */}
-        <button
-          data-testid="lab-back-btn"
-          onClick={onBack}
-          className="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-colors"
-          style={{ backgroundColor: 'rgba(34,211,238,0.12)', border: '1px solid rgba(34,211,238,0.35)' }}
-          aria-label="Back to menu"
-        >
-          <ChevronLeft className="w-5 h-5 text-cyan-300" />
-        </button>
-
-        {/* Character avatar */}
-        {character && (
-          <div
-            data-testid="lab-character-avatar"
-            className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2"
-            style={{
-              borderColor: character.accent || '#22d3ee',
-              boxShadow: `0 0 12px ${(character.accent || '#22d3ee')}55`,
-            }}
-            title={character.name}
+        {/* LEFT: back + avatar + name + level */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <button
+            data-testid="lab-back-btn"
+            onClick={onBack}
+            className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+            style={{ backgroundColor: 'rgba(34,211,238,0.12)', border: '1px solid rgba(34,211,238,0.35)' }}
+            aria-label="Back to menu"
           >
-            <img
-              src={character.image}
-              alt={character.name}
-              className="w-full h-full object-cover"
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
+            <ChevronLeft className="w-5 h-5 text-cyan-300" />
+          </button>
+
+          {character && (
+            <div
+              data-testid="lab-character-avatar"
+              className="shrink-0 w-10 h-10 rounded-full overflow-hidden border-2"
+              style={{
+                borderColor: character.accent || '#22d3ee',
+                boxShadow: `0 0 10px ${(character.accent || '#22d3ee')}44`,
+              }}
+              title={character.name}
+            >
+              <img
+                src={character.image}
+                alt={character.name}
+                className="w-full h-full object-cover"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span
+              data-testid="lab-nickname"
+              className="text-sm font-bold text-white truncate"
+              style={{ maxWidth: 80 }}
+            >
+              {character?.name?.split(' ')[2] || nickname}
+            </span>
+            <span
+              data-testid="lab-level"
+              className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold font-mono whitespace-nowrap"
+              style={{ backgroundColor: 'rgba(251,191,36,0.18)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.35)' }}
+            >
+              LVL {level}
+            </span>
           </div>
-        )}
-
-        {/* Name + level — single line, no wrapping */}
-        <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-          <span className="text-[10px] font-mono text-cyan-300/70 uppercase tracking-widest hidden xs:inline">Dr.</span>
-          <span
-            data-testid="lab-nickname"
-            className="text-xs sm:text-sm font-bold text-white truncate max-w-[70px] sm:max-w-[100px]"
-          >
-            {character?.name?.split(' ')[2] || nickname}
-          </span>
-          <span
-            data-testid="lab-level"
-            className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold font-mono"
-            style={{ backgroundColor: 'rgba(251,191,36,0.18)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.35)' }}
-          >
-            LVL {level}
-          </span>
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Compact stat pills */}
-        <Stat label="$LAB" value={labBalance} accent="#facc15" testid="lab-balance" />
-        <Stat label="PTS"  value={points}     accent="#a855f7" testid="lab-points" />
-
-        {/* Stability — desktop only */}
-        <div className="hidden lg:flex flex-col items-center shrink-0 px-2 py-1 rounded-xl"
-             style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="text-[8px] uppercase tracking-widest" style={{ color: 'rgba(34,211,238,0.6)' }}>STB</div>
-          <div className="text-xs font-bold font-mono text-emerald-300" data-testid="lab-stability">{stability}%</div>
+        {/* RIGHT: stats + sound — fixed width group, never grows */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Stat label="$LAB" value={labBalance} accent="#facc15" testid="lab-balance" />
+          <Stat label="PTS"  value={points}     accent="#a855f7" testid="lab-points" />
+          <button
+            data-testid="lab-sound-toggle"
+            onClick={toggleSound}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+            style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+            aria-label="Toggle sound"
+          >
+            {soundEnabled
+              ? <Volume2 className="w-4 h-4 text-cyan-200" />
+              : <VolumeX className="w-4 h-4 text-white/50" />
+            }
+          </button>
         </div>
-
-        {/* Sound toggle */}
-        <button
-          data-testid="lab-sound-toggle"
-          onClick={toggleSound}
-          className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
-          style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-          aria-label="Toggle sound"
-        >
-          {soundEnabled
-            ? <Volume2 className="w-4 h-4 text-cyan-200" />
-            : <VolumeX className="w-4 h-4 text-white/50" />
-          }
-        </button>
       </div>
 
       {/* ── Row 2: XP progress bar ── */}
@@ -608,17 +602,25 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
 
 const Stat = ({ label, value, accent, testid }) => (
   <div
-    className="shrink-0 px-2 py-1 rounded-xl text-center"
+    className="px-2 py-1 rounded-xl text-center"
     style={{
       backgroundColor: 'rgba(255,255,255,0.05)',
       border: '1px solid rgba(255,255,255,0.09)',
-      minWidth: 0,
-      maxWidth: 64,
+      width: 52,          /* fixed width — never grows, never clips */
+      flexShrink: 0,
     }}
     data-testid={testid}
   >
-    <div className="text-[8px] uppercase tracking-widest leading-none mb-0.5 truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</div>
-    <div className="text-xs font-bold font-mono leading-none tabular-nums truncate" style={{ color: accent }}>
+    <div
+      className="text-[8px] uppercase tracking-widest leading-none mb-0.5"
+      style={{ color: 'rgba(255,255,255,0.45)' }}
+    >
+      {label}
+    </div>
+    <div
+      className="text-xs font-bold font-mono leading-none tabular-nums overflow-hidden"
+      style={{ color: accent, textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+    >
       {Number(value || 0).toLocaleString()}
     </div>
   </div>
