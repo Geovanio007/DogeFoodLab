@@ -488,7 +488,7 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
         padding: '10px 12px 6px',
       }}>
 
-        {/* COL 1: back btn + avatar (fixed, never shrinks) */}
+        {/* COL 1: back btn + avatar with name+level stacked below */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <button
             data-testid="lab-back-btn"
@@ -505,46 +505,52 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
             <ChevronLeft className="w-5 h-5 text-cyan-300" />
           </button>
           {character && (
-            <div
-              data-testid="lab-character-avatar"
-              style={{
-                width: 42, height: 42, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-                border: `2px solid ${character.accent || '#22d3ee'}`,
-                boxShadow: `0 0 10px ${(character.accent || '#22d3ee')}44`,
-              }}
-              title={character.name}
-            >
-              <img src={character.image} alt={character.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+              {/* Avatar */}
+              <div
+                data-testid="lab-character-avatar"
+                style={{
+                  width: 42, height: 42, borderRadius: '50%', overflow: 'hidden',
+                  border: `2px solid ${character.accent || '#22d3ee'}`,
+                  boxShadow: `0 0 10px ${(character.accent || '#22d3ee')}44`,
+                }}
+                title={character.name}
+              >
+                <img src={character.image} alt={character.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              </div>
+              {/* Name + level badge stacked under avatar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <span
+                  data-testid="lab-nickname"
+                  style={{
+                    fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.85)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    maxWidth: 40,
+                  }}
+                >
+                  {character?.name?.split(' ')[2] || nickname}
+                </span>
+                <span
+                  data-testid="lab-level"
+                  style={{
+                    flexShrink: 0, padding: '1px 5px', borderRadius: 4,
+                    fontSize: 9, fontWeight: 800, fontFamily: 'monospace', whiteSpace: 'nowrap',
+                    backgroundColor: 'rgba(251,191,36,0.2)', color: '#fbbf24',
+                    border: '1px solid rgba(251,191,36,0.3)',
+                  }}
+                >
+                  {level}
+                </span>
+              </div>
             </div>
           )}
         </div>
 
-        {/* COL 2: name + level (flexible middle, clips if needed) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-          <span
-            data-testid="lab-nickname"
-            style={{
-              fontSize: 14, fontWeight: 700, color: '#ffffff',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}
-          >
-            {character?.name?.split(' ')[2] || nickname}
-          </span>
-          <span
-            data-testid="lab-level"
-            style={{
-              flexShrink: 0, padding: '2px 7px', borderRadius: 6,
-              fontSize: 11, fontWeight: 800, fontFamily: 'monospace', whiteSpace: 'nowrap',
-              backgroundColor: 'rgba(251,191,36,0.18)', color: '#fbbf24',
-              border: '1px solid rgba(251,191,36,0.35)',
-            }}
-          >
-            LVL {level}
-          </span>
-        </div>
+        {/* COL 2: empty flexible spacer — name/level now lives under avatar */}
+        <div style={{ minWidth: 0, flex: 1 }} />
 
         {/* COL 3: $LAB + PTS + sound (fixed, never grows) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -662,15 +668,14 @@ const ReactorChamber = ({ selectedIngredients, ingredients, overload, stability,
         <div className="absolute inset-0 lab-scanline" />
       </div>
 
-      {/* Header */}
-      <div className="relative z-10 flex items-center justify-between mb-3 sm:mb-4">
-        <div>
-          <div className="text-[10px] tracking-[0.3em] text-cyan-300/70 font-mono">MEME MIXER REACTOR</div>
-          <div className="text-xl sm:text-2xl font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-            Fusion Chamber<span className="text-cyan-300">.</span>
-          </div>
+      {/* Header — centred */}
+      <div className="relative z-10 flex flex-col items-center mb-3 sm:mb-4">
+        <div className="text-[10px] tracking-[0.3em] text-cyan-300/70 font-mono text-center">MEME MIXER REACTOR</div>
+        <div className="text-xl sm:text-2xl font-extrabold tracking-tight text-center" style={{ fontFamily: 'var(--font-heading)' }}>
+          Fusion Chamber<span className="text-cyan-300">.</span>
         </div>
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+        {/* Status pill — centred below title */}
+        <div className="flex items-center gap-2 mt-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10">
           <span className={classNames('w-2 h-2 rounded-full animate-pulse', overload > 70 ? 'bg-red-400' : 'bg-emerald-400')} />
           <span className="text-[10px] uppercase tracking-widest text-white/70">{overload > 70 ? 'OVERDRIVE' : 'ONLINE'}</span>
         </div>
