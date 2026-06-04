@@ -479,71 +479,87 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
         boxShadow: '0 8px 30px -10px rgba(56,189,248,0.4)',
       }}
     >
-      {/* ── Row 1: identity + stats ──
-           Left:  back btn | avatar | name | level badge
-           Right: $LAB pill | PTS pill | sound btn
-           Both sides are flex-contained — nothing can overflow the card.
-      ── */}
-      <div className="flex items-center justify-between gap-2 px-2 pt-2 pb-1 sm:px-3 sm:pt-3">
+      {/* ── Row 1: identity + stats ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'auto 1fr auto',
+        alignItems: 'center',
+        gap: 8,
+        padding: '10px 12px 6px',
+      }}>
 
-        {/* LEFT: back + avatar + name + level */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        {/* COL 1: back btn + avatar (fixed, never shrinks) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <button
             data-testid="lab-back-btn"
             onClick={onBack}
-            className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
-            style={{ backgroundColor: 'rgba(34,211,238,0.12)', border: '1px solid rgba(34,211,238,0.35)' }}
+            style={{
+              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(34,211,238,0.12)',
+              border: '1px solid rgba(34,211,238,0.35)',
+              cursor: 'pointer',
+            }}
             aria-label="Back to menu"
           >
             <ChevronLeft className="w-5 h-5 text-cyan-300" />
           </button>
-
           {character && (
             <div
               data-testid="lab-character-avatar"
-              className="shrink-0 w-10 h-10 rounded-full overflow-hidden border-2"
               style={{
-                borderColor: character.accent || '#22d3ee',
+                width: 42, height: 42, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                border: `2px solid ${character.accent || '#22d3ee'}`,
                 boxShadow: `0 0 10px ${(character.accent || '#22d3ee')}44`,
               }}
               title={character.name}
             >
-              <img
-                src={character.image}
-                alt={character.name}
-                className="w-full h-full object-cover"
+              <img src={character.image} alt={character.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
             </div>
           )}
-
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span
-              data-testid="lab-nickname"
-              className="text-sm font-bold text-white truncate"
-              style={{ maxWidth: 80 }}
-            >
-              {character?.name?.split(' ')[2] || nickname}
-            </span>
-            <span
-              data-testid="lab-level"
-              className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold font-mono whitespace-nowrap"
-              style={{ backgroundColor: 'rgba(251,191,36,0.18)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.35)' }}
-            >
-              LVL {level}
-            </span>
-          </div>
         </div>
 
-        {/* RIGHT: stats + sound — fixed width group, never grows */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* COL 2: name + level (flexible middle, clips if needed) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span
+            data-testid="lab-nickname"
+            style={{
+              fontSize: 14, fontWeight: 700, color: '#ffffff',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}
+          >
+            {character?.name?.split(' ')[2] || nickname}
+          </span>
+          <span
+            data-testid="lab-level"
+            style={{
+              flexShrink: 0, padding: '2px 7px', borderRadius: 6,
+              fontSize: 11, fontWeight: 800, fontFamily: 'monospace', whiteSpace: 'nowrap',
+              backgroundColor: 'rgba(251,191,36,0.18)', color: '#fbbf24',
+              border: '1px solid rgba(251,191,36,0.35)',
+            }}
+          >
+            LVL {level}
+          </span>
+        </div>
+
+        {/* COL 3: $LAB + PTS + sound (fixed, never grows) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <Stat label="$LAB" value={labBalance} accent="#facc15" testid="lab-balance" />
           <Stat label="PTS"  value={points}     accent="#a855f7" testid="lab-points" />
           <button
             data-testid="lab-sound-toggle"
             onClick={toggleSound}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
-            style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+            style={{
+              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              cursor: 'pointer',
+            }}
             aria-label="Toggle sound"
           >
             {soundEnabled
@@ -600,31 +616,29 @@ const TopBar = ({ nickname, level, xp, xpToNext, xpPct, points, labBalance, stab
   </header>
 );
 
-const Stat = ({ label, value, accent, testid }) => (
+const Stat = ({ label, value, accent, testid }) => {
+  const formatted = Number(value || 0).toLocaleString();
+  // Dynamically size the pill to fit the value — min 48px, max 72px
+  const w = Math.min(72, Math.max(48, formatted.length * 9 + 16));
+  return (
   <div
-    className="px-2 py-1 rounded-xl text-center"
+    data-testid={testid}
     style={{
+      width: w, flexShrink: 0, padding: '4px 6px', borderRadius: 10,
       backgroundColor: 'rgba(255,255,255,0.05)',
       border: '1px solid rgba(255,255,255,0.09)',
-      width: 52,          /* fixed width — never grows, never clips */
-      flexShrink: 0,
+      textAlign: 'center',
     }}
-    data-testid={testid}
   >
-    <div
-      className="text-[8px] uppercase tracking-widest leading-none mb-0.5"
-      style={{ color: 'rgba(255,255,255,0.45)' }}
-    >
+    <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.45)', lineHeight: 1, marginBottom: 2 }}>
       {label}
     </div>
-    <div
-      className="text-xs font-bold font-mono leading-none tabular-nums overflow-hidden"
-      style={{ color: accent, textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-    >
-      {Number(value || 0).toLocaleString()}
+    <div style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: accent, lineHeight: 1, whiteSpace: 'nowrap' }}>
+      {formatted}
     </div>
   </div>
-);
+  );
+};
 
 /* ----- Reactor ----- */
 
