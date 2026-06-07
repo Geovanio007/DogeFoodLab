@@ -694,8 +694,8 @@ const PromoBanner = ({ icon: Icon, iconBg, title, subtitle, borderColor, gradien
 );
 
 // ─── Feature Card ─────────────────────────────────────────────
-const FeatureCard = ({ icon: Icon, label, gradient, iconColor, borderColor, to, onClick, badge, testId }) => (
-  <Link to={to} onClick={onClick} className="block group" data-testid={testId}>
+const FeatureCard = ({ icon: Icon, label, gradient, iconColor, borderColor, to, state, onClick, badge, testId }) => (
+  <Link to={to} state={state} onClick={onClick} className="block group" data-testid={testId}>
     <div className={`relative overflow-hidden rounded-2xl border ${borderColor} bg-gradient-to-b ${gradient} p-4 sm:p-5 text-center hover:scale-[1.05] hover:-translate-y-1 transition-all duration-200`}
       style={{ boxShadow: '0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)' }}>
       <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.05] to-transparent rounded-t-2xl pointer-events-none" />
@@ -1205,7 +1205,7 @@ const MainMenu = () => {
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
               <FeatureCard icon={Beaker} label="Lab" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/lab" onClick={handleLabAccess} testId="feature-lab" />
               <FeatureCard icon={Zap} label="Arena" gradient="from-amber-500/25 to-orange-600/10" iconColor="text-amber-300" borderColor="border-amber-500/30" to="/arena" badge="LIVE" testId="feature-arena" />
-              <FeatureCard icon={Settings} label="Auto-Mix" gradient="from-sky-500/20 to-indigo-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/auto-mixer" badge="AI" testId="feature-auto-mixer" />
+              <FeatureCard icon={Settings} label="Auto-Mix" gradient="from-sky-500/20 to-indigo-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/settings" state={{ tab: 'auto-mixer' }} badge="AI" testId="feature-auto-mixer" />
               <FeatureCard icon={Palette} label="Treats" gradient="from-purple-500/20 to-pink-600/10" iconColor="text-purple-300" borderColor="border-purple-500/15" to="/nfts" testId="feature-treats" />
               <FeatureCard icon={Store} label="Market" gradient="from-sky-500/20 to-cyan-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/marketplace" testId="feature-market" />
               <FeatureCard icon={Crown} label="Tourney" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/tournament" testId="feature-tournament" />
