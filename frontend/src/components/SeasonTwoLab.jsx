@@ -274,7 +274,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
     })();
   }, [loadPlayerData, loadIngredients, loadMarketFeed, loadBrewingTreats]);
 
-  // Poll active treats every 10s so timers update
+  // Poll active treats every 10s so timers stay live
   useEffect(() => {
     const t = setInterval(loadBrewingTreats, 10000);
     return () => clearInterval(t);
@@ -1042,8 +1042,10 @@ const ResultReveal = ({ result, onClose }) => {
 
   const treat = result?.treat || {};
   const outcome = result?.outcome || {};
-  const xpGained = outcome.xp_gained ?? result.xp_gained ?? 0;
-  const pointsGained = outcome.points_gained ?? result.points_gained ?? 0;
+  // Backend stores rewards as xp_reward / points_reward on the treat object
+  const xpGained = treat.xp_reward ?? outcome.xp_reward ?? outcome.xp_gained ?? result.xp_gained ?? 0;
+  const pointsGained = treat.points_reward ?? outcome.points_reward ?? outcome.points_gained ?? result.points_gained ?? 0;
+  const fc = FLASK_COLORS[rarity] || FLASK_COLORS.Common;
 
   return (
     <div
@@ -1076,12 +1078,44 @@ const ResultReveal = ({ result, onClose }) => {
           {treat.name || outcome.name || 'Mystery Treat'}
         </h2>
 
-        <div className="my-5 relative mx-auto w-32 h-32 sm:w-40 sm:h-40">
-          <div className="absolute inset-0 rounded-full animate-rarity-pulse" style={{ background: `radial-gradient(circle, ${r.hex}66, transparent 70%)` }} />
-          <div className="absolute inset-3 rounded-full border" style={{ borderColor: r.hex + '99', background: `radial-gradient(circle at 35% 30%, ${r.hex}aa, ${r.hex}33 60%, transparent)`, boxShadow: `inset 0 0 30px ${r.glow}, 0 0 30px ${r.glow}` }} />
-          <div className="absolute inset-0 flex items-center justify-center text-6xl sm:text-7xl drop-shadow-[0_0_18px_rgba(255,255,255,0.6)]">
-            {outcome.emoji || treat.emoji || '🥩'}
-          </div>
+        <div className="my-5 relative mx-auto" style={{ width: 110, height: 138 }}>
+          {/* Glow behind flask */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: `radial-gradient(circle at 50% 65%, ${fc.glow}, transparent 60%)`,
+            animation: 'rarity-pulse 1.6s ease-in-out infinite',
+          }} />
+          <svg viewBox="0 0 80 100" width="110" height="138"
+            style={{ position: 'relative', zIndex: 1, filter: `drop-shadow(0 0 10px ${fc.liquid})` }}>
+            <defs>
+              <clipPath id="res-fc">
+                <path d="M28 6 L28 36 L10 68 Q7 78 16 80 L64 80 Q73 78 70 68 L52 36 L52 6 Z" />
+              </clipPath>
+              <linearGradient id="res-lg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={fc.liquid} stopOpacity="0.95" />
+                <stop offset="100%" stopColor={fc.liquid} stopOpacity="0.55" />
+              </linearGradient>
+            </defs>
+            {/* Glass */}
+            <path d="M28 6 L28 36 L10 68 Q7 78 16 80 L64 80 Q73 78 70 68 L52 36 L52 6 Z"
+              fill="rgba(255,255,255,0.03)" stroke={`${fc.liquid}88`} strokeWidth="2" />
+            <rect x="24" y="2" width="32" height="8" rx="3"
+              fill={`${fc.liquid}44`} stroke={`${fc.liquid}88`} strokeWidth="1.5" />
+            {/* Liquid — 70% full */}
+            <g clipPath="url(#res-fc)">
+              <rect x="0" y="32" width="80" height="56" fill="url(#res-lg)" />
+              {[0,1,2,3].map(i => (
+                <circle key={i} cx={18+i*13} cy={42+i*3} r={i*1.4+1.2}
+                  fill={fc.liquid} opacity="0.65"
+                  style={{ animation: `float-bub ${1.4+i*0.35}s ease-in-out infinite`, animationDelay: `${i*0.28}s` }} />
+              ))}
+            </g>
+            {/* Shine */}
+            <path d="M32 9 L32 34 L18 60" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            {/* Check */}
+            <circle cx="40" cy="54" r="13" fill={fc.liquid} opacity="0.92" />
+            <path d="M33 54 L38 60 L48 46" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
         </div>
 
         <div className="grid grid-cols-2 gap-2 mt-3">
@@ -1189,18 +1223,16 @@ const LiveMarketFeed = ({ items }) => (
 
 
 /* ============================================================
-   BREWING TREATS PANEL — Flask/Beaker visual per treat
-   Shows timer as liquid fill, collect button when ready.
+   FLASK COLORS — rarity → liquid colour mapping
+   Used by both BrewingTreatsPanel and ResultReveal
    ============================================================ */
-
-// Rarity → liquid color mapping (matches the reference image aesthetic)
 const FLASK_COLORS = {
-  Starter:   { liquid: '#f59e0b', glow: 'rgba(245,158,11,0.6)',  glass: 'rgba(245,158,11,0.15)', label: '#fbbf24' },
-  Rare:      { liquid: '#38bdf8', glow: 'rgba(56,189,248,0.6)',  glass: 'rgba(56,189,248,0.15)',  label: '#7dd3fc' },
-  Epic:      { liquid: '#a855f7', glow: 'rgba(168,85,247,0.65)', glass: 'rgba(168,85,247,0.15)', label: '#d8b4fe' },
-  Legendary: { liquid: '#fbbf24', glow: 'rgba(251,191,36,0.7)',  glass: 'rgba(251,191,36,0.15)', label: '#fde68a' },
-  Mythic:    { liquid: '#ec4899', glow: 'rgba(236,72,153,0.7)',  glass: 'rgba(236,72,153,0.15)', label: '#f9a8d4' },
-  Common:    { liquid: '#9ca3af', glow: 'rgba(156,163,175,0.5)', glass: 'rgba(156,163,175,0.1)', label: '#d1d5db' },
+  Starter:   { liquid: '#f59e0b', glow: 'rgba(245,158,11,0.6)',  glass: 'rgba(245,158,11,0.12)', label: '#fbbf24' },
+  Rare:      { liquid: '#38bdf8', glow: 'rgba(56,189,248,0.6)',  glass: 'rgba(56,189,248,0.12)',  label: '#7dd3fc' },
+  Epic:      { liquid: '#a855f7', glow: 'rgba(168,85,247,0.65)', glass: 'rgba(168,85,247,0.12)', label: '#d8b4fe' },
+  Legendary: { liquid: '#fbbf24', glow: 'rgba(251,191,36,0.7)',  glass: 'rgba(251,191,36,0.12)', label: '#fde68a' },
+  Mythic:    { liquid: '#ec4899', glow: 'rgba(236,72,153,0.7)',  glass: 'rgba(236,72,153,0.12)', label: '#f9a8d4' },
+  Common:    { liquid: '#9ca3af', glow: 'rgba(156,163,175,0.5)', glass: 'rgba(156,163,175,0.08)', label: '#d1d5db' },
 };
 
 function flaskColor(rarity) {
@@ -1217,7 +1249,7 @@ function formatTimer(secs) {
   return `${s}s`;
 }
 
-// Individual flask card — live countdown ticking inside
+/* ── Individual flask card ── */
 const FlaskCard = ({ treat, onCollect, isCollecting }) => {
   const rarity = treat?.rarity || 'Common';
   const fc = flaskColor(rarity);
@@ -1226,7 +1258,6 @@ const FlaskCard = ({ treat, onCollect, isCollecting }) => {
   const totalSecs = timerData.total_duration || 3600;
   const isReady = secsLeft <= 0 || treat.brewing_status === 'ready';
 
-  // Live countdown tick
   useEffect(() => {
     if (isReady) return;
     const interval = setInterval(() => {
@@ -1238,116 +1269,93 @@ const FlaskCard = ({ treat, onCollect, isCollecting }) => {
     return () => clearInterval(interval);
   }, [isReady]);
 
-  // Fill level: 100% when ready, progress during brewing
-  const fillPct = isReady ? 100 : Math.max(8, Math.min(95, ((totalSecs - secsLeft) / totalSecs) * 100));
-  // Bubble animation only while brewing
+  const fillPct = isReady ? 100 : Math.max(8, Math.min(94, ((totalSecs - secsLeft) / totalSecs) * 100));
   const bubbling = !isReady && secsLeft > 0;
+  const liquidY = 84 - (fillPct / 100) * 79; // SVG coords: top of fill inside flask
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 8,
-        padding: '12px 8px',
-        borderRadius: 20,
-        border: `1px solid ${fc.liquid}55`,
-        background: `radial-gradient(circle at 50% 0%, ${fc.glass}, rgba(5,3,13,0.9) 70%)`,
-        boxShadow: isReady ? `0 0 28px ${fc.glow}, 0 0 8px ${fc.glow}` : `0 0 12px ${fc.glow}44`,
-        minWidth: 100,
-        flex: '1 1 90px',
-        maxWidth: 130,
-        transition: 'box-shadow 0.4s',
-      }}
-    >
+    <div style={{
+      position: 'relative', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', gap: 8, padding: '12px 8px 10px',
+      borderRadius: 20, border: `1px solid ${fc.liquid}44`,
+      background: `radial-gradient(circle at 50% 0%, ${fc.glass}, rgba(5,3,13,0.93) 70%)`,
+      boxShadow: isReady
+        ? `0 0 24px ${fc.glow}, 0 0 6px ${fc.glow}`
+        : `0 0 10px ${fc.glow}33`,
+      minWidth: 95, flex: '1 1 90px', maxWidth: 125,
+      transition: 'box-shadow 0.4s',
+    }}>
       {/* Rarity badge */}
       <div style={{
         fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em',
-        color: fc.label, background: `${fc.liquid}22`, border: `1px solid ${fc.liquid}55`,
+        color: fc.label, background: `${fc.liquid}1e`, border: `1px solid ${fc.liquid}44`,
         borderRadius: 99, padding: '2px 8px',
-      }}>
-        {rarity}
-      </div>
+      }}>{rarity}</div>
 
-      {/* Flask SVG */}
-      <div style={{ position: 'relative', width: 64, height: 80 }}>
-        <svg viewBox="0 0 64 80" width="64" height="80" style={{ position: 'absolute', top: 0, left: 0 }}>
+      {/* Flask */}
+      <div style={{ position: 'relative', width: 60, height: 76 }}>
+        <svg viewBox="0 0 64 84" width="60" height="76"
+          style={{ filter: isReady ? `drop-shadow(0 0 8px ${fc.liquid})` : 'none', transition: 'filter 0.4s' }}>
           <defs>
-            <clipPath id={`flask-clip-${treat.id}`}>
-              {/* Erlenmeyer flask shape */}
-              <path d="M22 4 L22 32 L8 62 Q6 68 12 70 L52 70 Q58 68 56 62 L42 32 L42 4 Z" />
+            <clipPath id={`fc-${treat.id}`}>
+              <path d="M22 4 L22 30 L7 60 Q5 68 13 70 L51 70 Q59 68 57 60 L42 30 L42 4 Z" />
             </clipPath>
-            <linearGradient id={`liquid-grad-${treat.id}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={fc.liquid} stopOpacity="0.9" />
-              <stop offset="100%" stopColor={fc.liquid} stopOpacity="0.65" />
+            <linearGradient id={`fl-${treat.id}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={fc.liquid} stopOpacity="0.92" />
+              <stop offset="100%" stopColor={fc.liquid} stopOpacity="0.55" />
             </linearGradient>
           </defs>
-
-          {/* Flask glass outline */}
-          <path
-            d="M22 4 L22 32 L8 62 Q6 68 12 70 L52 70 Q58 68 56 62 L42 32 L42 4 Z"
-            fill="rgba(255,255,255,0.04)"
-            stroke={`${fc.liquid}88`}
-            strokeWidth="1.5"
-          />
-          {/* Flask neck top cap */}
-          <rect x="19" y="2" width="26" height="5" rx="2" fill={`${fc.liquid}44`} stroke={`${fc.liquid}88`} strokeWidth="1" />
-
-          {/* Liquid fill — clipped to flask shape */}
-          <g clipPath={`url(#flask-clip-${treat.id})`}>
-            <rect
-              x="0" y={70 - (fillPct / 100) * 70} width="64" height="70"
-              fill={`url(#liquid-grad-${treat.id})`}
-              style={{ transition: 'y 1s ease-out, height 1s ease-out' }}
-            />
-            {/* Wavy surface */}
+          {/* Glass */}
+          <path d="M22 4 L22 30 L7 60 Q5 68 13 70 L51 70 Q59 68 57 60 L42 30 L42 4 Z"
+            fill="rgba(255,255,255,0.03)" stroke={`${fc.liquid}77`} strokeWidth="1.5" />
+          <rect x="19" y="1" width="26" height="6" rx="2.5"
+            fill={`${fc.liquid}33`} stroke={`${fc.liquid}77`} strokeWidth="1" />
+          {/* Liquid */}
+          <g clipPath={`url(#fc-${treat.id})`}>
+            <rect x="0" y={liquidY} width="64" height="84"
+              fill={`url(#fl-${treat.id})`}
+              style={{ transition: 'y 1.2s ease-out' }} />
             {bubbling && (
-              <ellipse cx="32" cy={70 - (fillPct / 100) * 70} rx="20" ry="3"
-                fill={fc.liquid} opacity="0.4"
-                style={{ animation: 'liquid-bubble 1.6s ease-in-out infinite' }}
-              />
+              <ellipse cx="32" cy={liquidY}
+                rx="18" ry="2.5" fill={fc.liquid} opacity="0.35"
+                style={{ animation: 'liquid-bubble 1.6s ease-in-out infinite' }} />
             )}
           </g>
-
-          {/* Glass shine */}
-          <path
-            d="M24 8 L24 30 L14 55"
-            stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" fill="none"
-          />
-
-          {/* Bubbles rising while brewing */}
-          {bubbling && [1,2,3].map(i => (
-            <circle key={i}
-              cx={28 + i * 5} cy={60 - i * 8}
-              r={i * 1.2 + 0.8}
-              fill={fc.liquid} opacity="0.6"
-              style={{
-                animation: `float-bub ${1.5 + i * 0.4}s ease-in-out infinite`,
-                animationDelay: `${i * 0.3}s`,
-              }}
-            />
+          {/* Bubbles */}
+          {bubbling && [0,1,2].map(i => (
+            <circle key={i} cx={20 + i * 10} cy={liquidY + 6 + i * 4}
+              r={i + 1.2} fill={fc.liquid} opacity="0.65"
+              style={{ animation: `float-bub ${1.4 + i * 0.5}s ease-in-out infinite`, animationDelay: `${i * 0.3}s` }} />
           ))}
-
-          {/* Ready checkmark overlay */}
+          {/* Shine */}
+          <path d="M25 7 L25 28 L13 54"
+            stroke="rgba(255,255,255,0.28)" strokeWidth="2" strokeLinecap="round" fill="none" />
+          {/* Ready check */}
           {isReady && (
             <g>
-              <circle cx="32" cy="38" r="10" fill={fc.liquid} opacity="0.9" />
-              <path d="M27 38 L31 42 L38 34" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <circle cx="32" cy="44" r="10" fill={fc.liquid} opacity="0.95" />
+              <path d="M27 44 L31 48 L38 37"
+                stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
             </g>
           )}
         </svg>
+        {/* Ready pulse ring */}
+        {isReady && (
+          <div style={{
+            position: 'absolute', inset: -4, borderRadius: '50%',
+            border: `2px solid ${fc.liquid}66`,
+            animation: 'rarity-pulse 1.6s ease-in-out infinite',
+          }} />
+        )}
       </div>
 
-      {/* Treat name */}
+      {/* Name */}
       <div style={{
-        fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.85)',
-        textAlign: 'center', lineHeight: 1.3, maxWidth: 90, overflow: 'hidden',
-        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-      }}>
-        {treat.name || `${rarity} Treat`}
-      </div>
+        fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.82)',
+        textAlign: 'center', lineHeight: 1.3, maxWidth: 88,
+        overflow: 'hidden', display: '-webkit-box',
+        WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+      }}>{treat.name || `${rarity} Treat`}</div>
 
       {/* Timer / Collect */}
       {isReady ? (
@@ -1356,67 +1364,54 @@ const FlaskCard = ({ treat, onCollect, isCollecting }) => {
           disabled={isCollecting}
           style={{
             padding: '6px 14px', borderRadius: 99, fontSize: 11, fontWeight: 800,
-            letterSpacing: '0.08em', textTransform: 'uppercase', cursor: isCollecting ? 'wait' : 'pointer',
-            background: isCollecting ? 'rgba(255,255,255,0.1)' : `linear-gradient(135deg, ${fc.liquid}, ${fc.liquid}bb)`,
-            color: isCollecting ? 'rgba(255,255,255,0.4)' : '#000',
-            border: 'none', boxShadow: isCollecting ? 'none' : `0 4px 16px ${fc.glow}`,
+            letterSpacing: '0.06em', textTransform: 'uppercase',
+            cursor: isCollecting ? 'wait' : 'pointer',
+            background: isCollecting ? 'rgba(255,255,255,0.08)'
+              : `linear-gradient(135deg, ${fc.liquid}ee, ${fc.liquid}99)`,
+            color: isCollecting ? 'rgba(255,255,255,0.3)' : '#000',
+            border: 'none',
+            boxShadow: isCollecting ? 'none' : `0 4px 14px ${fc.glow}`,
             transition: 'all 0.2s',
           }}
-        >
-          {isCollecting ? '…' : 'Collect'}
-        </button>
+        >{isCollecting ? '…' : 'Collect'}</button>
       ) : (
         <div style={{
-          fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
+          fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
           color: fc.label, letterSpacing: '0.05em',
           padding: '4px 10px', borderRadius: 99,
-          background: `${fc.liquid}22`, border: `1px solid ${fc.liquid}44`,
-        }}>
-          {formatTimer(secsLeft)}
-        </div>
+          background: `${fc.liquid}18`, border: `1px solid ${fc.liquid}33`,
+        }}>{formatTimer(secsLeft)}</div>
       )}
 
-      {/* Points reward badge */}
+      {/* Points badge */}
       {treat.points_reward > 0 && (
         <div style={{
           position: 'absolute', top: 8, right: 8,
           fontSize: 8, fontWeight: 800, color: '#fbbf24',
-          background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.4)',
+          background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.35)',
           borderRadius: 99, padding: '1px 5px',
-        }}>
-          +{treat.points_reward}pts
-        </div>
-      )}
-
-      {/* Glow pulse when ready */}
-      {isReady && (
-        <div style={{
-          position: 'absolute', inset: 0, borderRadius: 20,
-          animation: 'rarity-pulse 1.6s ease-in-out infinite',
-          boxShadow: `0 0 20px ${fc.glow}`,
-          pointerEvents: 'none',
-        }} />
+        }}>+{treat.points_reward}pts</div>
       )}
     </div>
   );
 };
 
+/* ── Brewing panel ── */
 const BrewingTreatsPanel = ({ treats, onCollect, collectingId }) => {
-  const readyCount = treats.filter(t => (t?.timer?.remaining_seconds ?? 0) <= 0 || t.brewing_status === 'ready').length;
+  const readyCount = treats.filter(t =>
+    (t?.timer?.remaining_seconds ?? 0) <= 0 || t.brewing_status === 'ready'
+  ).length;
 
   return (
-    <section
-      data-testid="brewing-treats-panel"
-      style={{
-        borderRadius: 24,
-        border: '1px solid rgba(56,189,248,0.2)',
-        background: 'linear-gradient(135deg, rgba(10,8,32,0.95) 0%, rgba(6,4,22,0.98) 100%)',
-        padding: '16px',
-        boxShadow: readyCount > 0
-          ? '0 0 40px rgba(56,189,248,0.2), inset 0 0 40px rgba(56,189,248,0.03)'
-          : '0 8px 30px rgba(0,0,0,0.4)',
-      }}
-    >
+    <section data-testid="brewing-treats-panel" style={{
+      borderRadius: 24,
+      border: '1px solid rgba(56,189,248,0.18)',
+      background: 'linear-gradient(135deg, rgba(10,8,32,0.95), rgba(6,4,22,0.98))',
+      padding: 16,
+      boxShadow: readyCount > 0
+        ? '0 0 36px rgba(56,189,248,0.18), inset 0 0 36px rgba(56,189,248,0.03)'
+        : '0 8px 28px rgba(0,0,0,0.4)',
+    }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1426,29 +1421,28 @@ const BrewingTreatsPanel = ({ treats, onCollect, collectingId }) => {
             boxShadow: readyCount > 0 ? '0 0 8px #4ade80' : '0 0 8px #f59e0b',
             animation: 'rarity-pulse 1.6s ease-in-out infinite',
           }} />
-          <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.3em', fontFamily: 'monospace', color: 'rgba(255,255,255,0.6)' }}>
-            Reactor Output
-          </span>
+          <span style={{
+            fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.3em',
+            fontFamily: 'monospace', color: 'rgba(255,255,255,0.55)',
+          }}>Reactor Output</span>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {readyCount > 0 && (
             <span style={{
               fontSize: 10, fontWeight: 800, padding: '2px 10px', borderRadius: 99,
-              background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.4)',
+              background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.35)',
               color: '#4ade80', letterSpacing: '0.1em',
-            }}>
-              {readyCount} READY
-            </span>
+            }}>{readyCount} READY</span>
           )}
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>
             {treats.length} active
           </span>
         </div>
       </div>
-
-      {/* Flask grid */}
+      {/* Flasks */}
       <div style={{
-        display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: treats.length <= 3 ? 'center' : 'flex-start',
+        display: 'flex', flexWrap: 'wrap', gap: 10,
+        justifyContent: treats.length <= 3 ? 'center' : 'flex-start',
       }}>
         {treats.map(treat => (
           <FlaskCard
@@ -1459,28 +1453,18 @@ const BrewingTreatsPanel = ({ treats, onCollect, collectingId }) => {
           />
         ))}
       </div>
-
-      {/* Empty state fallback */}
-      {treats.length === 0 && (
-        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12, padding: '12px 0' }}>
-          No active brews. Mix some ingredients above to fill the flasks!
-        </div>
-      )}
     </section>
   );
 };
 
-/* ============================================================
-   COLLECT RESULT TOAST
-   ============================================================ */
-
+/* ── Collect result toast — FIXED: fully centered, no overflow ── */
 const CollectResultToast = ({ result, onClose }) => {
   const rewards = result?.rewards || {};
-  const pts = rewards.total_points ?? rewards.points ?? 0;
-  const xp = rewards.total_xp ?? rewards.xp ?? 0;
-  const happyHour = rewards.happy_hour_bonus > 0;
+  const pts  = rewards.total_points ?? rewards.points ?? 0;
+  const xp   = rewards.total_xp   ?? rewards.xp    ?? 0;
+  const happyHourBonus = rewards.happy_hour_bonus ?? 0;
   const leveledUp = result?.leveled_up;
-  const newLevel = result?.new_level;
+  const newLevel  = result?.new_level;
 
   useEffect(() => {
     const t = setTimeout(onClose, 4500);
@@ -1489,51 +1473,83 @@ const CollectResultToast = ({ result, onClose }) => {
 
   return (
     <div
-      style={{
-        position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
-        zIndex: 130, minWidth: 280, maxWidth: 340,
-        borderRadius: 20, padding: '16px 20px',
-        background: 'linear-gradient(135deg, rgba(10,8,32,0.98), rgba(6,4,22,0.98))',
-        border: '1px solid rgba(74,222,128,0.5)',
-        boxShadow: '0 20px 60px rgba(74,222,128,0.25)',
-        animation: 'result-pop 0.5s cubic-bezier(.2,.9,.3,1.15) both',
-      }}
       onClick={onClose}
+      style={{
+        position: 'fixed',
+        /* center both axes — no translateX trick that clips on narrow screens */
+        top: 0, left: 0, right: 0, bottom: 0,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        paddingBottom: 104,            /* clears the bottom mix bar */
+        zIndex: 130,
+        pointerEvents: 'none',         /* let touches pass through background */
+      }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-          background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-        }}>
-          🧪
-        </div>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
-            Treat Collected!
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          pointerEvents: 'auto',
+          width: 'calc(100% - 32px)', maxWidth: 320,
+          borderRadius: 20, padding: '16px 18px',
+          background: 'linear-gradient(135deg, rgba(10,8,32,0.98), rgba(6,4,22,0.98))',
+          border: '1px solid rgba(74,222,128,0.45)',
+          boxShadow: '0 20px 60px rgba(74,222,128,0.2)',
+          animation: 'result-pop 0.45s cubic-bezier(.2,.9,.3,1.15) both',
+        }}
+      >
+        {/* Top row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+            background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+          }}>🧪</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 800, color: '#4ade80',
+              textTransform: 'uppercase', letterSpacing: '0.15em',
+            }}>Treat Collected!</div>
+            {leveledUp && (
+              <div style={{ fontSize: 10, color: '#fbbf24', fontWeight: 700, marginTop: 2 }}>
+                ⬆ Level Up! Now Level {newLevel}
+              </div>
+            )}
           </div>
-          {leveledUp && (
-            <div style={{ fontSize: 10, color: '#fbbf24', fontWeight: 700, marginTop: 1 }}>
-              ⬆ Level Up! Now Level {newLevel}
+          <button
+            onClick={onClose}
+            style={{
+              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+              color: 'rgba(255,255,255,0.6)', fontSize: 14, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >×</button>
+        </div>
+        {/* Reward pills */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{
+            flex: 1, borderRadius: 12, padding: '8px 0', textAlign: 'center',
+            background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.22)',
+          }}>
+            <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.35)' }}>XP</div>
+            <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'monospace', color: '#22d3ee', lineHeight: 1.1 }}>+{xp}</div>
+          </div>
+          <div style={{
+            flex: 1, borderRadius: 12, padding: '8px 0', textAlign: 'center',
+            background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.22)',
+          }}>
+            <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.35)' }}>Points</div>
+            <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'monospace', color: '#a855f7', lineHeight: 1.1 }}>+{pts}</div>
+          </div>
+          {happyHourBonus > 0 && (
+            <div style={{
+              flex: 1, borderRadius: 12, padding: '8px 0', textAlign: 'center',
+              background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.28)',
+            }}>
+              <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.35)' }}>Bonus</div>
+              <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: '#fbbf24', lineHeight: 1.1 }}>+{happyHourBonus}🔥</div>
             </div>
           )}
         </div>
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ flex: 1, borderRadius: 12, background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.25)', padding: '8px 12px', textAlign: 'center' }}>
-          <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>XP</div>
-          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: '#22d3ee' }}>+{xp}</div>
-        </div>
-        <div style={{ flex: 1, borderRadius: 12, background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.25)', padding: '8px 12px', textAlign: 'center' }}>
-          <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>Points</div>
-          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: '#a855f7' }}>+{pts}</div>
-        </div>
-        {happyHour && (
-          <div style={{ flex: 1, borderRadius: 12, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', padding: '8px 12px', textAlign: 'center' }}>
-            <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>Bonus</div>
-            <div style={{ fontSize: 14, fontWeight: 800, fontFamily: 'monospace', color: '#fbbf24' }}>+{rewards.happy_hour_bonus}🔥</div>
-          </div>
-        )}
       </div>
     </div>
   );
