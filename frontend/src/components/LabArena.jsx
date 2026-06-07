@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, Trophy, Flame, Zap, Send, Users, Eye, Mic, Radio,
-  TrendingUp, Target, Clock, Award, AlertTriangle, Sparkles,
+  TrendingUp, Target, Clock, Award, AlertTriangle,
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -72,6 +72,7 @@ const usePoll = (url, intervalMs, options) => {
 const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
   const navigate = useNavigate();
   const [showStreamModal, setShowStreamModal] = useState(false);
+  const [joinError, setJoinError] = useState(null);
 
   const arenaPoll      = usePoll(`${API_URL}/api/arena/leaderboard?limit=50`, 4000);
   const heatPoll       = usePoll(`${API_URL}/api/arena/heat`, 15000);
@@ -131,7 +132,9 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
         <ArenaBanner
           arena={arena}
           isJoined={isJoined}
+          joinError={joinError}
           onJoin={async () => {
+            setJoinError(null);
             try {
               const res = await fetch(`${API_URL}/api/arena/join`, {
                 method: 'POST',
@@ -139,8 +142,10 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
                 body: JSON.stringify({ address: playerAddress, nickname: playerNickname }),
               });
               const j = await res.json();
-              if (!res.ok) alert(j.detail || 'Failed to join arena');
-            } catch (e) { alert(e.message); }
+              if (!res.ok) {
+                setJoinError(j.detail || 'Failed to join arena');
+              }
+            } catch (e) { setJoinError(e.message); }
           }}
         />
       </div>
@@ -277,7 +282,7 @@ const HeatEventBanner = ({ heat, startedAt, duration }) => {
 /* ─── Arena Banner ───
    ✅ No backdrop-blur-md — solid dark bg
    ✅ No filter:blur on decorative glow div                   */
-const ArenaBanner = ({ arena, isJoined, onJoin }) => {
+const ArenaBanner = ({ arena, isJoined, onJoin, joinError }) => {
   const now      = useNow(1000);
   const endsAt   = arena?.ends_at ? new Date(arena.ends_at).getTime() : null;
   const remaining = endsAt ? Math.max(0, Math.floor((endsAt - now) / 1000)) : 0;
@@ -360,12 +365,25 @@ const ArenaBanner = ({ arena, isJoined, onJoin }) => {
               {isJoined ? 'Joined' : 'Join Arena · 50 pts'}
             </span>
           </button>
-          {!isJoined && (
+          {!isJoined && !joinError && (
             <div
               className="text-[10px] text-center sm:text-right font-mono"
               style={{ color: 'rgba(255,255,255,0.5)' }}
             >
               Entry fee adds to pool
+            </div>
+          )}
+          {joinError && (
+            <div
+              className="text-[10px] text-center sm:text-right font-mono px-2 py-1.5 rounded-xl"
+              style={{
+                color: '#fca5a5',
+                backgroundColor: 'rgba(239,68,68,0.12)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                maxWidth: 200,
+              }}
+            >
+              {joinError}
             </div>
           )}
         </div>
@@ -470,7 +488,7 @@ const LeaderboardRow = ({ entry, isMe }) => {
           className="text-[9px] tracking-[0.25em] font-mono uppercase mt-0.5"
           style={{ color: 'rgba(255,255,255,0.4)' }}
         >
-          pts
+          arena pts
         </div>
       </div>
     </li>
@@ -564,7 +582,6 @@ const PredictionPanel = ({ entries, myAddress, myPrediction, onPredict }) => {
                 <span className="font-mono text-xs tabular-nums" style={{ color: '#fef9c3' }}>
                   {(c.points || 0).toLocaleString()}
                 </span>
-                <Sparkles className="w-3.5 h-3.5" style={{ color: 'rgba(253,211,77,0.7)' }} />
               </button>
             </li>
           ))}
