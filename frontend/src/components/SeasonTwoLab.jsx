@@ -32,6 +32,183 @@ const RARITY = {
   Common:    { hex: '#9ca3af', glow: 'rgba(156,163,175,.55)', label: 'Common' },
 };
 
+/* ============================================================
+   SEASON 2 RARITY IMAGES — public folder
+   ============================================================ */
+const RARITY_IMAGES = {
+  mythic:    '/Mythic.png',
+  legendary: '/Legendary.png',
+  epic:      '/Epic.png',
+  rare:      '/Rare.png',
+  uncommon:  '/uncommon.png',
+  common:    '/Common.png',
+  starter:   '/Common.png',
+};
+
+const RARITY_CINEMATIC = {
+  mythic:    { bg: 'radial-gradient(ellipse at center, #7c0040 0%, #1a0020 55%, #000 100%)', particles: '#ec4899', glow: '0 0 120px 40px rgba(236,72,153,0.6), 0 0 60px 20px rgba(236,72,153,0.4)', ring: 'rgba(236,72,153,0.8)', label: '#f9a8d4', sfx: 'MYTHIC',    count: 28 },
+  legendary: { bg: 'radial-gradient(ellipse at center, #7c3000 0%, #1a0e00 55%, #000 100%)', particles: '#fbbf24', glow: '0 0 120px 40px rgba(251,191,36,0.6),  0 0 60px 20px rgba(251,191,36,0.4)',  ring: 'rgba(251,191,36,0.8)', label: '#fde68a', sfx: 'LEGENDARY', count: 22 },
+  epic:      { bg: 'radial-gradient(ellipse at center, #3b0080 0%, #0d001a 55%, #000 100%)', particles: '#a855f7', glow: '0 0 100px 30px rgba(168,85,247,0.55), 0 0 50px 15px rgba(168,85,247,0.35)', ring: 'rgba(168,85,247,0.8)', label: '#d8b4fe', sfx: 'EPIC',      count: 18 },
+  rare:      { bg: 'radial-gradient(ellipse at center, #003380 0%, #00081a 55%, #000 100%)', particles: '#38bdf8', glow: '0 0 90px 25px rgba(56,189,248,0.5),   0 0 45px 12px rgba(56,189,248,0.3)',  ring: 'rgba(56,189,248,0.8)',  label: '#7dd3fc', sfx: 'RARE',     count: 14 },
+  uncommon:  { bg: 'radial-gradient(ellipse at center, #004040 0%, #000f0f 55%, #000 100%)', particles: '#2dd4bf', glow: '0 0 80px 20px rgba(45,212,191,0.45),  0 0 40px 10px rgba(45,212,191,0.25)', ring: 'rgba(45,212,191,0.7)', label: '#99f6e4', sfx: 'UNCOMMON', count: 10 },
+  starter:   { bg: 'radial-gradient(ellipse at center, #1a2e1a 0%, #050f05 55%, #000 100%)', particles: '#4ade80', glow: '0 0 60px 15px rgba(74,222,128,0.35),  0 0 30px 8px rgba(74,222,128,0.2)',   ring: 'rgba(74,222,128,0.6)', label: '#bbf7d0', sfx: 'STARTER',  count: 8  },
+  common:    { bg: 'radial-gradient(ellipse at center, #1a2e1a 0%, #050f05 55%, #000 100%)', particles: '#4ade80', glow: '0 0 60px 15px rgba(74,222,128,0.35),  0 0 30px 8px rgba(74,222,128,0.2)',   ring: 'rgba(74,222,128,0.6)', label: '#bbf7d0', sfx: 'COMMON',   count: 8  },
+};
+
+function getTreatRevealImage(rarity) {
+  return RARITY_IMAGES[(rarity || 'common').toLowerCase()] || '/Common.png';
+}
+
+/* ============================================================
+   CINEMATIC COLLECT REVEAL — shown directly on the Lab page
+   ============================================================ */
+const CinematicReveal = ({ treat, onClose }) => {
+  const [phase, setPhase] = useState(0);
+  // phases: 0=flash  1=drop  2=bloom  3=stats  4=idle
+
+  const rKey = (treat?.rarity || 'common').toLowerCase();
+  const cin  = RARITY_CINEMATIC[rKey] || RARITY_CINEMATIC.common;
+  const img  = getTreatRevealImage(treat?.rarity);
+  const name = treat?.name || `${treat?.rarity || 'Common'} Treat`;
+  const pts  = treat?.rewards?.total_points ?? treat?.rewards?.points ?? treat?.points_reward ?? 0;
+  const xp   = treat?.rewards?.total_xp    ?? treat?.rewards?.xp    ?? treat?.xp_reward    ?? 0;
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setPhase(1), 180),
+      setTimeout(() => setPhase(2), 580),
+      setTimeout(() => setPhase(3), 1050),
+      setTimeout(() => setPhase(4), 1750),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div
+      onClick={phase >= 4 ? onClose : undefined}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: phase === 0 ? 'rgba(255,255,255,0.95)' : cin.bg,
+        transition: 'background 0.35s ease-out',
+        cursor: phase >= 4 ? 'pointer' : 'default',
+      }}
+    >
+      {/* Particle burst */}
+      {phase >= 2 && Array.from({ length: cin.count }).map((_, i) => {
+        const angle = (360 / cin.count) * i;
+        const dist  = 110 + (i % 3) * 40;
+        const size  = 4 + (i % 3) * 2.5;
+        const rad   = (angle * Math.PI) / 180;
+        return (
+          <div key={i} style={{
+            position: 'absolute',
+            width: size, height: size, borderRadius: '50%',
+            background: cin.particles,
+            top: '50%', left: '50%',
+            transform: `translate(-50%,-50%) translate(${Math.cos(rad)*dist}px,${Math.sin(rad)*dist}px)`,
+            opacity: phase >= 3 ? 0 : 0.9,
+            transition: `opacity 0.55s ease-out ${(i % 4) * 0.07}s`,
+            boxShadow: `0 0 ${size * 2}px ${cin.particles}`,
+          }} />
+        );
+      })}
+
+      {/* Pulse ring */}
+      {phase >= 2 && (
+        <div style={{
+          position: 'absolute',
+          width: phase >= 3 ? 460 : 180, height: phase >= 3 ? 460 : 180,
+          borderRadius: '50%',
+          border: `2px solid ${cin.ring}`,
+          opacity: phase >= 4 ? 0 : 0.55,
+          transition: 'width 0.5s ease-out, height 0.5s ease-out, opacity 0.6s ease-out 0.7s',
+          pointerEvents: 'none',
+        }} />
+      )}
+
+      {/* Content column */}
+      <div style={{
+        position: 'relative', zIndex: 10,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+        transform: phase === 0 ? 'scale(0) translateY(-60px)'
+                 : phase === 1 ? 'scale(1.12) translateY(0)'
+                 : 'scale(1) translateY(0)',
+        opacity: phase === 0 ? 0 : 1,
+        transition: 'transform 0.42s cubic-bezier(.2,.9,.3,1.2), opacity 0.28s ease-out',
+      }}>
+        {/* Treat image + glow */}
+        <div style={{ position: 'relative', width: 210, height: 210, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{
+            position: 'absolute', inset: -28, borderRadius: '50%',
+            boxShadow: phase >= 2 ? cin.glow : 'none',
+            background: phase >= 2 ? `radial-gradient(circle, ${cin.particles}22, transparent 68%)` : 'none',
+            transition: 'box-shadow 0.45s ease-out, background 0.45s ease-out',
+          }} />
+          <img src={img} alt={name} style={{
+            width: 196, height: 196, objectFit: 'contain', position: 'relative', zIndex: 1,
+            filter: phase >= 2 ? `drop-shadow(0 0 22px ${cin.particles})` : 'none',
+            transition: 'filter 0.4s ease-out',
+          }} />
+        </div>
+
+        {/* Rarity label */}
+        <div style={{
+          fontSize: 12, fontWeight: 900, letterSpacing: '0.38em',
+          textTransform: 'uppercase', fontFamily: 'monospace',
+          color: cin.label, textShadow: `0 0 18px ${cin.particles}`,
+          opacity: phase >= 3 ? 1 : 0,
+          transform: phase >= 3 ? 'translateY(0)' : 'translateY(10px)',
+          transition: 'opacity 0.35s ease-out, transform 0.35s ease-out',
+        }}>{cin.sfx}</div>
+
+        {/* Treat name */}
+        <div style={{
+          fontSize: 21, fontWeight: 800, color: '#fff',
+          textAlign: 'center', maxWidth: 290, lineHeight: 1.2,
+          textShadow: '0 2px 18px rgba(0,0,0,0.85)',
+          opacity: phase >= 3 ? 1 : 0,
+          transform: phase >= 3 ? 'translateY(0)' : 'translateY(14px)',
+          transition: 'opacity 0.35s ease-out 0.08s, transform 0.35s ease-out 0.08s',
+        }}>{name}</div>
+
+        {/* XP + Points pills */}
+        {phase >= 3 && (
+          <div style={{
+            display: 'flex', gap: 12,
+            opacity: phase >= 4 ? 1 : 0,
+            transition: 'opacity 0.35s ease-out 0.15s',
+          }}>
+            <div style={{
+              padding: '10px 22px', borderRadius: 99, textAlign: 'center',
+              background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.3)',
+            }}>
+              <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)' }}>XP</div>
+              <div style={{ fontSize: 26, fontWeight: 900, fontFamily: 'monospace', color: '#22d3ee', lineHeight: 1 }}>+{xp}</div>
+            </div>
+            <div style={{
+              padding: '10px 22px', borderRadius: 99, textAlign: 'center',
+              background: `${cin.particles}18`, border: `1px solid ${cin.particles}44`,
+            }}>
+              <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)' }}>Points</div>
+              <div style={{ fontSize: 26, fontWeight: 900, fontFamily: 'monospace', color: cin.particles, lineHeight: 1 }}>+{pts}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Tap hint */}
+        {phase >= 4 && (
+          <div style={{
+            fontSize: 11, color: 'rgba(255,255,255,0.32)',
+            letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'monospace',
+          }}>Tap to continue</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
 const CATEGORY_TINT = {
   Starter: '#f59e0b', Rare: '#3b82f6', Epic: '#a855f7', Legendary: '#fbbf24', Mythic: '#ec4899',
 };
@@ -225,6 +402,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const [brewingTreats, setBrewingTreats] = useState([]);
   const [collectingId, setCollectingId] = useState(null);
   const [collectResult, setCollectResult] = useState(null);
+  const [revealData, setRevealData] = useState(null); // cinematic reveal
 
   const loadBrewingTreats = useCallback(async () => {
     if (!playerAddress) return;
@@ -256,16 +434,20 @@ const SeasonTwoLab = ({ playerAddress }) => {
       playSuccess && playSuccess();
       await loadBrewingTreats();
       await loadPlayerData();
-      // Write the collected treat to localStorage so MyTreats can fire the cinematic reveal
+      // Fire cinematic reveal directly on the lab page
+      setRevealData({
+        rarity:   data?.treat?.rarity  || data?.outcome?.rarity || 'Common',
+        name:     data?.treat?.name    || data?.outcome?.name   || 'Treat',
+        rewards:  data?.rewards || {},
+      });
+      // Also write to localStorage so MyTreats can show it if player navigates there
       try {
-        const treatForReveal = {
-          id:            treatId,
+        localStorage.setItem('dogefood_reveal_treat', JSON.stringify({
           rarity:        data?.treat?.rarity || data?.outcome?.rarity || 'Common',
           name:          data?.treat?.name   || data?.outcome?.name   || 'Treat',
           points_reward: data?.rewards?.total_points ?? data?.rewards?.points ?? 0,
           xp_reward:     data?.rewards?.total_xp    ?? data?.rewards?.xp    ?? 0,
-        };
-        localStorage.setItem('dogefood_reveal_treat', JSON.stringify(treatForReveal));
+        }));
       } catch (e) { /* non-fatal */ }
     } catch (e) {
       setError(e?.message || 'Collect failed');
@@ -509,6 +691,14 @@ const SeasonTwoLab = ({ playerAddress }) => {
           {error}
           <button onClick={() => setError(null)} className="ml-3 opacity-70 hover:opacity-100">×</button>
         </div>
+      )}
+
+      {/* Cinematic collect reveal — full screen, z-200 */}
+      {revealData && (
+        <CinematicReveal
+          treat={revealData}
+          onClose={() => setRevealData(null)}
+        />
       )}
 
       {collectResult && (
@@ -805,10 +995,30 @@ const ReactorChamber = ({ selectedIngredients, ingredients, overload, stability,
           <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.35), transparent 40%)' }} />
         </div>
 
-        {/* Holo % display */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none select-none">
-          <div className="text-[9px] tracking-[0.3em] font-mono text-cyan-200/70 uppercase">Stability</div>
-          <div className="text-2xl sm:text-3xl font-extrabold font-mono" style={{ color: `hsla(${hue},100%,75%,1)`, textShadow: `0 0 12px hsla(${hue},100%,60%,0.9)` }}>
+        {/* Holo % display — sits OUTSIDE the glass bowl so overflow:hidden never clips it */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            zIndex: 20,
+            width: '100%',
+          }}
+        >
+          <div style={{
+            fontSize: 9, letterSpacing: '0.3em', fontFamily: 'monospace',
+            color: `hsla(${hue},90%,80%,0.75)`, textTransform: 'uppercase',
+            marginBottom: 2,
+          }}>Stability</div>
+          <div style={{
+            fontSize: 'clamp(20px, 5vw, 30px)', fontWeight: 800, fontFamily: 'monospace',
+            color: `hsla(${hue},100%,75%,1)`,
+            textShadow: `0 0 12px hsla(${hue},100%,60%,0.9)`,
+            lineHeight: 1,
+          }}>
             {stability}%
           </div>
         </div>
