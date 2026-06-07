@@ -13,6 +13,260 @@ import MusicPlayer from './MusicPlayer';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
+
+/* ============================================================
+   SEASON 2 — RARITY IMAGE MAP
+   Images live in /public folder of the frontend repo.
+   ============================================================ */
+const RARITY_IMAGES = {
+  mythic:    '/Mythic.png',
+  legendary: '/Legendary.png',
+  epic:      '/Epic.png',
+  rare:      '/Rare.png',
+  uncommon:  '/uncommon.png',
+  common:    '/Common.png',
+};
+
+const RARITY_CINEMATIC = {
+  mythic: {
+    bg:        'radial-gradient(ellipse at center, #7c0040 0%, #1a0020 55%, #000 100%)',
+    particles: '#ec4899',
+    glow:      '0 0 120px 40px rgba(236,72,153,0.6), 0 0 60px 20px rgba(236,72,153,0.4)',
+    ring:      'rgba(236,72,153,0.8)',
+    label:     '#f9a8d4',
+    sfx:       'MYTHIC',
+  },
+  legendary: {
+    bg:        'radial-gradient(ellipse at center, #7c3000 0%, #1a0e00 55%, #000 100%)',
+    particles: '#fbbf24',
+    glow:      '0 0 120px 40px rgba(251,191,36,0.6), 0 0 60px 20px rgba(251,191,36,0.4)',
+    ring:      'rgba(251,191,36,0.8)',
+    label:     '#fde68a',
+    sfx:       'LEGENDARY',
+  },
+  epic: {
+    bg:        'radial-gradient(ellipse at center, #3b0080 0%, #0d001a 55%, #000 100%)',
+    particles: '#a855f7',
+    glow:      '0 0 100px 30px rgba(168,85,247,0.55), 0 0 50px 15px rgba(168,85,247,0.35)',
+    ring:      'rgba(168,85,247,0.8)',
+    label:     '#d8b4fe',
+    sfx:       'EPIC',
+  },
+  rare: {
+    bg:        'radial-gradient(ellipse at center, #003380 0%, #00081a 55%, #000 100%)',
+    particles: '#38bdf8',
+    glow:      '0 0 90px 25px rgba(56,189,248,0.5), 0 0 45px 12px rgba(56,189,248,0.3)',
+    ring:      'rgba(56,189,248,0.8)',
+    label:     '#7dd3fc',
+    sfx:       'RARE',
+  },
+  uncommon: {
+    bg:        'radial-gradient(ellipse at center, #004040 0%, #000f0f 55%, #000 100%)',
+    particles: '#2dd4bf',
+    glow:      '0 0 80px 20px rgba(45,212,191,0.45), 0 0 40px 10px rgba(45,212,191,0.25)',
+    ring:      'rgba(45,212,191,0.7)',
+    label:     '#99f6e4',
+    sfx:       'UNCOMMON',
+  },
+  common: {
+    bg:        'radial-gradient(ellipse at center, #1a2e1a 0%, #050f05 55%, #000 100%)',
+    particles: '#4ade80',
+    glow:      '0 0 60px 15px rgba(74,222,128,0.35), 0 0 30px 8px rgba(74,222,128,0.2)',
+    ring:      'rgba(74,222,128,0.6)',
+    label:     '#bbf7d0',
+    sfx:       'COMMON',
+  },
+};
+
+function getRarityKey(rarity) {
+  return (rarity || 'common').toLowerCase();
+}
+
+function getTreatImage(rarity) {
+  return RARITY_IMAGES[getRarityKey(rarity)] || RARITY_IMAGES.common;
+}
+
+/* ============================================================
+   CINEMATIC COLLECT REVEAL
+   Triggered when a treat is newly collected (passed via prop).
+   Phases: flash → image drop → glow bloom → stats → dismiss
+   ============================================================ */
+const CinematicReveal = ({ treat, onClose }) => {
+  const [phase, setPhase] = useState(0);
+  // 0=flash, 1=drop, 2=bloom, 3=stats, 4=idle
+  const rKey  = getRarityKey(treat?.rarity);
+  const cin   = RARITY_CINEMATIC[rKey] || RARITY_CINEMATIC.common;
+  const img   = getTreatImage(treat?.rarity);
+  const name  = treat?.name  || `${treat?.rarity || 'Common'} Treat`;
+  const pts   = treat?.points_reward || treat?.points || 0;
+  const xp    = treat?.xp_reward    || treat?.xp    || 0;
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setPhase(1), 180),
+      setTimeout(() => setPhase(2), 600),
+      setTimeout(() => setPhase(3), 1100),
+      setTimeout(() => setPhase(4), 1800),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  // Particle count based on rarity tier
+  const particleCount = { mythic: 28, legendary: 22, epic: 18, rare: 14, uncommon: 10, common: 7 }[rKey] || 8;
+
+  return (
+    <div
+      onClick={phase >= 4 ? onClose : undefined}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: phase === 0
+          ? 'rgba(255,255,255,0.95)'
+          : cin.bg,
+        transition: 'background 0.35s ease-out',
+        cursor: phase >= 4 ? 'pointer' : 'default',
+      }}
+    >
+      {/* Particle burst */}
+      {phase >= 2 && Array.from({ length: particleCount }).map((_, i) => {
+        const angle  = (360 / particleCount) * i;
+        const dist   = 120 + Math.random() * 100;
+        const size   = 4 + Math.random() * 6;
+        const delay  = Math.random() * 0.3;
+        const rad    = (angle * Math.PI) / 180;
+        return (
+          <div key={i} style={{
+            position: 'absolute',
+            width: size, height: size,
+            borderRadius: '50%',
+            background: cin.particles,
+            top: '50%', left: '50%',
+            transform: `translate(-50%, -50%) translate(${Math.cos(rad)*dist}px, ${Math.sin(rad)*dist}px)`,
+            opacity: phase >= 3 ? 0 : 0.9,
+            transition: `opacity 0.6s ease-out ${delay}s, transform 0.5s ease-out ${delay}s`,
+            boxShadow: `0 0 ${size*2}px ${cin.particles}`,
+          }} />
+        );
+      })}
+
+      {/* Outer ring pulse */}
+      {phase >= 2 && (
+        <div style={{
+          position: 'absolute',
+          width: phase >= 3 ? 480 : 200,
+          height: phase >= 3 ? 480 : 200,
+          borderRadius: '50%',
+          border: `2px solid ${cin.ring}`,
+          opacity: phase >= 4 ? 0 : 0.6,
+          transition: 'width 0.5s ease-out, height 0.5s ease-out, opacity 0.6s ease-out 0.8s',
+          pointerEvents: 'none',
+        }} />
+      )}
+
+      {/* Treat image */}
+      <div style={{
+        position: 'relative',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 24,
+        transform: phase === 0 ? 'scale(0) translateY(-80px)'
+                 : phase === 1 ? 'scale(1.15) translateY(0)'
+                 : 'scale(1) translateY(0)',
+        opacity: phase === 0 ? 0 : 1,
+        transition: 'transform 0.45s cubic-bezier(.2,.9,.3,1.2), opacity 0.3s ease-out',
+      }}>
+        {/* Image container */}
+        <div style={{
+          position: 'relative',
+          width: 220, height: 220,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {/* Glow bloom behind image */}
+          <div style={{
+            position: 'absolute', inset: -30,
+            borderRadius: '50%',
+            boxShadow: phase >= 2 ? cin.glow : 'none',
+            transition: 'box-shadow 0.5s ease-out',
+            background: phase >= 2 ? `radial-gradient(circle, ${cin.particles}22, transparent 70%)` : 'none',
+          }} />
+          <img
+            src={img}
+            alt={name}
+            style={{
+              width: 200, height: 200,
+              objectFit: 'contain',
+              position: 'relative', zIndex: 1,
+              filter: phase >= 2 ? `drop-shadow(0 0 24px ${cin.particles})` : 'none',
+              transition: 'filter 0.4s ease-out',
+            }}
+          />
+        </div>
+
+        {/* Rarity label */}
+        <div style={{
+          fontSize: 13, fontWeight: 900, letterSpacing: '0.35em',
+          textTransform: 'uppercase', color: cin.label,
+          opacity: phase >= 3 ? 1 : 0,
+          transform: phase >= 3 ? 'translateY(0)' : 'translateY(12px)',
+          transition: 'opacity 0.4s ease-out, transform 0.4s ease-out',
+          fontFamily: 'monospace',
+          textShadow: `0 0 20px ${cin.particles}`,
+        }}>
+          {cin.sfx}
+        </div>
+
+        {/* Treat name */}
+        <div style={{
+          fontSize: 22, fontWeight: 800, color: '#fff',
+          textAlign: 'center', maxWidth: 300, lineHeight: 1.2,
+          opacity: phase >= 3 ? 1 : 0,
+          transform: phase >= 3 ? 'translateY(0)' : 'translateY(16px)',
+          transition: 'opacity 0.4s ease-out 0.1s, transform 0.4s ease-out 0.1s',
+          textShadow: '0 2px 20px rgba(0,0,0,0.8)',
+        }}>
+          {name}
+        </div>
+
+        {/* Stats pills */}
+        {phase >= 3 && (
+          <div style={{
+            display: 'flex', gap: 12,
+            opacity: phase >= 4 ? 1 : 0,
+            transition: 'opacity 0.4s ease-out 0.2s',
+          }}>
+            <div style={{
+              padding: '10px 22px', borderRadius: 99,
+              background: 'rgba(34,211,238,0.12)', border: '1px solid rgba(34,211,238,0.3)',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)' }}>XP</div>
+              <div style={{ fontSize: 26, fontWeight: 900, fontFamily: 'monospace', color: '#22d3ee', lineHeight: 1 }}>+{xp}</div>
+            </div>
+            <div style={{
+              padding: '10px 22px', borderRadius: 99,
+              background: `${cin.particles}18`, border: `1px solid ${cin.particles}44`,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)' }}>Points</div>
+              <div style={{ fontSize: 26, fontWeight: 900, fontFamily: 'monospace', color: cin.particles, lineHeight: 1 }}>+{pts}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Dismiss hint */}
+        {phase >= 4 && (
+          <div style={{
+            fontSize: 11, color: 'rgba(255,255,255,0.35)',
+            letterSpacing: '0.2em', textTransform: 'uppercase',
+            fontFamily: 'monospace', marginTop: 8,
+          }}>
+            Tap anywhere to continue
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Glass Treat Card Component
 const TreatCard = ({ treat, index, ingredientMap = {}, onListForSale, isListed = false }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -146,19 +400,22 @@ const TreatCard = ({ treat, index, ingredientMap = {}, onListForSale, isListed =
             )}
           </div>
           
-          {/* Treat Image */}
+          {/* Treat Image — Season 2 rarity-specific art */}
           <div className="relative w-full aspect-square mb-4 flex items-center justify-center">
             <div className={`
               absolute inset-0 rounded-xl bg-gradient-to-br ${config.bg}
               opacity-50
             `} />
-            <img 
-              src={treat.image || "https://customer-assets.emergentagent.com/job_shibalab/artifacts/l9ufequf_20250720_2152_Shiba_Pouring_Cereal_remix_01k0mp753tfzxs9v4dqxhtp2ng-removebg-preview.png"}
+            {/* Glow pulse on hover */}
+            <div
+              className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{ boxShadow: `inset 0 0 40px ${config.glowColor || 'rgba(255,255,255,0.1)'}` }}
+            />
+            <img
+              src={getTreatImage(treat.rarity)}
               alt={treat.name || 'DogeFood Treat'}
-              className="relative w-20 h-20 object-contain drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
-              onError={(e) => {
-                e.target.src = "https://customer-assets.emergentagent.com/job_shibalab/artifacts/l9ufequf_20250720_2152_Shiba_Pouring_Cereal_remix_01k0mp753tfzxs9v4dqxhtp2ng-removebg-preview.png";
-              }}
+              className="relative w-24 h-24 object-contain drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
+              onError={(e) => { e.target.src = '/Common.png'; }}
             />
           </div>
           
@@ -294,6 +551,22 @@ const MyTreats = () => {
   const [paymentOption, setPaymentOption] = useState('both');
   const [listingLoading, setListingLoading] = useState(false);
   const [listedTreats, setListedTreats] = useState(new Set());
+
+  // Cinematic reveal — fired when arriving from a collect action
+  const [revealTreat, setRevealTreat] = useState(null);
+
+  useEffect(() => {
+    // SeasonTwoLab writes the just-collected treat to localStorage before navigating here
+    try {
+      const raw = localStorage.getItem('dogefood_reveal_treat');
+      if (raw) {
+        const treat = JSON.parse(raw);
+        localStorage.removeItem('dogefood_reveal_treat');
+        // Small delay so page has rendered before the flash
+        setTimeout(() => setRevealTreat(treat), 200);
+      }
+    } catch (e) { /* non-fatal */ }
+  }, []);
   
   // Get effective player address
   const getEffectiveAddress = () => {
@@ -468,6 +741,14 @@ const MyTreats = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Cinematic reveal — shown immediately on page load if a treat was just collected */}
+      {revealTreat && (
+        <CinematicReveal
+          treat={revealTreat}
+          onClose={() => setRevealTreat(null)}
+        />
+      )}
+
       {/* Background */}
       <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800" />
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent" />
@@ -705,10 +986,10 @@ const MyTreats = () => {
             
             {/* Treat Preview */}
             <div className="flex items-center gap-4 p-4 bg-slate-700/50 rounded-xl mb-6">
-              <img 
-                src={selectedTreat.image}
+              <img
+                src={getTreatImage(selectedTreat?.rarity)}
                 alt={selectedTreat.name}
-                className="w-16 h-16 object-contain"
+                className="w-16 h-16 object-contain drop-shadow-lg"
               />
               <div>
                 <h3 className="font-bold text-white">{selectedTreat.name}</h3>
