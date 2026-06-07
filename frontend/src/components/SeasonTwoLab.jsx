@@ -221,15 +221,64 @@ const SeasonTwoLab = ({ playerAddress }) => {
     } catch (e) { /* non-fatal */ }
   }, []);
 
+  // --- brewing treats ---
+  const [brewingTreats, setBrewingTreats] = useState([]);
+  const [collectingId, setCollectingId] = useState(null);
+  const [collectResult, setCollectResult] = useState(null);
+
+  const loadBrewingTreats = useCallback(async () => {
+    if (!playerAddress) return;
+    try {
+      const res = await fetch(`${API_URL}/api/treats/${playerAddress}/active`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const treats = Array.isArray(data?.treats) ? data.treats : [];
+      setBrewingTreats(treats.filter(t => t.brewing_status !== 'collected'));
+    } catch (e) { /* non-fatal */ }
+  }, [playerAddress]);
+
+  const handleCollect = useCallback(async (treatId) => {
+    if (collectingId) return;
+    setCollectingId(treatId);
+    try {
+      const res = await fetch(`${API_URL}/api/treats/${treatId}/collect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_address: playerAddress }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setError(err.detail || 'Collect failed');
+        return;
+      }
+      const data = await res.json();
+      setCollectResult(data);
+      playSuccess && playSuccess();
+      await loadBrewingTreats();
+      await loadPlayerData();
+    } catch (e) {
+      setError(e?.message || 'Collect failed');
+    } finally {
+      setCollectingId(null);
+    }
+  }, [collectingId, playerAddress, playSuccess, loadBrewingTreats, loadPlayerData]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       const lvl = await loadPlayerData();
       await loadIngredients(lvl);
       await loadMarketFeed();
+      await loadBrewingTreats();
       setLoading(false);
     })();
-  }, [loadPlayerData, loadIngredients, loadMarketFeed]);
+  }, [loadPlayerData, loadIngredients, loadMarketFeed, loadBrewingTreats]);
+
+  // Poll active treats every 10s so timers update
+  useEffect(() => {
+    const t = setInterval(loadBrewingTreats, 10000);
+    return () => clearInterval(t);
+  }, [loadBrewingTreats]);
 
   useEffect(() => {
     const t = setInterval(loadMarketFeed, 25000);
@@ -378,6 +427,14 @@ const SeasonTwoLab = ({ playerAddress }) => {
           {/* Happy Hour banner from legacy flow */}
           <HappyHourBanner />
 
+          {brewingTreats.length > 0 && (
+            <BrewingTreatsPanel
+              treats={brewingTreats}
+              onCollect={handleCollect}
+              collectingId={collectingId}
+            />
+          )}
+
           <ReactorChamber
             selectedIngredients={selectedIngredients}
             ingredients={ingredients}
@@ -441,6 +498,13 @@ const SeasonTwoLab = ({ playerAddress }) => {
           {error}
           <button onClick={() => setError(null)} className="ml-3 opacity-70 hover:opacity-100">×</button>
         </div>
+      )}
+
+      {collectResult && (
+        <CollectResultToast
+          result={collectResult}
+          onClose={() => setCollectResult(null)}
+        />
       )}
 
       {/* Spin the Wheel — floating button, prizes refresh player data */}
@@ -1122,6 +1186,360 @@ const LiveMarketFeed = ({ items }) => (
     )}
   </div>
 );
+
+
+/* ============================================================
+   BREWING TREATS PANEL — Flask/Beaker visual per treat
+   Shows timer as liquid fill, collect button when ready.
+   ============================================================ */
+
+// Rarity → liquid color mapping (matches the reference image aesthetic)
+const FLASK_COLORS = {
+  Starter:   { liquid: '#f59e0b', glow: 'rgba(245,158,11,0.6)',  glass: 'rgba(245,158,11,0.15)', label: '#fbbf24' },
+  Rare:      { liquid: '#38bdf8', glow: 'rgba(56,189,248,0.6)',  glass: 'rgba(56,189,248,0.15)',  label: '#7dd3fc' },
+  Epic:      { liquid: '#a855f7', glow: 'rgba(168,85,247,0.65)', glass: 'rgba(168,85,247,0.15)', label: '#d8b4fe' },
+  Legendary: { liquid: '#fbbf24', glow: 'rgba(251,191,36,0.7)',  glass: 'rgba(251,191,36,0.15)', label: '#fde68a' },
+  Mythic:    { liquid: '#ec4899', glow: 'rgba(236,72,153,0.7)',  glass: 'rgba(236,72,153,0.15)', label: '#f9a8d4' },
+  Common:    { liquid: '#9ca3af', glow: 'rgba(156,163,175,0.5)', glass: 'rgba(156,163,175,0.1)', label: '#d1d5db' },
+};
+
+function flaskColor(rarity) {
+  return FLASK_COLORS[rarity] || FLASK_COLORS.Common;
+}
+
+function formatTimer(secs) {
+  if (!secs || secs <= 0) return 'READY';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2,'0')}m`;
+  if (m > 0) return `${m}m ${String(s).padStart(2,'0')}s`;
+  return `${s}s`;
+}
+
+// Individual flask card — live countdown ticking inside
+const FlaskCard = ({ treat, onCollect, isCollecting }) => {
+  const rarity = treat?.rarity || 'Common';
+  const fc = flaskColor(rarity);
+  const timerData = treat?.timer || {};
+  const [secsLeft, setSecsLeft] = useState(timerData.remaining_seconds ?? 0);
+  const totalSecs = timerData.total_duration || 3600;
+  const isReady = secsLeft <= 0 || treat.brewing_status === 'ready';
+
+  // Live countdown tick
+  useEffect(() => {
+    if (isReady) return;
+    const interval = setInterval(() => {
+      setSecsLeft(prev => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isReady]);
+
+  // Fill level: 100% when ready, progress during brewing
+  const fillPct = isReady ? 100 : Math.max(8, Math.min(95, ((totalSecs - secsLeft) / totalSecs) * 100));
+  // Bubble animation only while brewing
+  const bubbling = !isReady && secsLeft > 0;
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 8,
+        padding: '12px 8px',
+        borderRadius: 20,
+        border: `1px solid ${fc.liquid}55`,
+        background: `radial-gradient(circle at 50% 0%, ${fc.glass}, rgba(5,3,13,0.9) 70%)`,
+        boxShadow: isReady ? `0 0 28px ${fc.glow}, 0 0 8px ${fc.glow}` : `0 0 12px ${fc.glow}44`,
+        minWidth: 100,
+        flex: '1 1 90px',
+        maxWidth: 130,
+        transition: 'box-shadow 0.4s',
+      }}
+    >
+      {/* Rarity badge */}
+      <div style={{
+        fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em',
+        color: fc.label, background: `${fc.liquid}22`, border: `1px solid ${fc.liquid}55`,
+        borderRadius: 99, padding: '2px 8px',
+      }}>
+        {rarity}
+      </div>
+
+      {/* Flask SVG */}
+      <div style={{ position: 'relative', width: 64, height: 80 }}>
+        <svg viewBox="0 0 64 80" width="64" height="80" style={{ position: 'absolute', top: 0, left: 0 }}>
+          <defs>
+            <clipPath id={`flask-clip-${treat.id}`}>
+              {/* Erlenmeyer flask shape */}
+              <path d="M22 4 L22 32 L8 62 Q6 68 12 70 L52 70 Q58 68 56 62 L42 32 L42 4 Z" />
+            </clipPath>
+            <linearGradient id={`liquid-grad-${treat.id}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={fc.liquid} stopOpacity="0.9" />
+              <stop offset="100%" stopColor={fc.liquid} stopOpacity="0.65" />
+            </linearGradient>
+          </defs>
+
+          {/* Flask glass outline */}
+          <path
+            d="M22 4 L22 32 L8 62 Q6 68 12 70 L52 70 Q58 68 56 62 L42 32 L42 4 Z"
+            fill="rgba(255,255,255,0.04)"
+            stroke={`${fc.liquid}88`}
+            strokeWidth="1.5"
+          />
+          {/* Flask neck top cap */}
+          <rect x="19" y="2" width="26" height="5" rx="2" fill={`${fc.liquid}44`} stroke={`${fc.liquid}88`} strokeWidth="1" />
+
+          {/* Liquid fill — clipped to flask shape */}
+          <g clipPath={`url(#flask-clip-${treat.id})`}>
+            <rect
+              x="0" y={70 - (fillPct / 100) * 70} width="64" height="70"
+              fill={`url(#liquid-grad-${treat.id})`}
+              style={{ transition: 'y 1s ease-out, height 1s ease-out' }}
+            />
+            {/* Wavy surface */}
+            {bubbling && (
+              <ellipse cx="32" cy={70 - (fillPct / 100) * 70} rx="20" ry="3"
+                fill={fc.liquid} opacity="0.4"
+                style={{ animation: 'liquid-bubble 1.6s ease-in-out infinite' }}
+              />
+            )}
+          </g>
+
+          {/* Glass shine */}
+          <path
+            d="M24 8 L24 30 L14 55"
+            stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" fill="none"
+          />
+
+          {/* Bubbles rising while brewing */}
+          {bubbling && [1,2,3].map(i => (
+            <circle key={i}
+              cx={28 + i * 5} cy={60 - i * 8}
+              r={i * 1.2 + 0.8}
+              fill={fc.liquid} opacity="0.6"
+              style={{
+                animation: `float-bub ${1.5 + i * 0.4}s ease-in-out infinite`,
+                animationDelay: `${i * 0.3}s`,
+              }}
+            />
+          ))}
+
+          {/* Ready checkmark overlay */}
+          {isReady && (
+            <g>
+              <circle cx="32" cy="38" r="10" fill={fc.liquid} opacity="0.9" />
+              <path d="M27 38 L31 42 L38 34" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </g>
+          )}
+        </svg>
+      </div>
+
+      {/* Treat name */}
+      <div style={{
+        fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.85)',
+        textAlign: 'center', lineHeight: 1.3, maxWidth: 90, overflow: 'hidden',
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+      }}>
+        {treat.name || `${rarity} Treat`}
+      </div>
+
+      {/* Timer / Collect */}
+      {isReady ? (
+        <button
+          onClick={() => onCollect(treat.id)}
+          disabled={isCollecting}
+          style={{
+            padding: '6px 14px', borderRadius: 99, fontSize: 11, fontWeight: 800,
+            letterSpacing: '0.08em', textTransform: 'uppercase', cursor: isCollecting ? 'wait' : 'pointer',
+            background: isCollecting ? 'rgba(255,255,255,0.1)' : `linear-gradient(135deg, ${fc.liquid}, ${fc.liquid}bb)`,
+            color: isCollecting ? 'rgba(255,255,255,0.4)' : '#000',
+            border: 'none', boxShadow: isCollecting ? 'none' : `0 4px 16px ${fc.glow}`,
+            transition: 'all 0.2s',
+          }}
+        >
+          {isCollecting ? '…' : 'Collect'}
+        </button>
+      ) : (
+        <div style={{
+          fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
+          color: fc.label, letterSpacing: '0.05em',
+          padding: '4px 10px', borderRadius: 99,
+          background: `${fc.liquid}22`, border: `1px solid ${fc.liquid}44`,
+        }}>
+          {formatTimer(secsLeft)}
+        </div>
+      )}
+
+      {/* Points reward badge */}
+      {treat.points_reward > 0 && (
+        <div style={{
+          position: 'absolute', top: 8, right: 8,
+          fontSize: 8, fontWeight: 800, color: '#fbbf24',
+          background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.4)',
+          borderRadius: 99, padding: '1px 5px',
+        }}>
+          +{treat.points_reward}pts
+        </div>
+      )}
+
+      {/* Glow pulse when ready */}
+      {isReady && (
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: 20,
+          animation: 'rarity-pulse 1.6s ease-in-out infinite',
+          boxShadow: `0 0 20px ${fc.glow}`,
+          pointerEvents: 'none',
+        }} />
+      )}
+    </div>
+  );
+};
+
+const BrewingTreatsPanel = ({ treats, onCollect, collectingId }) => {
+  const readyCount = treats.filter(t => (t?.timer?.remaining_seconds ?? 0) <= 0 || t.brewing_status === 'ready').length;
+
+  return (
+    <section
+      data-testid="brewing-treats-panel"
+      style={{
+        borderRadius: 24,
+        border: '1px solid rgba(56,189,248,0.2)',
+        background: 'linear-gradient(135deg, rgba(10,8,32,0.95) 0%, rgba(6,4,22,0.98) 100%)',
+        padding: '16px',
+        boxShadow: readyCount > 0
+          ? '0 0 40px rgba(56,189,248,0.2), inset 0 0 40px rgba(56,189,248,0.03)'
+          : '0 8px 30px rgba(0,0,0,0.4)',
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: readyCount > 0 ? '#4ade80' : '#f59e0b',
+            boxShadow: readyCount > 0 ? '0 0 8px #4ade80' : '0 0 8px #f59e0b',
+            animation: 'rarity-pulse 1.6s ease-in-out infinite',
+          }} />
+          <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.3em', fontFamily: 'monospace', color: 'rgba(255,255,255,0.6)' }}>
+            Reactor Output
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {readyCount > 0 && (
+            <span style={{
+              fontSize: 10, fontWeight: 800, padding: '2px 10px', borderRadius: 99,
+              background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.4)',
+              color: '#4ade80', letterSpacing: '0.1em',
+            }}>
+              {readyCount} READY
+            </span>
+          )}
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
+            {treats.length} active
+          </span>
+        </div>
+      </div>
+
+      {/* Flask grid */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: treats.length <= 3 ? 'center' : 'flex-start',
+      }}>
+        {treats.map(treat => (
+          <FlaskCard
+            key={treat.id}
+            treat={treat}
+            onCollect={onCollect}
+            isCollecting={collectingId === treat.id}
+          />
+        ))}
+      </div>
+
+      {/* Empty state fallback */}
+      {treats.length === 0 && (
+        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12, padding: '12px 0' }}>
+          No active brews. Mix some ingredients above to fill the flasks!
+        </div>
+      )}
+    </section>
+  );
+};
+
+/* ============================================================
+   COLLECT RESULT TOAST
+   ============================================================ */
+
+const CollectResultToast = ({ result, onClose }) => {
+  const rewards = result?.rewards || {};
+  const pts = rewards.total_points ?? rewards.points ?? 0;
+  const xp = rewards.total_xp ?? rewards.xp ?? 0;
+  const happyHour = rewards.happy_hour_bonus > 0;
+  const leveledUp = result?.leveled_up;
+  const newLevel = result?.new_level;
+
+  useEffect(() => {
+    const t = setTimeout(onClose, 4500);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div
+      style={{
+        position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
+        zIndex: 130, minWidth: 280, maxWidth: 340,
+        borderRadius: 20, padding: '16px 20px',
+        background: 'linear-gradient(135deg, rgba(10,8,32,0.98), rgba(6,4,22,0.98))',
+        border: '1px solid rgba(74,222,128,0.5)',
+        boxShadow: '0 20px 60px rgba(74,222,128,0.25)',
+        animation: 'result-pop 0.5s cubic-bezier(.2,.9,.3,1.15) both',
+      }}
+      onClick={onClose}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+          background: 'rgba(74,222,128,0.2)', border: '1px solid rgba(74,222,128,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+        }}>
+          🧪
+        </div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+            Treat Collected!
+          </div>
+          {leveledUp && (
+            <div style={{ fontSize: 10, color: '#fbbf24', fontWeight: 700, marginTop: 1 }}>
+              ⬆ Level Up! Now Level {newLevel}
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1, borderRadius: 12, background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.25)', padding: '8px 12px', textAlign: 'center' }}>
+          <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>XP</div>
+          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: '#22d3ee' }}>+{xp}</div>
+        </div>
+        <div style={{ flex: 1, borderRadius: 12, background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.25)', padding: '8px 12px', textAlign: 'center' }}>
+          <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>Points</div>
+          <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: '#a855f7' }}>+{pts}</div>
+        </div>
+        {happyHour && (
+          <div style={{ flex: 1, borderRadius: 12, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', padding: '8px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>Bonus</div>
+            <div style={{ fontSize: 14, fontWeight: 800, fontFamily: 'monospace', color: '#fbbf24' }}>+{rewards.happy_hour_bonus}🔥</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
 
 /* ----- Character Selection ----- */
 
