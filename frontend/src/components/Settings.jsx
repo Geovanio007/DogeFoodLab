@@ -335,27 +335,30 @@ const Settings = () => {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full grid-cols-5 p-1 rounded-2xl shadow-sm ${isDarkMode ? 'bg-slate-800' : 'bg-white/80 backdrop-blur-sm'}`}>
-            <TabsTrigger value="general" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-general">
-              <SettingsIcon className="w-4 h-4 mr-2" />
-              General
-            </TabsTrigger>
-            <TabsTrigger value="auto-mixer" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-auto-mixer">
-              <Bot className="w-4 h-4 mr-2" />
-              Auto-Mixer
-            </TabsTrigger>
-            <TabsTrigger value="audio" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-audio">
-              <Music className="w-4 h-4 mr-2" />
-              Audio
-            </TabsTrigger>
-            <TabsTrigger value="referral" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-referral">
-              <Gift className="w-4 h-4 mr-2" />
-              Referral
-            </TabsTrigger>
-            <TabsTrigger value="account" className={`rounded-xl transition-all ${isDarkMode ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-300' : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white'}`} data-testid="tab-account">
-              <User className="w-4 h-4 mr-2" />
-              Account
-            </TabsTrigger>
+          <TabsList className={`flex w-full gap-1 p-1 rounded-2xl shadow-sm overflow-x-auto ${isDarkMode ? 'bg-slate-800' : 'bg-white/80 backdrop-blur-sm'}`}>
+            {[
+              { value: 'general',    Icon: SettingsIcon, label: 'General',    testId: 'tab-general'    },
+              { value: 'auto-mixer', Icon: Bot,          label: 'Auto-Mix',   testId: 'tab-auto-mixer' },
+              { value: 'audio',      Icon: Music,        label: 'Audio',      testId: 'tab-audio'      },
+              { value: 'referral',   Icon: Gift,         label: 'Referral',   testId: 'tab-referral'   },
+              { value: 'account',    Icon: User,         label: 'Account',    testId: 'tab-account'    },
+            ].map(({ value, Icon, label, testId }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                data-testid={testId}
+                className={`
+                  flex-1 min-w-0 flex flex-col items-center justify-center gap-1
+                  py-2 px-1 rounded-xl transition-all shrink-0
+                  ${isDarkMode
+                    ? 'data-[state=active]:bg-sky-600 data-[state=active]:text-white text-slate-400 hover:text-slate-200'
+                    : 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-blue-500 data-[state=active]:text-white text-slate-600'}
+                `}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="text-[10px] font-medium leading-none whitespace-nowrap">{label}</span>
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           {/* General Settings Tab */}
