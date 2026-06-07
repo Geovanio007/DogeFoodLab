@@ -256,6 +256,17 @@ const SeasonTwoLab = ({ playerAddress }) => {
       playSuccess && playSuccess();
       await loadBrewingTreats();
       await loadPlayerData();
+      // Write the collected treat to localStorage so MyTreats can fire the cinematic reveal
+      try {
+        const treatForReveal = {
+          id:            treatId,
+          rarity:        data?.treat?.rarity || data?.outcome?.rarity || 'Common',
+          name:          data?.treat?.name   || data?.outcome?.name   || 'Treat',
+          points_reward: data?.rewards?.total_points ?? data?.rewards?.points ?? 0,
+          xp_reward:     data?.rewards?.total_xp    ?? data?.rewards?.xp    ?? 0,
+        };
+        localStorage.setItem('dogefood_reveal_treat', JSON.stringify(treatForReveal));
+      } catch (e) { /* non-fatal */ }
     } catch (e) {
       setError(e?.message || 'Collect failed');
     } finally {
