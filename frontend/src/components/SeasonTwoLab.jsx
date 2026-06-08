@@ -461,8 +461,8 @@ const SeasonTwoLab = ({ playerAddress }) => {
     } finally {
       setCollectingId(null);
     }
-  }, [collectingId, playerAddress, playSuccess, loadBrewingTreats, loadPlayerData]);
-
+  }, [collectingId, playerAddress, playSuccess, loadBrewingTreats, loadPlayerData, brewingTreats]);
+   
   useEffect(() => {
     (async () => {
       setLoading(true);
