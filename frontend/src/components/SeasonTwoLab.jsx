@@ -418,6 +418,13 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const handleCollect = useCallback(async (treatId) => {
     if (collectingId) return;
     setCollectingId(treatId);
+
+    // Grab treat metadata from local state BEFORE the API call —
+    // the collect endpoint does NOT return rarity/name in its response.
+    const sourceTreat = brewingTreats.find(t => t.id === treatId) || {};
+    const treatRarity = sourceTreat.rarity || sourceTreat.category || 'Common';
+    const treatName   = sourceTreat.name   || `${treatRarity} Treat`;
+
     try {
       const res = await fetch(`${API_URL}/api/treats/${treatId}/collect`, {
         method: 'POST',
@@ -434,17 +441,17 @@ const SeasonTwoLab = ({ playerAddress }) => {
       playSuccess && playSuccess();
       await loadBrewingTreats();
       await loadPlayerData();
-      // Fire cinematic reveal directly on the lab page
+      // Fire cinematic reveal using rarity from the treat we already had
       setRevealData({
-        rarity:   data?.treat?.rarity  || data?.outcome?.rarity || 'Common',
-        name:     data?.treat?.name    || data?.outcome?.name   || 'Treat',
-        rewards:  data?.rewards || {},
+        rarity:  treatRarity,
+        name:    treatName,
+        rewards: data?.rewards || {},
       });
-      // Also write to localStorage so MyTreats can show it if player navigates there
+      // Also write to localStorage so MyTreats shows it if player navigates there
       try {
         localStorage.setItem('dogefood_reveal_treat', JSON.stringify({
-          rarity:        data?.treat?.rarity || data?.outcome?.rarity || 'Common',
-          name:          data?.treat?.name   || data?.outcome?.name   || 'Treat',
+          rarity:        treatRarity,
+          name:          treatName,
           points_reward: data?.rewards?.total_points ?? data?.rewards?.points ?? 0,
           xp_reward:     data?.rewards?.total_xp    ?? data?.rewards?.xp    ?? 0,
         }));
