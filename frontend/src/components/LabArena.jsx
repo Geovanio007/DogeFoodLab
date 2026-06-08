@@ -74,17 +74,30 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
   const [showStreamModal, setShowStreamModal] = useState(false);
   const [joinError, setJoinError] = useState(null);
 
-  const arenaPoll      = usePoll(`${API_URL}/api/arena/leaderboard?limit=50`, 4000);
+  // /api/arena/current returns { arena, entries, top, heat }
+  // /api/arena/leaderboard returns { entries, top, total_entrants }
+  // Poll /current for the arena object (prize_pool, ends_at, entries_count)
+  // Poll /leaderboard separately at higher frequency for live score updates
+  const currentPoll    = usePoll(`${API_URL}/api/arena/current`, 8000);
+  const lbPoll         = usePoll(`${API_URL}/api/arena/leaderboard?limit=50`, 4000);
   const heatPoll       = usePoll(`${API_URL}/api/arena/heat`, 15000);
   const predictionPoll = usePoll(`${API_URL}/api/arena/prediction/${playerAddress}`, 8000);
 
-  const arena      = arenaPoll.data?.arena;
-  const entries    = arenaPoll.data?.entries || [];
-  const heat       = heatPoll.data?.event;
-  const myPrediction = predictionPoll.data?.prediction;
+  // arena metadata comes from /current; live entries from /leaderboard (fresher)
+  const arena   = currentPoll.data?.arena;
+  const entries = lbPoll.data?.entries || currentPoll.data?.entries || [];
+
+  // Derive competitors count + prize pool from live entries when arena object is stale
+  const competitorCount = entries.length || arena?.entries_count || 0;
+  const prizePool       = competitorCount * 50; // 50pts entry fee per player
+  const heat            = heatPoll.data?.event || currentPoll.data?.heat;
+  const myPrediction    = predictionPoll.data?.prediction;
 
   const isJoined = useMemo(
-    () => entries.some((e) => e.player_address === playerAddress),
+    () => entries.some(
+      (e) => e.player_address === playerAddress ||
+             e.player_address?.toLowerCase() === playerAddress?.toLowerCase()
+    ),
     [entries, playerAddress]
   );
 
@@ -131,6 +144,8 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
       <div className="relative z-10 px-3 sm:px-6">
         <ArenaBanner
           arena={arena}
+          competitorCount={competitorCount}
+          prizePool={prizePool}
           isJoined={isJoined}
           joinError={joinError}
           onJoin={async () => {
@@ -282,10 +297,19 @@ const HeatEventBanner = ({ heat, startedAt, duration }) => {
 /* ─── Arena Banner ───
    ✅ No backdrop-blur-md — solid dark bg
    ✅ No filter:blur on decorative glow div                   */
-const ArenaBanner = ({ arena, isJoined, onJoin, joinError }) => {
+const ArenaBanner = ({ arena, competitorCount, prizePool, isJoined, onJoin, joinError }) => {
   const now      = useNow(1000);
-  const endsAt   = arena?.ends_at ? new Date(arena.ends_at).getTime() : null;
-  const remaining = endsAt ? Math.max(0, Math.floor((endsAt - now) / 1000)) : 0;
+
+  // ends_at: try arena object first, fall back to next UTC midnight (arena resets daily)
+  const endsAt = useMemo(() => {
+    if (arena?.ends_at) return new Date(arena.ends_at).getTime();
+    // Fallback: next UTC midnight so timer always shows something meaningful
+    const tomorrow = new Date();
+    tomorrow.setUTCHours(24, 0, 0, 0);
+    return tomorrow.getTime();
+  }, [arena?.ends_at]);
+
+  const remaining = Math.max(0, Math.floor((endsAt - now) / 1000));
 
   return (
     <section
@@ -320,7 +344,7 @@ const ArenaBanner = ({ arena, isJoined, onJoin, joinError }) => {
               className="text-[10px] sm:text-xs tracking-[0.3em] font-mono font-bold uppercase"
               style={{ color: '#fde047' }}
             >
-              24h Arena · {arena?.entries_count || 0} competitors
+              24h Arena · {competitorCount} competitors
             </span>
           </div>
           <h2
@@ -338,7 +362,7 @@ const ArenaBanner = ({ arena, isJoined, onJoin, joinError }) => {
                 textShadow: '0 0 20px rgba(250,204,21,0.5)',
               }}
             >
-              {(arena?.prize_pool || 0).toLocaleString()}
+              {(prizePool || arena?.prize_pool || 0).toLocaleString()}
             </span>
             <span className="text-sm sm:text-base font-mono font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>
               PTS
