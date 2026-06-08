@@ -267,231 +267,285 @@ const CinematicReveal = ({ treat, onClose }) => {
   );
 };
 
-// Glass Treat Card Component
+/* ============================================================
+   NFT-STYLE TREAT CARD
+   Square format, image-dominant, clean metadata footer.
+   ============================================================ */
+const RARITY_CONFIG = {
+  mythic:    { hex: '#ec4899', glow: 'rgba(236,72,153,0.5)',  border: 'rgba(236,72,153,0.6)',  badge: 'linear-gradient(135deg,#f43f5e,#ec4899)', label: '#f9a8d4', icon: 'M' },
+  legendary: { hex: '#fbbf24', glow: 'rgba(251,191,36,0.5)',  border: 'rgba(251,191,36,0.55)', badge: 'linear-gradient(135deg,#f59e0b,#fbbf24)', label: '#fde68a', icon: 'L' },
+  epic:      { hex: '#a855f7', glow: 'rgba(168,85,247,0.5)',  border: 'rgba(168,85,247,0.55)', badge: 'linear-gradient(135deg,#7c3aed,#a855f7)', label: '#d8b4fe', icon: 'E' },
+  rare:      { hex: '#38bdf8', glow: 'rgba(56,189,248,0.5)',  border: 'rgba(56,189,248,0.5)',  badge: 'linear-gradient(135deg,#0284c7,#38bdf8)', label: '#7dd3fc', icon: 'R' },
+  uncommon:  { hex: '#2dd4bf', glow: 'rgba(45,212,191,0.45)', border: 'rgba(45,212,191,0.45)', badge: 'linear-gradient(135deg,#0d9488,#2dd4bf)', label: '#99f6e4', icon: 'U' },
+  common:    { hex: '#4ade80', glow: 'rgba(74,222,128,0.35)', border: 'rgba(74,222,128,0.3)',  badge: 'linear-gradient(135deg,#16a34a,#4ade80)', label: '#bbf7d0', icon: 'C' },
+};
+
 const TreatCard = ({ treat, index, ingredientMap = {}, onListForSale, isListed = false }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  // Helper to get ingredient name from ID
+  const [hovered, setHovered] = useState(false);
+
+  const rKey = getRarityKey(treat.rarity);
+  const cfg  = RARITY_CONFIG[rKey] || RARITY_CONFIG.common;
+  const img  = getTreatImage(treat.rarity);
+  const pts  = treat.points_reward || treat.points || 0;
+  const xp   = treat.xp_reward || treat.xp || 0;
+
   const getIngredientName = (ing) => {
-    // If it's an ID like "ING001", look it up in the map
-    if (ing && ing.startsWith('ING')) {
-      return ingredientMap[ing] || ing;
-    }
-    // Otherwise return as-is (already a name)
+    if (ing && ing.startsWith('ING')) return ingredientMap[ing] || ing;
     return ing;
   };
-  
-  const getRarityConfig = (rarity) => {
-    switch (rarity?.toLowerCase()) {
-      case 'mythic':
-        return {
-          gradient: 'from-rose-400 via-pink-500 to-red-500',
-          glow: 'shadow-rose-400/40',
-          border: 'border-rose-400/60',
-          bg: 'from-rose-500/15 to-pink-500/10',
-          text: 'text-rose-400',
-          icon: 'M',
-          shine: 'bg-gradient-to-r from-transparent via-rose-200/40 to-transparent'
-        };
-      case 'legendary':
-        return {
-          gradient: 'from-amber-400 via-yellow-300 to-amber-500',
-          glow: 'shadow-amber-400/30',
-          border: 'border-amber-400/50',
-          bg: 'from-amber-500/10 to-yellow-500/5',
-          text: 'text-amber-400',
-          icon: 'L',
-          shine: 'bg-gradient-to-r from-transparent via-amber-200/30 to-transparent'
-        };
-      case 'epic':
-        return {
-          gradient: 'from-purple-400 via-pink-400 to-purple-500',
-          glow: 'shadow-purple-400/30',
-          border: 'border-purple-400/50',
-          bg: 'from-purple-500/10 to-pink-500/5',
-          text: 'text-purple-400',
-          icon: 'E',
-          shine: 'bg-gradient-to-r from-transparent via-purple-200/30 to-transparent'
-        };
-      case 'rare':
-        return {
-          gradient: 'from-blue-400 via-cyan-400 to-blue-500',
-          glow: 'shadow-blue-400/30',
-          border: 'border-blue-400/50',
-          bg: 'from-blue-500/10 to-cyan-500/5',
-          text: 'text-blue-400',
-          icon: 'R',
-          shine: 'bg-gradient-to-r from-transparent via-blue-200/30 to-transparent'
-        };
-      case 'uncommon':
-        return {
-          gradient: 'from-cyan-400 via-teal-400 to-cyan-500',
-          glow: 'shadow-cyan-400/25',
-          border: 'border-cyan-400/40',
-          bg: 'from-cyan-500/10 to-teal-500/5',
-          text: 'text-cyan-400',
-          icon: 'U',
-          shine: 'bg-gradient-to-r from-transparent via-cyan-200/25 to-transparent'
-        };
-      default:
-        return {
-          gradient: 'from-green-400 via-emerald-400 to-green-500',
-          glow: 'shadow-green-400/20',
-          border: 'border-green-400/30',
-          bg: 'from-green-500/10 to-emerald-500/5',
-          text: 'text-green-400',
-          icon: 'C',
-          shine: 'bg-gradient-to-r from-transparent via-green-200/20 to-transparent'
-        };
-    }
-  };
-  
-  const config = getRarityConfig(treat.rarity);
-  
+
   return (
     <div
-      className={`
-        relative group cursor-pointer
-        transform transition-all duration-500 ease-out
-        ${isHovered ? 'scale-[1.02] -translate-y-1' : ''}
-      `}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{ animationDelay: `${index * 50}ms` }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: 'relative',
+        borderRadius: 16,
+        overflow: 'hidden',
+        background: 'linear-gradient(160deg, #0f1623 0%, #0a0e18 100%)',
+        border: `1px solid ${hovered ? cfg.border : 'rgba(255,255,255,0.08)'}`,
+        boxShadow: hovered
+          ? `0 0 0 1px ${cfg.border}, 0 8px 32px ${cfg.glow}, 0 2px 8px rgba(0,0,0,0.6)`
+          : '0 2px 12px rgba(0,0,0,0.5)',
+        transform: hovered ? 'translateY(-4px) scale(1.02)' : 'translateY(0) scale(1)',
+        transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+        cursor: 'pointer',
+        animationDelay: `${index * 40}ms`,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
     >
-      {/* Glow Effect */}
-      <div className={`
-        absolute -inset-1 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500
-        bg-gradient-to-r ${config.gradient} blur-xl
-      `} />
-      
-      {/* Card */}
-      <div className={`
-        relative overflow-hidden rounded-2xl
-        bg-gradient-to-br ${config.bg}
-        backdrop-blur-xl border ${config.border}
-        ${isHovered ? `shadow-2xl ${config.glow}` : 'shadow-lg'}
-        transition-all duration-500
-      `}>
-        {/* Shine Effect */}
-        <div className={`
-          absolute inset-0 ${config.shine}
-          transform -skew-x-12 -translate-x-full group-hover:translate-x-full
-          transition-transform duration-1000 ease-out
-        `} />
-        
-        {/* Glass Overlay */}
-        <div className="absolute inset-0 bg-white/5" />
-        
-        {/* Content */}
-        <div className="relative p-4">
-          {/* Rarity Badge */}
-          <div className="flex justify-between items-start mb-3">
-            <Badge className={`
-              bg-gradient-to-r ${config.gradient} text-white font-bold
-              px-3 py-1 rounded-full text-xs shadow-lg
-            `}>
-              {config.icon} {treat.rarity || 'Common'}
-            </Badge>
-            {treat.season_id && (
-              <Badge className="bg-slate-800/80 text-slate-300 border border-slate-600/50 text-xs">
-                S{treat.season_id}
-              </Badge>
-            )}
+      {/* ── Square image area ── */}
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        paddingTop: '100%', // perfect square
+        overflow: 'hidden',
+        background: `radial-gradient(ellipse at 50% 60%, ${cfg.glow.replace('0.5','0.18').replace('0.45','0.14').replace('0.35','0.1')} 0%, #080c14 70%)`,
+        flexShrink: 0,
+      }}>
+        {/* Animated corner accent top-left */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0,
+          width: 40, height: 40,
+          borderTop: `2px solid ${cfg.hex}`,
+          borderLeft: `2px solid ${cfg.hex}`,
+          borderTopLeftRadius: 15,
+          opacity: hovered ? 1 : 0.4,
+          transition: 'opacity 0.2s',
+          zIndex: 3,
+        }} />
+        {/* Animated corner accent bottom-right */}
+        <div style={{
+          position: 'absolute', bottom: 0, right: 0,
+          width: 40, height: 40,
+          borderBottom: `2px solid ${cfg.hex}`,
+          borderRight: `2px solid ${cfg.hex}`,
+          borderBottomRightRadius: 15,
+          opacity: hovered ? 1 : 0.4,
+          transition: 'opacity 0.2s',
+          zIndex: 3,
+        }} />
+
+        {/* Season badge top-right */}
+        {treat.season_id && (
+          <div style={{
+            position: 'absolute', top: 10, right: 10,
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(6px)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 6,
+            padding: '2px 7px',
+            fontSize: 10,
+            fontWeight: 700,
+            color: 'rgba(255,255,255,0.6)',
+            letterSpacing: '0.05em',
+            zIndex: 4,
+          }}>S{treat.season_id}</div>
+        )}
+
+        {/* Rarity badge top-left */}
+        <div style={{
+          position: 'absolute', top: 10, left: 10,
+          background: cfg.badge,
+          borderRadius: 8,
+          padding: '3px 10px',
+          fontSize: 10,
+          fontWeight: 900,
+          color: '#fff',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          zIndex: 4,
+          boxShadow: `0 2px 8px ${cfg.glow}`,
+        }}>{cfg.icon} {treat.rarity || 'Common'}</div>
+
+        {/* The treat image — centered absolutely inside the padded square */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {/* Glow disc behind image */}
+          <div style={{
+            position: 'absolute',
+            width: '60%', height: '60%',
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 70%)`,
+            opacity: hovered ? 1 : 0.5,
+            transition: 'opacity 0.3s',
+            filter: 'blur(12px)',
+          }} />
+          <img
+            src={img}
+            alt={treat.name || 'DogeFood Treat'}
+            onError={(e) => { e.target.src = '/Common.png'; }}
+            style={{
+              width: '72%', height: '72%',
+              objectFit: 'contain',
+              position: 'relative', zIndex: 2,
+              transform: hovered ? 'scale(1.08)' : 'scale(1)',
+              transition: 'transform 0.3s ease-out',
+              filter: hovered ? `drop-shadow(0 0 16px ${cfg.hex})` : `drop-shadow(0 4px 8px rgba(0,0,0,0.5))`,
+            }}
+          />
+        </div>
+
+        {/* Horizontal shine sweep on hover */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%)',
+          transform: hovered ? 'translateX(100%)' : 'translateX(-100%)',
+          transition: 'transform 0.55s ease-out',
+          zIndex: 5,
+          pointerEvents: 'none',
+        }} />
+      </div>
+
+      {/* ── Card footer ── */}
+      <div style={{
+        padding: '12px 14px 14px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        flex: 1,
+        borderTop: `1px solid rgba(255,255,255,0.06)`,
+      }}>
+        {/* Treat name */}
+        <div style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: '#e2e8f0',
+          letterSpacing: '0.01em',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          lineHeight: 1.3,
+        }}>
+          {treat.name || 'Mysterious Treat'}
+        </div>
+
+        {/* Stats row */}
+        <div style={{
+          display: 'flex',
+          gap: 8,
+        }}>
+          <div style={{
+            flex: 1,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 8,
+            padding: '6px 8px',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: cfg.hex, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{pts}</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 2, letterSpacing: '0.1em', textTransform: 'uppercase' }}>PTS</div>
           </div>
-          
-          {/* Treat Image — Season 2 rarity-specific art */}
-          <div className="relative w-full aspect-square mb-4 flex items-center justify-center">
-            <div className={`
-              absolute inset-0 rounded-xl bg-gradient-to-br ${config.bg}
-              opacity-50
-            `} />
-            {/* Glow pulse on hover */}
-            <div
-              className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{ boxShadow: `inset 0 0 40px ${config.glowColor || 'rgba(255,255,255,0.1)'}` }}
-            />
-            <img
-              src={getTreatImage(treat.rarity)}
-              alt={treat.name || 'DogeFood Treat'}
-              className="relative w-24 h-24 object-contain drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
-              onError={(e) => { e.target.src = '/Common.png'; }}
-            />
-          </div>
-          
-          {/* Treat Info */}
-          <div className="text-center">
-            <h3 className="font-bold text-white text-lg mb-1 truncate">
-              {treat.name || 'Mysterious Treat'}
-            </h3>
-            
-            {/* Stats Row */}
-            <div className="flex justify-center gap-4 mt-3">
-              <div className="text-center">
-                <div className={`text-lg font-bold ${config.text}`}>
-                  {treat.points_reward || treat.points || 0}
-                </div>
-                <div className="text-xs text-slate-400">Points</div>
-              </div>
-              <div className="w-px bg-slate-600/50" />
-              <div className="text-center">
-                <div className="text-lg font-bold text-white">
-                  {treat.xp_reward || treat.xp || 0}
-                </div>
-                <div className="text-xs text-slate-400">XP</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Ingredients */}
-          {treat.ingredients && treat.ingredients.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-white/10">
-              <div className="text-xs text-slate-400 mb-1.5 text-center">Ingredients:</div>
-              <div className="flex justify-center gap-1.5 flex-wrap">
-                {treat.ingredients.slice(0, 4).map((ing, i) => (
-                  <span key={i} className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300">
-                    {getIngredientName(ing)}
-                  </span>
-                ))}
-                {treat.ingredients.length > 4 && (
-                  <span className="text-xs text-slate-400 px-2 py-0.5">+{treat.ingredients.length - 4} more</span>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {/* Creation Date */}
-          {treat.created_at && (
-            <div className="mt-2 text-center">
-              <span className="text-xs text-slate-500">
-                {new Date(treat.created_at).toLocaleDateString()}
-              </span>
-            </div>
-          )}
-          
-          {/* List for Sale Button / Listed Badge */}
-          <div className="mt-3 pt-3 border-t border-white/10">
-            {isListed ? (
-              <div className="flex items-center justify-center gap-2 py-2 px-3 bg-sky-500/20 rounded-lg border border-sky-500/30">
-                <Store className="w-4 h-4 text-sky-400" />
-                <span className="text-xs font-medium text-sky-400">Listed on Marketplace</span>
-              </div>
-            ) : (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onListForSale && onListForSale(treat);
-                }}
-                className="w-full bg-gradient-to-r from-yellow-500/20 to-sky-500/20 hover:from-yellow-500/30 hover:to-sky-500/30 text-white text-xs border border-yellow-500/30 hover:border-sky-500/50"
-                size="sm"
-                data-testid={`list-btn-${treat.id}`}
-              >
-                <Tag className="w-3 h-3 mr-1" />
-                List for Sale
-              </Button>
-            )}
+          <div style={{
+            flex: 1,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 8,
+            padding: '6px 8px',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#94a3b8', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{xp}</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 2, letterSpacing: '0.1em', textTransform: 'uppercase' }}>XP</div>
           </div>
         </div>
+
+        {/* Ingredients — compact pill row */}
+        {treat.ingredients && treat.ingredients.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {treat.ingredients.slice(0, 3).map((ing, i) => (
+              <span key={i} style={{
+                fontSize: 9,
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 4,
+                padding: '2px 6px',
+                color: 'rgba(255,255,255,0.5)',
+                letterSpacing: '0.04em',
+              }}>
+                {getIngredientName(ing)}
+              </span>
+            ))}
+            {treat.ingredients.length > 3 && (
+              <span style={{
+                fontSize: 9,
+                color: 'rgba(255,255,255,0.3)',
+                padding: '2px 4px',
+              }}>+{treat.ingredients.length - 3}</span>
+            )}
+          </div>
+        )}
+
+        {/* Date */}
+        {treat.created_at && (
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.05em' }}>
+            {new Date(treat.created_at).toLocaleDateString()}
+          </div>
+        )}
+
+        {/* List / Listed button */}
+        {isListed ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '7px 10px',
+            background: 'rgba(14,165,233,0.12)',
+            border: '1px solid rgba(14,165,233,0.3)',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            color: '#38bdf8',
+          }}>
+            <Store size={12} />
+            Listed
+          </div>
+        ) : (
+          <button
+            onClick={(e) => { e.stopPropagation(); onListForSale && onListForSale(treat); }}
+            data-testid={`list-btn-${treat.id}`}
+            style={{
+              width: '100%',
+              padding: '7px 10px',
+              background: hovered
+                ? `linear-gradient(135deg, ${cfg.hex}28, ${cfg.hex}18)`
+                : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${hovered ? cfg.border : 'rgba(255,255,255,0.1)'}`,
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 700,
+              color: hovered ? cfg.label : 'rgba(255,255,255,0.5)',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+            }}
+          >
+            <Tag size={10} />
+            List for Sale
+          </button>
+        )}
       </div>
     </div>
   );
