@@ -34,25 +34,26 @@ const RARITY_IMAGES = {
   common:    '/Common.png',
 };
 
-// The exact Shiba-pouring-cereal URL that all S2 treats were stamped with
-const S2_PLACEHOLDER_IMAGE =
-  'l9ufequf_20250720_2152_Shiba_Pouring_Cereal';
+/**
+ * Season 2 ingredients are prefixed with "S2_" (e.g. S2_001).
+ * Season 1 ingredients use "ING" prefix (e.g. ING101).
+ * This is the most reliable signal — it's baked into the listing data itself.
+ */
+function isSeasonTwo(listing) {
+  const ings = listing.treat_ingredients || [];
+  return ings.length > 0 && ings.some(ing => ing.startsWith('S2_'));
+}
 
 /**
  * Returns the correct display image for a marketplace listing.
- * - Season 2 treats (identified by the old placeholder URL) → use rarity PNG
- * - Season 1 treats (real custom image) → keep original treat_image
+ * - Season 2 treats → use rarity PNG from /public
+ * - Season 1 treats → keep the original treat_image (cereal box Shiba art)
  */
 function getListingImage(listing) {
-  const isS2Placeholder =
-    listing.treat_image && listing.treat_image.includes(S2_PLACEHOLDER_IMAGE);
-
-  if (isS2Placeholder) {
+  if (isSeasonTwo(listing)) {
     const key = (listing.treat_rarity || 'common').toLowerCase();
     return RARITY_IMAGES[key] || RARITY_IMAGES.common;
   }
-
-  // Season 1 or any custom image — use as-is
   return listing.treat_image || null;
 }
 
@@ -77,9 +78,9 @@ function getRarityStyle(rarity) {
    ============================================================ */
 const ListingCard = ({ listing, ingredientMap, onBuy }) => {
   const [hovered, setHovered] = useState(false);
-  const cfg = getRarityStyle(listing.treat_rarity);
-  const img = getListingImage(listing);
-  const isS2 = listing.treat_image && listing.treat_image.includes(S2_PLACEHOLDER_IMAGE);
+  const cfg  = getRarityStyle(listing.treat_rarity);
+  const img  = getListingImage(listing);
+  const isS2 = isSeasonTwo(listing);
 
   const getIngredientName = (ing) => {
     if (ing && ing.startsWith('ING')) return ingredientMap[ing] || ing;
