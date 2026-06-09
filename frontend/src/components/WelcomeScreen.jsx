@@ -23,7 +23,7 @@ import INGREDIENT_ICONS from '../config/ingredientIcons';
 
 const LAB_TOKEN = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/bihai5rz_1000081758-removebg-preview.png';
 
-const SEASON2_LAUNCH_ISO = '2026-06-11T00:00:00Z';
+const SEASON2_LAUNCH_ISO = '2026-06-18T00:00:00Z';
 const SEASON2_LAUNCH_AT = Date.parse(SEASON2_LAUNCH_ISO);
 
 const SNEAK_PEEK_IDS = ['S2_050', 'S2_045', 'S2_041', 'S2_040', 'S2_032', 'S2_021'];
