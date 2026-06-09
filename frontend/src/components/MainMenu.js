@@ -992,6 +992,15 @@ const MainMenu = () => {
           {/* ── Player Points Ticker ── */}
           <PlayerTickerCarousel />
 
+          {/* ── Sale Banner ── */}
+          <div className="w-full overflow-hidden rounded-xl">
+            <img
+              src="/Sale.png"
+              alt="Sale"
+              className="w-full h-auto block"
+            />
+          </div>
+
           {/* ── Mobile: Share & Earn + Quick Stats ── */}
           <div className="lg:hidden space-y-3">
             <button
