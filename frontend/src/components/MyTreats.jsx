@@ -360,21 +360,19 @@ const TreatCard = ({ treat, index, ingredientMap = {}, onListForSale, isListed =
         }} />
 
         {/* Season badge top-right */}
-        {treat.season_id && (
-          <div style={{
-            position: 'absolute', top: 10, right: 10,
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(6px)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 6,
-            padding: '2px 7px',
-            fontSize: 10,
-            fontWeight: 700,
-            color: 'rgba(255,255,255,0.6)',
-            letterSpacing: '0.05em',
-            zIndex: 4,
-          }}>S{treat.season_id}</div>
-        )}
+        <div style={{
+          position: 'absolute', top: 10, right: 10,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(6px)',
+          border: `1px solid ${getSeasonLabel(treat) === 'S2' ? 'rgba(45,212,191,0.4)' : 'rgba(255,255,255,0.12)'}`,
+          borderRadius: 6,
+          padding: '2px 7px',
+          fontSize: 10,
+          fontWeight: 700,
+          color: getSeasonLabel(treat) === 'S2' ? '#2dd4bf' : 'rgba(255,255,255,0.6)',
+          letterSpacing: '0.05em',
+          zIndex: 4,
+        }}>{getSeasonLabel(treat)}</div>
 
         {/* Rarity badge top-left */}
         <div style={{
