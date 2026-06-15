@@ -259,12 +259,13 @@ const FundsBreakdown = ({ stats, isDark }) => {
 
 // Rarity colors for badges
 const RARITY_COLORS = {
-  Common: { bg: 'bg-gray-100', text: 'text-gray-700', dark_bg: 'bg-gray-800', dark_text: 'text-gray-300' },
-  Uncommon: { bg: 'bg-green-100', text: 'text-green-700', dark_bg: 'bg-green-900/50', dark_text: 'text-green-300' },
-  Rare: { bg: 'bg-blue-100', text: 'text-blue-700', dark_bg: 'bg-blue-900/50', dark_text: 'text-blue-300' },
-  Epic: { bg: 'bg-purple-100', text: 'text-purple-700', dark_bg: 'bg-purple-900/50', dark_text: 'text-purple-300' },
-  Legendary: { bg: 'bg-amber-100', text: 'text-amber-700', dark_bg: 'bg-amber-900/50', dark_text: 'text-amber-300' },
-  Mythic: { bg: 'bg-rose-100', text: 'text-rose-700', dark_bg: 'bg-rose-900/50', dark_text: 'text-rose-300' }
+  Starter:   { bg: 'bg-amber-100',  text: 'text-amber-700',  dark_bg: 'bg-amber-900/40',  dark_text: 'text-amber-300'  },
+  Common:    { bg: 'bg-gray-100',   text: 'text-gray-700',   dark_bg: 'bg-gray-800',       dark_text: 'text-gray-300'   },
+  Uncommon:  { bg: 'bg-teal-100',   text: 'text-teal-700',   dark_bg: 'bg-teal-900/50',    dark_text: 'text-teal-300'   },
+  Rare:      { bg: 'bg-blue-100',   text: 'text-blue-700',   dark_bg: 'bg-blue-900/50',    dark_text: 'text-blue-300'   },
+  Epic:      { bg: 'bg-purple-100', text: 'text-purple-700', dark_bg: 'bg-purple-900/50',  dark_text: 'text-purple-300' },
+  Legendary: { bg: 'bg-amber-100',  text: 'text-amber-700',  dark_bg: 'bg-amber-900/50',   dark_text: 'text-amber-300'  },
+  Mythic:    { bg: 'bg-rose-100',   text: 'text-rose-700',   dark_bg: 'bg-rose-900/50',    dark_text: 'text-rose-300'   },
 };
 
 // Agent Stats Card Component - Professional detailed view
@@ -435,7 +436,9 @@ const AgentStatsCard = ({ agentStatus, playerStats, isDark }) => {
             </span>
             <span className="flex items-center gap-1">
               <RefreshCw className="w-4 h-4" />
-              Next run: {new Date(agentStatus.next_run_time_utc).toLocaleTimeString()}
+              Next run: {agentStatus.next_run_time_utc
+                ? new Date(agentStatus.next_run_time_utc).toLocaleTimeString()
+                : '--:--'}
             </span>
             <span className="flex items-center gap-1">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -1042,7 +1045,7 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
                         <div>
                           <div className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>{mix.treat_name}</div>
                           <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                            {format(new Date(mix.created_at), 'MMM d, h:mm a')}
+                            {mix.created_at ? format(new Date(mix.created_at), 'MMM d, h:mm a') : '--'}
                           </div>
                         </div>
                       </div>
