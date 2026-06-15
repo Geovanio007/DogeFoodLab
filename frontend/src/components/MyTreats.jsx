@@ -102,14 +102,15 @@ function getTreatDisplayImage(treat) {
     || treat?.season_id === 2;
 
   if (isS2) {
+    // S2: always use the rarity PNG
     return RARITY_IMAGES[getRarityKey(treat?.rarity)] || RARITY_IMAGES.common;
   }
 
-  // S1: use the real custom image, reject S2 placeholder URL if it leaked
-  const customImg = treat?.image || treat?.treat_image;
-  if (customImg && !customImg.includes(S2_PLACEHOLDER_IMAGE)) {
-    return customImg;
-  }
+  // S1: use whatever image is stored on the treat (Shiba Starlink art IS correct for S1)
+  const storedImg = treat?.image || treat?.treat_image;
+  if (storedImg) return storedImg;
+
+  // Fallback if no image stored at all
   return RARITY_IMAGES[getRarityKey(treat?.rarity)] || RARITY_IMAGES.common;
 }
 
