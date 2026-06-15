@@ -82,8 +82,35 @@ function getRarityKey(rarity) {
   return (rarity || 'common').toLowerCase();
 }
 
+// The Shiba-pouring-cereal URL stamped on all S2 treats at creation time
+const S2_PLACEHOLDER_IMAGE = 'l9ufequf_20250720_2152_Shiba_Pouring_Cereal';
+
+// Keep getTreatImage for rarity-only lookups (cinematic reveal, listing modal)
 function getTreatImage(rarity) {
   return RARITY_IMAGES[getRarityKey(rarity)] || RARITY_IMAGES.common;
+}
+
+/**
+ * Season-aware image resolver for treat cards.
+ * S1 treats use their real custom image stored in treat.image.
+ * S2 treats use the rarity PNG from /public.
+ * Detection: S2_ ingredient prefix is the authoritative signal.
+ */
+function getTreatDisplayImage(treat) {
+  const ings = treat?.ingredients || [];
+  const isS2 = ings.some(ing => typeof ing === 'string' && ing.startsWith('S2_'))
+    || treat?.season_id === 2;
+
+  if (isS2) {
+    return RARITY_IMAGES[getRarityKey(treat?.rarity)] || RARITY_IMAGES.common;
+  }
+
+  // S1: use the real custom image, reject S2 placeholder URL if it leaked
+  const customImg = treat?.image || treat?.treat_image;
+  if (customImg && !customImg.includes(S2_PLACEHOLDER_IMAGE)) {
+    return customImg;
+  }
+  return RARITY_IMAGES[getRarityKey(treat?.rarity)] || RARITY_IMAGES.common;
 }
 
 /**
@@ -108,7 +135,7 @@ const CinematicReveal = ({ treat, onClose }) => {
   // 0=flash, 1=drop, 2=bloom, 3=stats, 4=idle
   const rKey  = getRarityKey(treat?.rarity);
   const cin   = RARITY_CINEMATIC[rKey] || RARITY_CINEMATIC.common;
-  const img   = getTreatImage(treat?.rarity);
+  const img   = getTreatDisplayImage(treat);
   const name  = treat?.name  || `${treat?.rarity || 'Common'} Treat`;
   const pts   = treat?.points_reward || treat?.points || 0;
   const xp    = treat?.xp_reward    || treat?.xp    || 0;
@@ -297,7 +324,7 @@ const TreatCard = ({ treat, index, ingredientMap = {}, onListForSale, isListed =
 
   const rKey = getRarityKey(treat.rarity);
   const cfg  = RARITY_CONFIG[rKey] || RARITY_CONFIG.common;
-  const img  = getTreatImage(treat.rarity);
+  const img  = getTreatDisplayImage(treat);
   const pts  = treat.points_reward || treat.points || 0;
   const xp   = treat.xp_reward || treat.xp || 0;
 
