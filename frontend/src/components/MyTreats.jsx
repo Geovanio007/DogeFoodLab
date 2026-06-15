@@ -605,6 +605,7 @@ const MyTreats = () => {
   const [playerNFTStatus, setPlayerNFTStatus] = useState(false);
   const [playerPoints, setPlayerPoints] = useState(0);
   const [playerLevel, setPlayerLevel] = useState(1);
+  const [playerLabTokens, setPlayerLabTokens] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [ingredientMap, setIngredientMap] = useState({});
   
@@ -683,6 +684,7 @@ const MyTreats = () => {
           setPlayerNFTStatus(playerData.is_nft_holder === true);
           setPlayerPoints(playerData.points || 0);
           setPlayerLevel(playerData.level || 1);
+          if (playerData.s1_lab_tokens != null) setPlayerLabTokens(playerData.s1_lab_tokens);
           if (dispatch) {
             dispatch({ type: 'SET_NFT_HOLDER', payload: playerData.is_nft_holder === true });
             dispatch({ type: 'LOAD_PLAYER_DATA', payload: {
@@ -865,9 +867,10 @@ const MyTreats = () => {
           />
           <StatsCard 
             icon={Coins} 
-            value="0.00" 
+            value={playerLabTokens != null ? playerLabTokens.toLocaleString() : "0.00"} 
             label="$LAB Tokens" 
             color="blue"
+            subtext={playerLabTokens > 0 ? "Earned from Season 1" : "Top 50 earn $LAB"}
           />
         </div>
 
