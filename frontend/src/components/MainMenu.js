@@ -716,6 +716,151 @@ const FeatureCard = ({ icon: Icon, label, gradient, iconColor, borderColor, to, 
 // ═══════════════════════════════════════════════════════════════
 // MAIN MENU COMPONENT
 // ═══════════════════════════════════════════════════════════════
+/* ─── Spin Wheel CTA Bubble ─────────────────────────────────────────────────
+   Floating corner widget that draws a mini version of the actual wheel.
+   Tapping navigates to /lab where the real SpinWheel lives.
+   ─────────────────────────────────────────────────────────────────────────── */
+const WHEEL_COLORS = [
+  '#3b82f6','#8b5cf6','#06b6d4','#fbbf24','#ef4444',
+  '#10b981','#ec4899','#14b8a6','#a855f7','#f97316',
+];
+
+const SpinWheelCTA = () => {
+  const navigate = useNavigate();
+  const canvasRef = React.useRef(null);
+  const [angle, setAngle] = React.useState(0);
+  const rafRef = React.useRef(null);
+  const [dismissed, setDismissed] = React.useState(false);
+
+  // Slow-spin animation
+  React.useEffect(() => {
+    let a = 0;
+    const tick = () => {
+      a = (a + 0.4) % 360;
+      setAngle(a);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  // Draw the mini wheel
+  React.useEffect(() => {
+    const c = canvasRef.current;
+    if (!c) return;
+    const size = 64, cx = size / 2, cy = size / 2, r = size / 2 - 3;
+    c.width = size; c.height = size;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, size, size);
+    const n = WHEEL_COLORS.length;
+    const slice = (2 * Math.PI) / n;
+    const offset = (angle * Math.PI) / 180;
+
+    WHEEL_COLORS.forEach((clr, i) => {
+      const a0 = offset + i * slice;
+      const a1 = a0 + slice;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, a0, a1); ctx.closePath();
+      ctx.fillStyle = clr; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 0.8; ctx.stroke();
+    });
+
+    // Outer ring
+    ctx.beginPath(); ctx.arc(cx, cy, r + 1, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+    ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 8;
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    // Center hub
+    ctx.beginPath(); ctx.arc(cx, cy, 12, 0, 2 * Math.PI);
+    ctx.fillStyle = '#0f172a'; ctx.fill();
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '700 7px Inter,system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SPIN', cx, cy);
+
+    // Pointer arrow at top
+    const px = cx, py = 3;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(px - 5, py - 6);
+    ctx.lineTo(px + 5, py - 6);
+    ctx.closePath();
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 3;
+    ctx.fill(); ctx.shadowBlur = 0;
+  }, [angle]);
+
+  if (dismissed) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 90,   // above the MusicPlayer bar
+        right: 16,
+        zIndex: 998,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 6,
+        filter: 'drop-shadow(0 4px 16px rgba(56,189,248,0.4))',
+        animation: 'ctaBounce 2.5s ease-in-out infinite',
+      }}
+    >
+      <style>{`
+        @keyframes ctaBounce {
+          0%,100% { transform: translateY(0); }
+          50%      { transform: translateY(-6px); }
+        }
+      `}</style>
+
+      {/* Dismiss button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); setDismissed(true); }}
+        style={{
+          position: 'absolute', top: -8, right: -8,
+          width: 18, height: 18, borderRadius: '50%',
+          background: 'rgba(15,23,42,0.9)',
+          border: '1px solid rgba(255,255,255,0.15)',
+          color: 'rgba(255,255,255,0.5)',
+          fontSize: 10, lineHeight: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', zIndex: 2,
+        }}
+        aria-label="Dismiss"
+      >✕</button>
+
+      {/* The wheel bubble */}
+      <button
+        onClick={() => navigate('/lab')}
+        style={{
+          position: 'relative',
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          border: '2px solid rgba(56,189,248,0.5)',
+          borderRadius: 20,
+          padding: '10px 12px',
+          cursor: 'pointer',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          backdropFilter: 'blur(8px)',
+          minWidth: 84,
+        }}
+        aria-label="Spin the Wheel"
+      >
+        <canvas ref={canvasRef} width={64} height={64} style={{ borderRadius: '50%' }} />
+        <span style={{
+          fontSize: 9, fontWeight: 800, color: '#38bdf8',
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+          lineHeight: 1, whiteSpace: 'nowrap',
+        }}>
+          Daily Spin!
+        </span>
+      </button>
+    </div>
+  );
+};
+
 const MainMenu = () => {
   const { address, isConnected } = useAccount();
   const { nftBalance, isNFTHolder, loading: nftLoading } = useNFTVerification();
@@ -1401,6 +1546,8 @@ const MainMenu = () => {
         </div>
       </footer>
 
+      <SpinWheelCTA />
+
       <MusicPlayer />
 
       {/* ─── Auth Modal ── */}
@@ -1456,3 +1603,4 @@ const MainMenu = () => {
 };
 
 export default MainMenu;
+    
