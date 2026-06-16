@@ -877,9 +877,9 @@ const STEPS = [
     badgeText: '#38bdf8',
     description: "You're a Doge Scientist on a mission to craft legendary treats and climb the leaderboard. Here's everything you need to know to get started. Swipe through to master the Lab! 🐾",
     tips: [
-      '🐾 Create treats to earn Points & XP',
-      '📈 Points → $LAB tokens at season end',
-      '🏆 Top 50 scientists earn token rewards',
+      ' Create treats to earn Points & XP',
+      ' Points → $LAB tokens at season end',
+      ' Top 50 scientists earn token rewards',
     ],
   },
   {
@@ -891,10 +891,10 @@ const STEPS = [
     badgeText: '#facc15',
     description: "Tap the Lab tab on the menu to open your Reactor Chamber. Select up to 5 ingredients from your inventory to craft a treat. Higher-tier ingredients unlock rarer treats.",
     tips: [
-      '⚗️ Tap Lab → choose ingredients → Brew',
+      ' Tap Lab → choose ingredients → Brew',
       '5 ingredients = best rarity chance',
-      '🌟 Mix Legendary/Mythic ingredients for top treats',
-      '🔒 New ingredients unlock as you level up',
+      ' Mix Legendary/Mythic ingredients for top treats',
+      ' New ingredients unlock as you level up',
     ],
   },
   {
@@ -906,10 +906,10 @@ const STEPS = [
     badgeText: '#a855f7',
     description: "Once you brew, your treat needs time to cook in the Reactor. The brewing timer counts down — higher rarity treats take longer. Watch for Heat Events in the Arena to cut brewing time by 50%!",
     tips: [
-      '⚡ Overclock Heat Event = 50% faster brewing',
-      '🔔 Come back when the timer hits 0:00',
-      '📱 You can check the timer anytime in the Lab',
-      '🧬 Streak bonuses also reduce brew time',
+      ' Overclock Heat Event = 50% faster brewing',
+      ' Come back when the timer hits 0:00',
+      ' You can check the timer anytime in the Lab',
+      ' Streak bonuses also reduce brew time',
     ],
   },
   {
@@ -921,10 +921,10 @@ const STEPS = [
     badgeText: '#2dd4bf',
     description: "When the brew timer finishes, head back to the Lab and tap Collect. A cinematic reveal shows your treat's rarity and the Points + XP you earned. Rarer treats = more rewards!",
     tips: [
-      '✨ Golden Hour Heat Event = Points ×2 on collect',
-      '🎬 Watch the cinematic reveal — it’s rarity-based',
-      '💎 Mythic treats earn 500–1000 points each',
-      '🔥 Keep a daily streak for XP bonuses',
+      ' Golden Hour Heat Event = Points ×2 on collect',
+      ' Watch the cinematic reveal — it’s rarity-based',
+      ' Mythic treats earn 500–1000 points each',
+      ' Keep a daily streak for XP bonuses',
     ],
   },
   {
@@ -936,10 +936,10 @@ const STEPS = [
     badgeText: '#ec4899',
     description: "Tap My Treats from the menu to see every treat you've ever crafted — your permanent NFT-style collection. S1 treats show their original art; S2 treats show their rarity image. You can also list treats for sale on the Marketplace.",
     tips: [
-      '📂 Filter by rarity: Common → Mythic',
-      '🛒 Tap List for Sale to put a treat on market',
-      '🔵 S1 badge = Season 1 · 🟢 S2 badge = Season 2',
-      '💰 Your earned $LAB tokens show here too',
+      ' Filter by rarity: Common → Mythic',
+      ' Tap List for Sale to put a treat on market',
+      ' S1 badge = Season 1 · 🟢 S2 badge = Season 2',
+      ' Your earned $LAB tokens show here too',
     ],
   },
   {
@@ -951,10 +951,10 @@ const STEPS = [
     badgeText: '#f97316',
     description: "The Arena is a 24-hour competitive event. Pay the 50-point entry fee to join, then earn Arena Score by collecting treats during the session. The prize pool builds from entry fees — top players share it at settlement.",
     tips: [
-      '🎯 Entry fee: 50 pts — goes into the prize pool',
-      '🥇 Rank #1 wins 50% of the total pool',
-      '🔮 Predict the winner for a 3× points payout',
-      '🔥 Arena Score = treats collected after joining',
+      ' Entry fee: 50 pts — goes into the prize pool',
+      ' Rank #1 wins 50% of the total pool',
+      ' Predict the winner for a 3× points payout',
+      ' Arena Score = treats collected after joining',
     ],
   },
   {
@@ -966,10 +966,10 @@ const STEPS = [
     badgeText: '#06b6d4',
     description: "Once every 24 hours you get a free spin in the Lab. Land on bonus points, extra ingredient slots, XP boosts or rare ingredient drops. Tap the spinning wheel CTA on the main menu to go straight there!",
     tips: [
-      '🎡 Free once per day — don’t miss it',
-      '⭐ Prizes: points, XP, extra brews, ingredients',
-      '📊 Spin outcomes appear in the Live Activity feed',
-      '🎯 Tap the spinning bubble on the main menu',
+      ' Free once per day — don’t miss it',
+      ' Prizes: points, XP, extra brews, ingredients',
+      ' Spin outcomes appear in the Live Activity feed',
+      ' Tap the spinning bubble on the main menu',
     ],
   },
   {
@@ -981,10 +981,10 @@ const STEPS = [
     badgeText: '#fbbf24',
     description: "The Leaderboard ranks all scientists by total Points. Top 50 players earn $LAB token rewards at season end — the higher your rank, the larger your share. Tap any player's name to see their Stats Card.",
     tips: [
-      '👑 Rank 1 earns the largest $LAB allocation',
-      '📊 Tap a player → Stats Card shows their breakdown',
-      '🧪 Your current rank and points show at the top',
-      '⏰ Rankings reset at the start of each new season',
+      ' Rank 1 earns the largest $LAB allocation',
+      ' Tap a player → Stats Card shows their breakdown',
+      ' Your current rank and points show at the top',
+      ' Rankings reset at the start of each new season',
     ],
   },
 ];
