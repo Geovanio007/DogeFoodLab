@@ -68,7 +68,6 @@ const HappyHourBanner = () => {
           boxShadow: '0 0 30px rgba(251, 191, 36, 0.25), 0 8px 32px rgba(0,0,0,0.5)',
         }}
       >
-        {/* Outer glow border */}
         <div
           style={{
             borderRadius: '18px',
@@ -81,7 +80,7 @@ const HappyHourBanner = () => {
             minHeight: '160px',
           }}
         >
-          {/* Subtle purple nebula glow background */}
+          {/* Background glow */}
           <div style={{
             position: 'absolute', inset: 0,
             background: 'radial-gradient(ellipse at 15% 50%, rgba(139,92,246,0.18) 0%, transparent 55%), radial-gradient(ellipse at 85% 30%, rgba(251,191,36,0.10) 0%, transparent 50%)',
@@ -95,11 +94,10 @@ const HappyHourBanner = () => {
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
-            paddingBottom: '0',
             flexShrink: 0,
             overflow: 'hidden',
           }}>
-            {/* Warm floor glow under mascot */}
+            {/* Warm floor glow */}
             <div style={{
               position: 'absolute',
               bottom: 0,
@@ -110,32 +108,25 @@ const HappyHourBanner = () => {
               pointerEvents: 'none',
             }} />
 
-            {/* Mascot: Shiba scientist emoji with lab coat feel */}
-            <div style={{
-              fontSize: '80px',
-              lineHeight: 1,
-              filter: 'drop-shadow(0 0 18px rgba(251,191,36,0.6)) drop-shadow(0 4px 8px rgba(0,0,0,0.5))',
-              userSelect: 'none',
-              paddingBottom: '8px',
-              position: 'relative',
-              zIndex: 2,
-            }}>
-              🐕
-            </div>
+            {/* Mascot image */}
+            <img
+              src="/Mascot.png"
+              alt="DogeFood Lab Mascot"
+              style={{
+                height: '145px',
+                width: 'auto',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 0 18px rgba(251,191,36,0.5)) drop-shadow(0 4px 8px rgba(0,0,0,0.5))',
+                position: 'relative',
+                zIndex: 2,
+              }}
+            />
 
-            {/* Decorative bone treats */}
-            <div style={{
-              position: 'absolute', bottom: 6, left: 12,
-              fontSize: '18px', opacity: 0.7,
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
-            }}>🦴</div>
-            <div style={{
-              position: 'absolute', bottom: 10, right: 10,
-              fontSize: '14px', opacity: 0.5,
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
-            }}>🦴</div>
+            {/* Decorative bones */}
+            <div style={{ position: 'absolute', bottom: 6, left: 12, fontSize: '18px', opacity: 0.7, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }}>🦴</div>
+            <div style={{ position: 'absolute', bottom: 10, right: 10, fontSize: '14px', opacity: 0.5, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }}>🦴</div>
 
-            {/* Paw prints floating */}
+            {/* Paw prints */}
             <div style={{ position: 'absolute', top: 14, right: 16, fontSize: '13px', opacity: 0.45 }}>🐾</div>
             <div style={{ position: 'absolute', top: 38, left: 18, fontSize: '10px', opacity: 0.3 }}>🐾</div>
           </div>
@@ -171,7 +162,6 @@ const HappyHourBanner = () => {
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
-                  textShadow: 'none',
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
                   letterSpacing: '-0.5px',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -196,18 +186,13 @@ const HappyHourBanner = () => {
                   background: '#fff',
                   boxShadow: '0 0 6px #fff',
                   display: 'inline-block',
-                  animation: 'pulse 1.5s infinite',
+                  animation: 'hhPulse 1.5s infinite',
                 }} />
-                <span style={{
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '11px',
-                  letterSpacing: '1px',
-                }}>LIVE</span>
+                <span style={{ color: '#fff', fontWeight: 700, fontSize: '11px', letterSpacing: '1px' }}>LIVE</span>
               </div>
             </div>
 
-            {/* +25% BONUS box */}
+            {/* +BONUS box */}
             <div style={{
               background: 'rgba(0,0,0,0.4)',
               border: '1px solid rgba(251,191,36,0.3)',
@@ -228,18 +213,10 @@ const HappyHourBanner = () => {
                 }}>
                   +{status.bonus_percent}%
                 </div>
-                <div style={{
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                  lineHeight: 1.2,
-                }}>BONUS</div>
-                <div style={{
-                  color: 'rgba(255,255,255,0.7)',
-                  fontSize: '10px',
-                  lineHeight: 1.3,
-                  marginTop: '1px',
-                }}>points on all<br />treats collected now</div>
+                <div style={{ color: '#fff', fontWeight: 700, fontSize: '12px', lineHeight: 1.2 }}>BONUS</div>
+                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', lineHeight: 1.3, marginTop: '1px' }}>
+                  points on all<br />treats collected now
+                </div>
               </div>
               <div style={{
                 width: '32px', height: '32px',
@@ -285,7 +262,7 @@ const HappyHourBanner = () => {
           </div>
 
           <style>{`
-            @keyframes pulse {
+            @keyframes hhPulse {
               0%, 100% { opacity: 1; }
               50% { opacity: 0.4; }
             }
@@ -295,7 +272,7 @@ const HappyHourBanner = () => {
     );
   }
 
-  // Upcoming state — styled to match overall design language
+  // Upcoming state
   return (
     <div
       className="mb-6 w-full"
@@ -318,7 +295,6 @@ const HappyHourBanner = () => {
         padding: '12px 16px',
         gap: '12px',
       }}>
-        {/* Clock icon area */}
         <div style={{
           width: '44px', height: '44px',
           borderRadius: '12px',
@@ -332,36 +308,16 @@ const HappyHourBanner = () => {
           <Clock size={20} color="#fbbf24" />
         </div>
 
-        {/* Left text */}
         <div style={{ flex: 1 }}>
-          <div style={{
-            color: '#e2e8f0',
-            fontWeight: 700,
-            fontSize: '13px',
-          }}>Happy Hour</div>
-          <div style={{
-            color: '#94a3b8',
-            fontSize: '11px',
-            marginTop: '2px',
-          }}>
+          <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Happy Hour</div>
+          <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>
             +{status.bonus_percent}% bonus points daily at {status.start_hour_utc}:00 UTC
           </div>
         </div>
 
-        {/* Right countdown */}
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{
-            color: '#64748b',
-            fontSize: '9px',
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-          }}>Starts in</div>
-          <div style={{
-            color: '#fbbf24',
-            fontWeight: 700,
-            fontSize: '14px',
-            fontFamily: 'monospace',
-          }}>{countdown}</div>
+          <div style={{ color: '#64748b', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px' }}>Starts in</div>
+          <div style={{ color: '#fbbf24', fontWeight: 700, fontSize: '14px', fontFamily: 'monospace' }}>{countdown}</div>
         </div>
       </div>
     </div>
