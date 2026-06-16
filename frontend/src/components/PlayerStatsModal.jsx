@@ -13,23 +13,25 @@ const CHARACTER_IMAGES = {
   rex: '/characters/rex.png'
 };
 
-// Rarity colors
+// Rarity colors — S2 tiers: Starter, Common, Uncommon, Rare, Epic, Legendary, Mythic
 const RARITY_COLORS = {
-  Common: 'text-gray-400',
-  Uncommon: 'text-green-400',
-  Rare: 'text-blue-400',
-  Epic: 'text-purple-400',
+  Starter:   'text-amber-400',
+  Common:    'text-gray-400',
+  Uncommon:  'text-teal-400',
+  Rare:      'text-blue-400',
+  Epic:      'text-purple-400',
   Legendary: 'text-yellow-400',
-  Mythic: 'text-red-400'
+  Mythic:    'text-pink-400',
 };
 
 const RARITY_BG = {
-  Common: 'bg-gray-500/20',
-  Uncommon: 'bg-green-500/20',
-  Rare: 'bg-blue-500/20',
-  Epic: 'bg-purple-500/20',
+  Starter:   'bg-amber-500/20',
+  Common:    'bg-gray-500/20',
+  Uncommon:  'bg-teal-500/20',
+  Rare:      'bg-blue-500/20',
+  Epic:      'bg-purple-500/20',
   Legendary: 'bg-yellow-500/20',
-  Mythic: 'bg-red-500/20'
+  Mythic:    'bg-pink-500/20',
 };
 
 const PlayerStatsModal = ({ playerAddress, onClose }) => {
@@ -253,10 +255,10 @@ const PlayerStatsModal = ({ playerAddress, onClose }) => {
                       <span className="text-[9px] text-orange-300 uppercase">Streak</span>
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-xl font-black text-white">{stats.streak.current}</span>
+                      <span className="text-xl font-black text-white">{stats.streak?.current ?? 0}</span>
                       <span className="text-[10px] text-orange-300">days</span>
                     </div>
-                    <div className="text-[9px] text-orange-400">{stats.streak.title}</div>
+                    <div className="text-[9px] text-orange-400">{stats.streak?.title || "New Chef"}</div>
                   </div>
                   <div className={`${RARITY_BG[stats.stats.best_rarity] || 'bg-slate-800/50'} border border-slate-600/30 rounded p-2`}>
                     <div className="flex items-center gap-1 mb-0.5">
@@ -276,7 +278,7 @@ const PlayerStatsModal = ({ playerAddress, onClose }) => {
                     <Beaker className="w-3 h-3 text-sky-400" />
                     <span className="text-[10px] font-semibold text-white">Rarity Breakdown</span>
                   </div>
-                  <div className="grid grid-cols-6 gap-0.5">
+                  <div className="grid grid-cols-7 gap-0.5">
                     {Object.entries(stats.rarity_breakdown).map(([rarity, count]) => (
                       <div key={rarity} className={`text-center py-1 rounded ${RARITY_BG[rarity]}`}>
                         <div className={`text-xs font-bold ${RARITY_COLORS[rarity]}`}>{count}</div>
@@ -333,7 +335,7 @@ const PlayerStatsModal = ({ playerAddress, onClose }) => {
                     <div className="text-[8px] text-slate-400">Avg/Day</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-sm font-bold text-sky-400">{stats.stats.points_earned.toLocaleString()}</div>
+                    <div className="text-sm font-bold text-sky-400">{(stats.stats?.points_earned ?? 0).toLocaleString()}</div>
                     <div className="text-[8px] text-slate-400">7d Pts</div>
                   </div>
                   <div className="text-center">
