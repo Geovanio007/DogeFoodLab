@@ -922,7 +922,7 @@ const STEPS = [
     description: "When the brew timer finishes, head back to the Lab and tap Collect. A cinematic reveal shows your treat's rarity and the Points + XP you earned. Rarer treats = more rewards!",
     tips: [
       '✨ Golden Hour Heat Event = Points ×2 on collect',
-      '🎬 Watch the cinematic reveal — it's rarity-based',
+      '🎬 Watch the cinematic reveal — it’s rarity-based',
       '💎 Mythic treats earn 500–1000 points each',
       '🔥 Keep a daily streak for XP bonuses',
     ],
@@ -966,7 +966,7 @@ const STEPS = [
     badgeText: '#06b6d4',
     description: "Once every 24 hours you get a free spin in the Lab. Land on bonus points, extra ingredient slots, XP boosts or rare ingredient drops. Tap the spinning wheel CTA on the main menu to go straight there!",
     tips: [
-      '🎡 Free once per day — don't miss it',
+      '🎡 Free once per day — don’t miss it',
       '⭐ Prizes: points, XP, extra brews, ingredients',
       '📊 Spin outcomes appear in the Live Activity feed',
       '🎯 Tap the spinning bubble on the main menu',
