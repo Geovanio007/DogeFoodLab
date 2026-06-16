@@ -861,6 +861,308 @@ const SpinWheelCTA = () => {
   );
 };
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GAME WALKTHROUGH — shown on first visit, re-openable via "?" button
+   ═══════════════════════════════════════════════════════════════════════════ */
+const WALKTHROUGH_KEY = 'dogefood_walkthrough_v1_done';
+
+const STEPS = [
+  {
+    emoji: '🧪',
+    title: 'Welcome to DogeFood Lab!',
+    color: '#38bdf8',
+    badge: 'START HERE',
+    badgeColor: 'rgba(56,189,248,0.2)',
+    badgeText: '#38bdf8',
+    description: "You're a Doge Scientist on a mission to craft legendary treats and climb the leaderboard. Here's everything you need to know to get started. Swipe through to master the Lab! 🐾",
+    tips: [
+      '🐾 Create treats to earn Points & XP',
+      '📈 Points → $LAB tokens at season end',
+      '🏆 Top 50 scientists earn token rewards',
+    ],
+  },
+  {
+    emoji: '⚗️',
+    title: 'Step 1 — Create Treats in the Lab',
+    color: '#facc15',
+    badge: 'THE LAB',
+    badgeColor: 'rgba(250,204,21,0.15)',
+    badgeText: '#facc15',
+    description: "Tap the Lab tab on the menu to open your Reactor Chamber. Select up to 5 ingredients from your inventory to craft a treat. Higher-tier ingredients unlock rarer treats.",
+    tips: [
+      '⚗️ Tap Lab → choose ingredients → Brew',
+      '5 ingredients = best rarity chance',
+      '🌟 Mix Legendary/Mythic ingredients for top treats',
+      '🔒 New ingredients unlock as you level up',
+    ],
+  },
+  {
+    emoji: '⏳',
+    title: 'Step 2 — Wait for the Timer',
+    color: '#a855f7',
+    badge: 'BREWING',
+    badgeColor: 'rgba(168,85,247,0.15)',
+    badgeText: '#a855f7',
+    description: "Once you brew, your treat needs time to cook in the Reactor. The brewing timer counts down — higher rarity treats take longer. Watch for Heat Events in the Arena to cut brewing time by 50%!",
+    tips: [
+      '⚡ Overclock Heat Event = 50% faster brewing',
+      '🔔 Come back when the timer hits 0:00',
+      '📱 You can check the timer anytime in the Lab',
+      '🧬 Streak bonuses also reduce brew time',
+    ],
+  },
+  {
+    emoji: '🎁',
+    title: 'Step 3 — Collect Your Treat',
+    color: '#2dd4bf',
+    badge: 'COLLECT',
+    badgeColor: 'rgba(45,212,191,0.15)',
+    badgeText: '#2dd4bf',
+    description: "When the brew timer finishes, head back to the Lab and tap Collect. A cinematic reveal shows your treat's rarity and the Points + XP you earned. Rarer treats = more rewards!",
+    tips: [
+      '✨ Golden Hour Heat Event = Points ×2 on collect',
+      '🎬 Watch the cinematic reveal — it's rarity-based',
+      '💎 Mythic treats earn 500–1000 points each',
+      '🔥 Keep a daily streak for XP bonuses',
+    ],
+  },
+  {
+    emoji: '🖼️',
+    title: 'Step 4 — View Your Collection',
+    color: '#ec4899',
+    badge: 'MY TREATS',
+    badgeColor: 'rgba(236,72,153,0.15)',
+    badgeText: '#ec4899',
+    description: "Tap My Treats from the menu to see every treat you've ever crafted — your permanent NFT-style collection. S1 treats show their original art; S2 treats show their rarity image. You can also list treats for sale on the Marketplace.",
+    tips: [
+      '📂 Filter by rarity: Common → Mythic',
+      '🛒 Tap List for Sale to put a treat on market',
+      '🔵 S1 badge = Season 1 · 🟢 S2 badge = Season 2',
+      '💰 Your earned $LAB tokens show here too',
+    ],
+  },
+  {
+    emoji: '🏟️',
+    title: 'Step 5 — Join the Arena',
+    color: '#f97316',
+    badge: 'ARENA',
+    badgeColor: 'rgba(249,115,22,0.15)',
+    badgeText: '#f97316',
+    description: "The Arena is a 24-hour competitive event. Pay the 50-point entry fee to join, then earn Arena Score by collecting treats during the session. The prize pool builds from entry fees — top players share it at settlement.",
+    tips: [
+      '🎯 Entry fee: 50 pts — goes into the prize pool',
+      '🥇 Rank #1 wins 50% of the total pool',
+      '🔮 Predict the winner for a 3× points payout',
+      '🔥 Arena Score = treats collected after joining',
+    ],
+  },
+  {
+    emoji: '🎰',
+    title: 'Step 6 — Spin the Daily Wheel',
+    color: '#06b6d4',
+    badge: 'DAILY SPIN',
+    badgeColor: 'rgba(6,182,212,0.15)',
+    badgeText: '#06b6d4',
+    description: "Once every 24 hours you get a free spin in the Lab. Land on bonus points, extra ingredient slots, XP boosts or rare ingredient drops. Tap the spinning wheel CTA on the main menu to go straight there!",
+    tips: [
+      '🎡 Free once per day — don't miss it',
+      '⭐ Prizes: points, XP, extra brews, ingredients',
+      '📊 Spin outcomes appear in the Live Activity feed',
+      '🎯 Tap the spinning bubble on the main menu',
+    ],
+  },
+  {
+    emoji: '🏆',
+    title: 'Step 7 — Check the Leaderboard',
+    color: '#fbbf24',
+    badge: 'LEADERBOARD',
+    badgeColor: 'rgba(251,191,36,0.15)',
+    badgeText: '#fbbf24',
+    description: "The Leaderboard ranks all scientists by total Points. Top 50 players earn $LAB token rewards at season end — the higher your rank, the larger your share. Tap any player's name to see their Stats Card.",
+    tips: [
+      '👑 Rank 1 earns the largest $LAB allocation',
+      '📊 Tap a player → Stats Card shows their breakdown',
+      '🧪 Your current rank and points show at the top',
+      '⏰ Rankings reset at the start of each new season',
+    ],
+  },
+];
+
+const WalkthroughModal = ({ onClose }) => {
+  const [step, setStep] = React.useState(0);
+  const navigate = useNavigate();
+  const s = STEPS[step];
+  const isLast = step === STEPS.length - 1;
+
+  const goTo = (route) => { onClose(); navigate(route); };
+
+  const ROUTE_MAP = {
+    'THE LAB':     '/lab',
+    'MY TREATS':   '/my-treats',
+    'ARENA':       '/arena',
+    'LEADERBOARD': '/leaderboard',
+    'DAILY SPIN':  '/lab',
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 10000,
+        background: 'rgba(4,3,15,0.92)',
+        backdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '16px',
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{
+        width: '100%', maxWidth: 380,
+        background: 'linear-gradient(160deg, #0f1623 0%, #080c14 100%)',
+        border: `1px solid ${s.color}44`,
+        borderRadius: 24,
+        boxShadow: `0 0 60px ${s.color}22, 0 20px 60px rgba(0,0,0,0.7)`,
+        overflow: 'hidden',
+        position: 'relative',
+      }}>
+        {/* Progress bar */}
+        <div style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}>
+          <div style={{
+            height: '100%',
+            width: `${((step + 1) / STEPS.length) * 100}%`,
+            background: `linear-gradient(90deg, ${s.color}, ${s.color}99)`,
+            transition: 'width 0.4s ease',
+            borderRadius: 99,
+          }} />
+        </div>
+
+        {/* Close */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute', top: 14, right: 14,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '50%', width: 30, height: 30,
+            color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
+            fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >✕</button>
+
+        <div style={{ padding: '24px 24px 20px' }}>
+          {/* Step counter */}
+          <div style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.2em',
+            color: 'rgba(255,255,255,0.3)', marginBottom: 12,
+            textTransform: 'uppercase',
+          }}>
+            {step + 1} of {STEPS.length}
+          </div>
+
+          {/* Emoji + badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+              background: `${s.color}18`,
+              border: `1px solid ${s.color}44`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 28,
+              boxShadow: `0 0 24px ${s.color}22`,
+            }}>{s.emoji}</div>
+            <div>
+              <div style={{
+                display: 'inline-block',
+                background: s.badgeColor, color: s.badgeText,
+                fontSize: 9, fontWeight: 800, letterSpacing: '0.18em',
+                padding: '3px 10px', borderRadius: 99,
+                border: `1px solid ${s.color}44`,
+                marginBottom: 5, textTransform: 'uppercase',
+              }}>
+                {ROUTE_MAP[s.badge] ? (
+                  <span
+                    style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationColor: `${s.badgeText}66` }}
+                    onClick={() => goTo(ROUTE_MAP[s.badge])}
+                  >{s.badge} ↗</span>
+                ) : s.badge}
+              </div>
+              <h2 style={{
+                fontSize: 15, fontWeight: 800, color: '#e2e8f0',
+                lineHeight: 1.25, margin: 0,
+              }}>{s.title}</h2>
+            </div>
+          </div>
+
+          {/* Description */}
+          <p style={{
+            fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6,
+            marginBottom: 16,
+          }}>{s.description}</p>
+
+          {/* Tips */}
+          <div style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 12, padding: '12px 14px',
+            display: 'flex', flexDirection: 'column', gap: 6,
+            marginBottom: 20,
+          }}>
+            {s.tips.map((tip, i) => (
+              <div key={i} style={{
+                fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.4,
+              }}>{tip}</div>
+            ))}
+          </div>
+
+          {/* Nav */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            {step > 0 && (
+              <button
+                onClick={() => setStep(s => s - 1)}
+                style={{
+                  flex: 1, padding: '11px 0',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12, color: 'rgba(255,255,255,0.5)',
+                  cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                }}
+              >← Back</button>
+            )}
+            <button
+              onClick={() => {
+                if (isLast) { onClose(); }
+                else { setStep(s => s + 1); }
+              }}
+              style={{
+                flex: 2, padding: '11px 0',
+                background: `linear-gradient(135deg, ${s.color}33, ${s.color}22)`,
+                border: `1px solid ${s.color}66`,
+                borderRadius: 12, color: s.color,
+                cursor: 'pointer', fontSize: 13, fontWeight: 800,
+                letterSpacing: '0.04em',
+                boxShadow: `0 0 16px ${s.color}22`,
+              }}
+            >{isLast ? '🚀 Start Playing!' : 'Next →'}</button>
+          </div>
+
+          {/* Skip */}
+          {!isLast && (
+            <div style={{ textAlign: 'center', marginTop: 12 }}>
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'none', border: 'none',
+                  color: 'rgba(255,255,255,0.25)', fontSize: 11,
+                  cursor: 'pointer', textDecoration: 'underline',
+                }}
+              >Skip walkthrough</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MainMenu = () => {
   const { address, isConnected } = useAccount();
   const { nftBalance, isNFTHolder, loading: nftLoading } = useNFTVerification();
@@ -871,6 +1173,14 @@ const MainMenu = () => {
 
   useEffect(() => { showPlayer(); }, [showPlayer]);
 
+  const [showWalkthrough, setShowWalkthrough] = useState(() => {
+    try { return !localStorage.getItem(WALKTHROUGH_KEY); }
+    catch { return false; }
+  });
+  const closeWalkthrough = React.useCallback(() => {
+    try { localStorage.setItem(WALKTHROUGH_KEY, '1'); } catch {}
+    setShowWalkthrough(false);
+  }, []);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showGuestSignup, setShowGuestSignup] = useState(false);
   const [guestUsername, setGuestUsername] = useState('');
@@ -1548,6 +1858,25 @@ const MainMenu = () => {
 
       <SpinWheelCTA />
 
+      {/* Walkthrough "?" re-open button — bottom-left corner */}
+      <button
+        onClick={() => setShowWalkthrough(true)}
+        title="Game Guide"
+        style={{
+          position: 'fixed', bottom: 90, left: 16, zIndex: 997,
+          width: 38, height: 38, borderRadius: '50%',
+          background: 'rgba(15,22,35,0.9)',
+          border: '1.5px solid rgba(56,189,248,0.4)',
+          color: '#38bdf8', fontSize: 16, fontWeight: 900,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(6px)',
+          boxShadow: '0 2px 12px rgba(56,189,248,0.2)',
+        }}
+        aria-label="Open game guide"
+      >?</button>
+
+      {showWalkthrough && <WalkthroughModal onClose={closeWalkthrough} />}
+
       <MusicPlayer />
 
       {/* ─── Auth Modal ── */}
@@ -1603,4 +1932,3 @@ const MainMenu = () => {
 };
 
 export default MainMenu;
-    
