@@ -86,11 +86,30 @@ const DailyLimitTracker = ({ playerAddress, onStatusUpdate }) => {
     if (!pendingPurchase) return;
     
     const interval = setInterval(async () => {
+      // Also trigger a backend payment check so Tatum is polled immediately
+      try { await fetch(`${API_URL}/api/payments/check-pending`, { method: 'POST' }); } catch (_) {}
+      
+      const statusRes = await fetch(`${API_URL}/api/extra-life/status/${playerAddress}`);
+      if (statusRes.ok) {
+        const statusData = await statusRes.json();
+        if (!statusData.pending_purchase && pendingPurchase) {
+          // Purchase was auto-activated — refresh daily status and show success
+          await fetchDailyStatus();
+          setPurchaseResult({
+            success: true,
+            message: `Payment confirmed! +${pendingPurchase.treats_amount} extra treats added!`,
+            treats_amount: pendingPurchase.treats_amount
+          });
+          setPendingPurchase(null);
+          setSelectedPackage(null);
+          return;
+        }
+      }
       await fetchDailyStatus();
-    }, 10000); // Check every 10 seconds for auto-activation
+    }, 15000); // Check every 15 seconds for auto-activation
     
     return () => clearInterval(interval);
-  }, [pendingPurchase, fetchDailyStatus]);
+  }, [pendingPurchase, fetchDailyStatus, playerAddress]);
 
   // Countdown timer — update every 60s (minute precision is enough for 6h window)
   useEffect(() => {
@@ -174,7 +193,8 @@ const DailyLimitTracker = ({ playerAddress, onStatusUpdate }) => {
       if (statusRes.ok) {
         const statusData = await statusRes.json();
         if (!statusData.pending_purchase && pendingPurchase) {
-          // Purchase was completed!
+          // Purchase was completed! Re-fetch daily status so treat count reflects new balance
+          await fetchDailyStatus();
           setPurchaseResult({ 
             success: true, 
             message: `Payment confirmed! +${pendingPurchase.treats_amount} extra treats added!`,
