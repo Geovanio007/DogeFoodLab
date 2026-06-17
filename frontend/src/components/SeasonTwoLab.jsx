@@ -8,6 +8,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import HappyHourBanner from './HappyHourBanner';
 import SpinWheel from './SpinWheel';
 import DailyLimitTracker from './DailyLimitTracker';
+import { KernelOfWowStatus, KernelBonusResult } from './KernelOfWow';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -311,6 +312,8 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const [isBrewing, setIsBrewing] = useState(false);
   const [showBrewingAnim, setShowBrewingAnim] = useState(false);
   const [brewResult, setBrewResult] = useState(null);
+  const [hasKernelOfWow, setHasKernelOfWow] = useState(false);
+  const [kernelBonusResult, setKernelBonusResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
 
   // --- assistant + market feed ---
@@ -564,6 +567,10 @@ const SeasonTwoLab = ({ playerAddress }) => {
         setShowBrewingAnim(false);
         setBrewResult(data);
         setShowResult(true);
+        // Capture Kernel of Wow bonus if active
+        if (data.kernel_bonus) {
+          setKernelBonusResult(data.kernel_bonus);
+        }
         setSelectedIngredients([]);
         const rare = ['Rare', 'Epic', 'Legendary', 'Mythic'].includes(data.outcome?.rarity);
         if (rare) playRare && playRare(); else playSuccess && playSuccess();
@@ -624,6 +631,13 @@ const SeasonTwoLab = ({ playerAddress }) => {
 
       <div className="relative z-10 max-w-6xl mx-auto px-3 sm:px-4 pt-3 pb-32 sm:pb-36 grid gap-4 lg:grid-cols-[1fr_320px]">
         <main className="space-y-4">
+          {/* Kernel of Wow — shows when player holds the special ingredient */}
+          <KernelOfWowStatus
+            playerAddress={playerAddress}
+            onStatusChange={setHasKernelOfWow}
+            theme="reactor"
+          />
+
           {/* Happy Hour banner from legacy flow */}
           <HappyHourBanner />
 
@@ -686,8 +700,21 @@ const SeasonTwoLab = ({ playerAddress }) => {
       {showResult && brewResult && (
         <ResultReveal
           result={brewResult}
-          onClose={() => setShowResult(false)}
+          onClose={() => { setShowResult(false); setKernelBonusResult(null); }}
         />
+      )}
+
+      {/* Kernel of Wow bonus result — floats above result screen when active */}
+      {!showResult && kernelBonusResult && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[130] w-full max-w-sm px-4">
+          <KernelBonusResult bonusInfo={kernelBonusResult} theme="reactor" />
+          <button
+            onClick={() => setKernelBonusResult(null)}
+            className="mt-2 w-full text-center text-xs text-slate-500 hover:text-slate-300 transition-colors"
+          >
+            Dismiss
+          </button>
+        </div>
       )}
 
       {error && (
