@@ -183,7 +183,7 @@ const Leaderboard = () => {
             </div>
           </div>
           <Badge className="bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs" data-testid="season-badge">
-            Season 1
+            Season 2
           </Badge>
         </div>
 
