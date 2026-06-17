@@ -11,14 +11,14 @@ import MusicPlayer from './MusicPlayer';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-const SEASON_1_END = new Date('2026-04-31T00:00:00Z').getTime();
+const SEASON_2_END = new Date('2026-09-17T00:00:00Z').getTime(); // Season 2: Jun 17 – Sep 17 2026
 
 const SeasonCountdown = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
     const calc = () => {
-      const diff = SEASON_1_END - Date.now();
+      const diff = SEASON_2_END - Date.now();
       if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       return {
         days: Math.floor(diff / 86400000),
@@ -43,7 +43,7 @@ const SeasonCountdown = () => {
     <div className="rounded-2xl p-4 border border-sky-500/20 bg-gradient-to-r from-sky-900/30 via-[#0c1222] to-sky-900/30"
       style={{ boxShadow: '0 0 30px rgba(56,189,248,0.08), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
       <div className="text-xs text-sky-400 mb-3 text-center font-bold tracking-widest flex items-center justify-center gap-2">
-        <Clock className="w-3.5 h-3.5" /> SEASON 1 ENDS IN
+        <Clock className="w-3.5 h-3.5" /> SEASON 2 ENDS IN
       </div>
       <div className="flex gap-2 sm:gap-3 justify-center">
         {boxes.map((b, i) => (
