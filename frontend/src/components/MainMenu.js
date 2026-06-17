@@ -136,17 +136,24 @@ const PlayerTickerCarousel = () => {
       const items = data.slice(0, 20).map(player => {
         const prev = baseline[player.address];
         let pct = 0;
-        if (prev != null && prev > 0) {
+        let baselineWasZero = false;
+        if (prev == null) {
+          // Player not yet in baseline — show neutral
+          pct = 0;
+        } else if (prev > 0) {
+          // Normal % change
           pct = ((player.points - prev) / prev) * 100;
-        } else if ((prev == null || prev === 0) && player.points > 0) {
-          // New player who wasn't in the baseline — treat as +100%
-          pct = 100;
+        } else {
+          // prev === 0: S2 fresh start — show absolute points gained, flag for renderer
+          baselineWasZero = true;
+          pct = player.points > 0 ? player.points : 0;
         }
         return {
           address: player.address,
           nickname: player.nickname || `Scientist #${player.rank}`,
           points: player.points,
           pct: Math.round(pct * 100) / 100,
+          baselineWasZero,
           rank: player.rank,
         };
       });
@@ -210,7 +217,10 @@ const PlayerTickerCarousel = () => {
           const isDown = item.pct < 0;
           const sign = isUp ? '+' : '';
           const pctColor = isUp ? '#34d399' : isDown ? '#f87171' : '#94a3b8';
-          const pctDisplay = `${sign}${item.pct.toFixed(2)}%`;
+          // When baseline was 0 (S2 fresh start), show "+Npts" instead of a % number
+          const pctDisplay = item.baselineWasZero
+            ? (item.pct > 0 ? `+${item.pct.toLocaleString()}pts` : '—')
+            : `${sign}${item.pct.toFixed(2)}%`;
 
           return (
             <div
