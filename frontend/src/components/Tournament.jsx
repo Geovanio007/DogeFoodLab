@@ -8,7 +8,7 @@ import { useAccount } from 'wagmi';
 import MusicPlayer from './MusicPlayer';
 import { 
   ArrowLeft, Trophy, Clock, Users, Swords, Crown, 
-  ChevronRight, Beaker, Star, Timer, Award, Zap, Shield
+  ChevronRight, Beaker, CircleDot, Timer, Award, Zap, Shield
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
