@@ -21,14 +21,14 @@ import {
 import PointsSwapWidget from './PointsSwapWidget';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const SEASON_1_END = new Date('2026-04-31T00:00:00Z').getTime();
+const SEASON_2_END = new Date('2026-09-17T00:00:00Z').getTime(); // Season 2: Jun 17 – Sep 17 2026
 
 // ─── Season Countdown ────────────────────────────────────────
 const SeasonCountdown = ({ compact }) => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
     const calc = () => {
-      const diff = SEASON_1_END - Date.now();
+      const diff = SEASON_2_END - Date.now();
       if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       return {
         days: Math.floor(diff / 86400000),
@@ -1469,11 +1469,11 @@ const MainMenu = () => {
           {/* ── Player Points Ticker ── */}
           <PlayerTickerCarousel />
 
-          {/* ── Sale Banner ── */}
+          {/* ── Season 2 Banner ── */}
           <div className="w-full overflow-hidden rounded-xl">
             <img
-              src="/Sale.png"
-              alt="Sale"
+              src="/Season2banner.jpg"
+              alt="Season 2 is Live"
               className="w-full h-auto block"
             />
           </div>
@@ -1780,7 +1780,7 @@ const MainMenu = () => {
                   <span className="text-white font-black text-xs leading-none">S2</span>
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white">Season 2 Countdown</div>
+                  <div className="text-xs font-bold text-white">Season 2 Ends</div>
                   <div className="text-[10px] text-indigo-300/70 mt-0.5"><SeasonCountdown compact /></div>
                 </div>
               </div>
@@ -1818,7 +1818,7 @@ const MainMenu = () => {
                 <span className="text-white font-black text-sm leading-none">S2</span>
               </div>
               <div>
-                <div className="text-xs font-bold text-white">Season 2 Countdown</div>
+                <div className="text-xs font-bold text-white">Season 2 Ends</div>
                 <div className="text-[10px] text-indigo-300/70 mt-0.5"><SeasonCountdown compact /></div>
               </div>
             </div>
