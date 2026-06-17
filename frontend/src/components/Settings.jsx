@@ -712,7 +712,7 @@ const Settings = () => {
         </Tabs>
 
         <div className={`mt-8 text-center text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-          <p>DogeFood Lab v1.0.0 Beta • Built with love for the Dogecoin community</p>
+          <p>DogeFood Lab v2.0.0 Beta • Built with love for the Dogecoin community</p>
         </div>
       </div>
     </div>
