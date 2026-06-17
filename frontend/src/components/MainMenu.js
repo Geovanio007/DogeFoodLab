@@ -1296,34 +1296,42 @@ const MainMenu = () => {
     const fetchTgProfile = async () => {
       try {
         const res = await fetch(`${BACKEND_URL}/api/player/${tgAddress}/profile`);
-        const p = res.ok ? await res.json() : null;
-        if (p) {
-          // Prefer the custom nickname stored in DB; fall back to Telegram display name
-          setUsername(p.nickname || telegramUser.first_name || '');
-          setProfileImage(p.profile_image || null);
-          setPlayerLevel(p.level || 1);
-          setPlayerPoints(p.points || 0);
+        if (!res.ok) {
           setProfileLoaded(true);
-          // Keep GameContext in sync so other components that read `points` are accurate
-          loadPlayerData(tgAddress);
-        } else {
-          // No DB record yet
-          setUsername('');
-          setProfileLoaded(true);
+          return;
         }
+        const p = await res.json();
+        // p.points may be 0 legitimately — use nullish coalescing, not ||
+        setUsername(p.nickname || telegramUser.first_name || '');
+        setProfileImage(p.profile_image ?? null);
+        setPlayerLevel(p.level ?? 1);
+        setPlayerPoints(p.points ?? 0);
+        setProfileLoaded(true);
       } catch {
-        setUsername('');
         setProfileLoaded(true);
       }
     };
 
-    // Fetch immediately on mount
+    // Fetch immediately
     fetchTgProfile();
 
-    // Poll every 30 s so points update when the player comes back from the Lab
+    // Poll every 30 s to pick up points earned in the Lab
     const pollInterval = setInterval(fetchTgProfile, 30_000);
-    return () => clearInterval(pollInterval);
-  }, [isTelegram, telegramUser, loadPlayerData]);
+
+    // Also re-fetch instantly when the player navigates back to this page
+    // Telegram mini-apps fire visibilitychange + focus when the user returns
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchTgProfile(); };
+    const onFocus   = () => fetchTgProfile();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTelegram, telegramUser]);  // intentionally omit loadPlayerData — stable ref not guaranteed
 
   useEffect(() => {
     if (isConnected && address && !nftLoading) {
