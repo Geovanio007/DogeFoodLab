@@ -51,7 +51,7 @@ const CountdownTimer = ({ targetDate, label, compact = false }) => {
   }, [targetDate]);
   
   if (timeLeft.ended) {
-    return <span className="text-red-400 font-bold text-sm">ENDED</span>;
+    return <span className="text-emerald-400 font-bold text-sm">🟢 IN PROGRESS</span>;
   }
   
   if (compact) {
@@ -454,15 +454,21 @@ const Tournament = () => {
                 <div>
                   <div className="text-xs text-slate-400 uppercase tracking-wider">Status</div>
                   <div className="text-white font-bold">
-                    {tournament?.status === 'active' ? 'Tournament Active' : 'Qualification Phase'}
+                    {tournament?.status === 'active' 
+                      ? 'Tournament Active' 
+                      : tournament?.status === 'completed'
+                      ? 'Season Complete'
+                      : 'Qualification Phase 🟢'}
                   </div>
                 </div>
               </div>
-              {tournament?.tournament_starts && (
+              {tournament?.tournament_starts ? (
                 <CountdownTimer 
                   targetDate={tournament.tournament_starts} 
-                  label="Tournament Begins In"
+                  label="Knockouts Begin In"
                 />
+              ) : (
+                <span className="text-emerald-400 font-bold text-sm">🟢 LIVE — Earn points to qualify</span>
               )}
             </CardContent>
           </Card>
