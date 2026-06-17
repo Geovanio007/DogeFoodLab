@@ -1223,13 +1223,14 @@ const MainMenu = () => {
   });
   const [playerLevel, setPlayerLevel] = useState(1);
   const [playerPoints, setPlayerPoints] = useState(0);
+  const [profileLoaded, setProfileLoaded] = useState(false);  // true once first profile fetch completes
 
   const isLoggedIn = isConnected || guestUser || (isTelegram && telegramUser);
   const effectiveAddress = address || guestUser?.guest_id || guestUser?.id || (telegramUser ? `tg_${telegramUser.id}` : null);
   const effectiveLevel = (isConnected && currentLevel) ? currentLevel : playerLevel;
-  // Prefer playerPoints (fetched live from the profile API) when available,
-  // fall back to GameContext points only if playerPoints hasn't loaded yet.
-  const effectivePoints = playerPoints > 0 ? playerPoints : (points || 0);
+  // Once the profile fetch has completed (profileLoaded=true), always use playerPoints
+  // — even if it's 0. Only fall back to GameContext points before the first fetch.
+  const effectivePoints = profileLoaded ? playerPoints : (points || 0);
   const isAuthenticated = isConnected || isTelegram || guestUser;
 
   const handleReferralClick = () => {
@@ -1245,6 +1246,7 @@ const MainMenu = () => {
         setProfileImage(p.profile_image || null);
         setPlayerLevel(p.level || 1);
         setPlayerPoints(p.points || 0);
+        setProfileLoaded(true);
       }
     } catch (e) { console.error(e); }
   };
@@ -1279,6 +1281,7 @@ const MainMenu = () => {
             setProfileImage(p.profile_image || null);
             setPlayerLevel(p.level || 1);
             setPlayerPoints(p.points || 0);
+            setProfileLoaded(true);
           }
         })
         .catch(() => {});
@@ -1286,28 +1289,41 @@ const MainMenu = () => {
   }, [isConnected, address]);
 
   useEffect(() => {
-    if (isTelegram && telegramUser) {
-      const tgAddress = `tg_${telegramUser.id}`;
-      fetch(`${BACKEND_URL}/api/player/${tgAddress}/profile`)
-        .then(r => r.ok ? r.json() : null)
-        .then(p => {
-          if (p) {
-            // Prefer the custom nickname stored in DB; only fall back to Telegram name
-            // if no custom username has ever been set
-            setUsername(p.nickname || '');
-            setProfileImage(p.profile_image || null);
-            setPlayerLevel(p.level || 1);
-            setPlayerPoints(p.points || 0);
-          } else {
-            // No DB record yet — show nothing so user is prompted to set a username
-            setUsername('');
-          }
-        })
-        .catch(() => {
+    if (!isTelegram || !telegramUser) return;
+
+    const tgAddress = `tg_${telegramUser.id}`;
+
+    const fetchTgProfile = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/player/${tgAddress}/profile`);
+        const p = res.ok ? await res.json() : null;
+        if (p) {
+          // Prefer the custom nickname stored in DB; fall back to Telegram display name
+          setUsername(p.nickname || telegramUser.first_name || '');
+          setProfileImage(p.profile_image || null);
+          setPlayerLevel(p.level || 1);
+          setPlayerPoints(p.points || 0);
+          setProfileLoaded(true);
+          // Keep GameContext in sync so other components that read `points` are accurate
+          loadPlayerData(tgAddress);
+        } else {
+          // No DB record yet
           setUsername('');
-        });
-    }
-  }, [isTelegram, telegramUser]);
+          setProfileLoaded(true);
+        }
+      } catch {
+        setUsername('');
+        setProfileLoaded(true);
+      }
+    };
+
+    // Fetch immediately on mount
+    fetchTgProfile();
+
+    // Poll every 30 s so points update when the player comes back from the Lab
+    const pollInterval = setInterval(fetchTgProfile, 30_000);
+    return () => clearInterval(pollInterval);
+  }, [isTelegram, telegramUser, loadPlayerData]);
 
   useEffect(() => {
     if (isConnected && address && !nftLoading) {
