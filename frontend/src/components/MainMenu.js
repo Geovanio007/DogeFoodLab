@@ -1330,8 +1330,7 @@ const MainMenu = () => {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', onFocus);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTelegram, telegramUser]);  // intentionally omit loadPlayerData — stable ref not guaranteed
+  }, [isTelegram, telegramUser]);
 
   useEffect(() => {
     if (isConnected && address && !nftLoading) {
