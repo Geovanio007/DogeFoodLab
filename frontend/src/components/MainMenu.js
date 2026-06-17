@@ -70,8 +70,11 @@ const SeasonCountdown = ({ compact }) => {
 };
 
 // ─── Player Ticker Carousel ───────────────────────────────────
-const TICKER_SNAPSHOT_KEY = 'dogefood_ticker_snapshot';
-const TICKER_SNAPSHOT_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+// Baseline snapshot: saved once on first load, rolls forward every 24h.
+// "Last seen" snapshot: updated every poll so % reflects live movement vs baseline.
+const TICKER_BASELINE_KEY = 'dogefood_ticker_baseline';   // {timestamp, data: {addr: pts}}
+const TICKER_SEEN_KEY     = 'dogefood_ticker_seen';       // {data: {addr: pts}} – no TTL
+const TICKER_BASELINE_TTL = 24 * 60 * 60 * 1000;         // 24 h
 
 const PlayerTickerCarousel = () => {
   const [tickerItems, setTickerItems] = useState([]);
@@ -87,37 +90,56 @@ const PlayerTickerCarousel = () => {
       const data = await res.json();
       if (!Array.isArray(data) || data.length === 0) return;
 
-      // Load or create 24h snapshot
-      let snapshot = {};
+      const now = Date.now();
+
+      // ── Baseline snapshot (the 24 h reference point) ──────────────────
+      // Only reset when 24 h have elapsed; otherwise preserve it so %
+      // keeps accumulating across page refreshes / 5-min polls.
+      let baseline = {};
       try {
-        const raw = localStorage.getItem(TICKER_SNAPSHOT_KEY);
+        const raw = localStorage.getItem(TICKER_BASELINE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          // If snapshot is older than 24h, reset it (but keep old values for diff display)
-          if (Date.now() - parsed.timestamp < TICKER_SNAPSHOT_TTL) {
-            snapshot = parsed.data || {};
+          if (now - parsed.timestamp < TICKER_BASELINE_TTL) {
+            // Still within 24 h window — keep using the saved baseline
+            baseline = parsed.data || {};
           } else {
-            // Snapshot expired: save fresh snapshot and show 0% change
+            // 24 h elapsed: roll the baseline forward using last-seen values
+            // (not current values, so we don't lose any movement that just happened)
+            let lastSeen = {};
+            try {
+              const seenRaw = localStorage.getItem(TICKER_SEEN_KEY);
+              if (seenRaw) lastSeen = JSON.parse(seenRaw).data || {};
+            } catch {}
             const fresh = {};
-            data.forEach(p => { fresh[p.address] = p.points; });
-            localStorage.setItem(TICKER_SNAPSHOT_KEY, JSON.stringify({ timestamp: Date.now(), data: fresh }));
-            snapshot = fresh;
+            data.forEach(p => { fresh[p.address] = lastSeen[p.address] ?? p.points; });
+            localStorage.setItem(TICKER_BASELINE_KEY, JSON.stringify({ timestamp: now, data: fresh }));
+            baseline = fresh;
           }
         } else {
-          // First load: save snapshot now, show 0% change until next cycle
+          // Very first load — seed baseline with current points
           const fresh = {};
           data.forEach(p => { fresh[p.address] = p.points; });
-          localStorage.setItem(TICKER_SNAPSHOT_KEY, JSON.stringify({ timestamp: Date.now(), data: fresh }));
-          snapshot = fresh;
+          localStorage.setItem(TICKER_BASELINE_KEY, JSON.stringify({ timestamp: now, data: fresh }));
+          baseline = fresh;
         }
       } catch {}
 
+      // ── Update the "last seen" snapshot (no TTL — just current standings) ──
+      try {
+        const seen = {};
+        data.forEach(p => { seen[p.address] = p.points; });
+        localStorage.setItem(TICKER_SEEN_KEY, JSON.stringify({ data: seen }));
+      } catch {}
+
+      // ── Build ticker items using baseline for % calculation ────────────
       const items = data.slice(0, 20).map(player => {
-        const prev = snapshot[player.address];
+        const prev = baseline[player.address];
         let pct = 0;
         if (prev != null && prev > 0) {
           pct = ((player.points - prev) / prev) * 100;
-        } else if (prev === 0 && player.points > 0) {
+        } else if ((prev == null || prev === 0) && player.points > 0) {
+          // New player who wasn't in the baseline — treat as +100%
           pct = 100;
         }
         return {
@@ -137,7 +159,7 @@ const PlayerTickerCarousel = () => {
 
   useEffect(() => {
     buildTickerItems();
-    const iv = setInterval(buildTickerItems, 5 * 60 * 1000); // refresh every 5 min
+    const iv = setInterval(buildTickerItems, 2 * 60 * 1000); // refresh every 2 min for more live feel
     return () => clearInterval(iv);
   }, [buildTickerItems]);
 
@@ -1755,10 +1777,10 @@ const MainMenu = () => {
             <div className="mx-3 mt-3 p-2.5 rounded-xl bg-gradient-to-br from-indigo-900/30 to-purple-900/20 border border-indigo-500/15">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shrink-0">
-                  <span className="text-white font-black text-xs leading-none">S1</span>
+                  <span className="text-white font-black text-xs leading-none">S2</span>
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white">Season 1 Countdown</div>
+                  <div className="text-xs font-bold text-white">Season 2 Countdown</div>
                   <div className="text-[10px] text-indigo-300/70 mt-0.5"><SeasonCountdown compact /></div>
                 </div>
               </div>
@@ -1793,10 +1815,10 @@ const MainMenu = () => {
           <div className="mx-3 mt-3 p-3 rounded-xl bg-gradient-to-br from-indigo-900/30 to-purple-900/20 border border-indigo-500/15">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shrink-0">
-                <span className="text-white font-black text-sm leading-none">S1</span>
+                <span className="text-white font-black text-sm leading-none">S2</span>
               </div>
               <div>
-                <div className="text-xs font-bold text-white">Season 1 Countdown</div>
+                <div className="text-xs font-bold text-white">Season 2 Countdown</div>
                 <div className="text-[10px] text-indigo-300/70 mt-0.5"><SeasonCountdown compact /></div>
               </div>
             </div>
