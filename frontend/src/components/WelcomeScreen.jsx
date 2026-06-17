@@ -278,8 +278,6 @@ const useCountdown = (target) => {
 const WelcomeScreen = ({ onPlayNow }) => {
   const { isDarkMode } = useTheme();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const cd = useCountdown(SEASON2_LAUNCH_AT);
-
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
     onPlayNow();
@@ -349,26 +347,10 @@ const WelcomeScreen = ({ onPlayNow }) => {
               className="text-[10px] sm:text-sm tracking-[0.3em] font-bold uppercase"
               style={{ fontFamily: "'Fredoka', system-ui, sans-serif", color: '#fef08a' }}
             >
-              {cd.finished ? 'Season 2 is LIVE' : 'Season 2 incoming'}
+              Season 2 is LIVE 🚀
             </span>
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
           </div>
-
-          {/* Countdown — only this re-renders each second */}
-          {!cd.finished && (
-            <div
-              data-testid="season2-countdown"
-              className="mt-4 sm:mt-7 flex items-stretch gap-1.5 sm:gap-3 w-full max-w-[26rem] sm:max-w-[28rem] px-1 sm:px-0"
-            >
-              <CountdownDigit value={cd.days}    label="DAYS" />
-              <Colon />
-              <CountdownDigit value={cd.hours}   label="HRS"  pad={2} />
-              <Colon />
-              <CountdownDigit value={cd.minutes} label="MIN"  pad={2} />
-              <Colon />
-              <CountdownDigit value={cd.seconds} label="SEC"  pad={2} pulse />
-            </div>
-          )}
 
           {/* PLAY button */}
           <div className="play-cta-wrap" data-testid="play-now-btn-wrap">
