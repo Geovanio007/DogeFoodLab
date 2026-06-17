@@ -347,7 +347,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
               className="text-[10px] sm:text-sm tracking-[0.3em] font-bold uppercase"
               style={{ fontFamily: "'Fredoka', system-ui, sans-serif", color: '#fef08a' }}
             >
-              Season 2 is LIVE 🚀
+              Season 2 is LIVE 
             </span>
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
           </div>
