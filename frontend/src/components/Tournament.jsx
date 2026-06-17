@@ -424,7 +424,7 @@ const Tournament = () => {
             <span className="text-sm font-medium">Back to Menu</span>
           </Link>
           <Badge className="bg-slate-800 text-slate-300 border-slate-600">
-            Season 1
+            Season 2
           </Badge>
         </div>
 
@@ -660,7 +660,7 @@ const Tournament = () => {
         {/* Footer */}
         <div className="text-center py-4">
           <p className="text-slate-500 text-xs">
-            Treat Masters Champions League • Season 1 • DogeFood Lab
+            Treat Masters Champions League • Season 2 • DogeFood Lab
           </p>
         </div>
       </div>
