@@ -16,22 +16,11 @@ root.render(
   </React.StrictMode>
 );
 
-// SW strategy: unregister everything and never re-register.
-//
-// Previously this block called navigator.serviceWorker.register() on every
-// page load — which caused an infinite loop:
-//   register() → browser fetches /service-worker.js → kill-switch activates
-//   → unregisters itself → app re-registers on next load → repeat forever.
-//
-// The fix: only unregister. The permanent no-op /service-worker.js stays
-// deployed so browsers that cached the old SW URL don't get a 404 rejection,
-// but we never call register() again so no new SW is ever installed.
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.getRegistrations()
-      .then((regs) => {
-        regs.forEach((r) => { try { r.unregister(); } catch (e) { /* noop */ } });
-      })
-      .catch(() => { /* noop */ });
-  });
-}
+// SW strategy v8 (June 2026):
+//   - We no longer auto-register the SW on page load.
+//   - We no longer auto-unregister all SWs on page load (this used to
+//     wipe out the push subscription on every visit).
+//   - The push SW (`/service-worker.js` v8 — no fetch handler) is
+//     registered LAZILY by NotificationContext when the user enables
+//     notifications in Settings. That keeps MyDoge WebView happy and
+//     avoids any update loop.
