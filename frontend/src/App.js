@@ -301,9 +301,10 @@ const InnerApp = () => {
           </Router>
         )}
 
-        {/* Notification Permission Prompt - DISABLED for now (Feb 2026).
-            Toggle the `false &&` below to re-enable. */}
-        {false && showNotificationPrompt && !isTelegram && (
+        {/* Notification Permission Prompt (web push). For Telegram users we
+            don't show this — they enable notifications from Settings, and the
+            backend messages them via the bot. */}
+        {showNotificationPrompt && !isTelegram && (
           <NotificationPrompt onClose={() => setShowNotificationPrompt(false)} />
         )}
       </div>
