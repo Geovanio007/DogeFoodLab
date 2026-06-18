@@ -226,7 +226,11 @@ const InnerApp = () => {
   };
 
   // Get the effective player address (wallet or telegram or guest)
-  const effectiveAddress = address || (telegramUser ? `TG_${telegramUser.id}` : null) || (guestUser ? (guestUser.guest_id || guestUser.id) : null);
+  // NOTE: use lowercase `tg_` everywhere to match `MainMenu`, treat creation
+  // payloads, and the leaderboard split logic. Mixing `TG_` and `tg_` in the
+  // past created duplicate player documents in MongoDB (see admin migration
+  // endpoint `/api/admin/merge-duplicate-telegram-players`).
+  const effectiveAddress = address || (telegramUser ? `tg_${telegramUser.id}` : null) || (guestUser ? (guestUser.guest_id || guestUser.id) : null);
 
   return (
     <GameProvider>
