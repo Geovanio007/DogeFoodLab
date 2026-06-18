@@ -42,13 +42,18 @@ function webPushSupported() {
   );
 }
 
+// MyDoge wallet browser does not support push notifications at all.
+// Detected once at module load time so it never changes during a session.
+const IS_MYDOGE_BROWSER = typeof navigator !== 'undefined' && /MyDoge/i.test(navigator.userAgent);
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export const NotificationProvider = ({ children }) => {
   const { telegramUser, isTelegram } = useTelegram();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
-    () => localStorage.getItem('dogefood_notifications_enabled') === 'true'
+    // MyDoge browser: always false — notifications not supported, never prompt
+    () => IS_MYDOGE_BROWSER ? false : localStorage.getItem('dogefood_notifications_enabled') === 'true'
   );
   const [treatReadyNotify, setTreatReadyNotify] = useState(
     () => localStorage.getItem('dogefood_treat_ready_notify') !== 'false'
@@ -81,7 +86,9 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   // Track current browser permission state.
+  // Skip for MyDoge browser — treat as 'denied' so the prompt never fires.
   useEffect(() => {
+    if (IS_MYDOGE_BROWSER) return;
     if (!isTelegram && typeof window !== 'undefined' && 'Notification' in window) {
       setPermissionStatus(Notification.permission);
     }
@@ -225,6 +232,8 @@ export const NotificationProvider = ({ children }) => {
 
   // ── Public: enable notifications (routes Telegram vs web) ───────────────────
   const requestPermission = useCallback(async () => {
+    // MyDoge browser: notifications not supported — silently no-op
+    if (IS_MYDOGE_BROWSER) return false;
     setIsLoading(true);
     setLastError(null);
     try {
