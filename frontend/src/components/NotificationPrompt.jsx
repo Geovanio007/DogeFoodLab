@@ -144,6 +144,15 @@ const NotificationPrompt = ({ onClose }) => {
 
 // ─── Settings page panel (rendered inside Settings.jsx) ──────────────────────
 export const NotificationSettings = ({ isDarkMode = true }) => {
+  // MyDoge wallet browser does not support push notifications — hide the section entirely
+  if (/MyDoge/i.test(navigator.userAgent)) {
+    return (
+      <div className={`p-4 rounded-xl text-sm ${isDarkMode ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+        Push notifications are not supported in the MyDoge browser.
+      </div>
+    );
+  }
+
   const {
     notificationsEnabled,
     treatReadyNotify,
