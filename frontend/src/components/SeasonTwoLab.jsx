@@ -377,12 +377,9 @@ const SeasonTwoLab = ({ playerAddress }) => {
   }, [playerAddress, loadPlayerData]);
 
   const loadIngredients = useCallback(async (lvl) => {
+    // ── Step 1: load ingredients (critical — must always succeed) ──────────
     try {
-      // Fetch unlocked ingredients + heat event state in parallel
-      const [unlockedRes, heatRes] = await Promise.all([
-        fetch(`${API_URL}/api/ingredients/unlocked/${lvl}`),
-        fetch(`${API_URL}/api/ingredients?level=${lvl}`),
-      ]);
+      const unlockedRes = await fetch(`${API_URL}/api/ingredients/unlocked/${lvl}`);
       if (!unlockedRes.ok) return;
       const data = await unlockedRes.json();
       const list = Array.isArray(data)
@@ -391,13 +388,20 @@ const SeasonTwoLab = ({ playerAddress }) => {
           ? data.ingredients
           : [];
       setIngredients(list);
-      // Pick up active heat event from the ingredients response
+    } catch (e) {
+      console.warn('[SeasonTwoLab] loadIngredients failed:', e?.message || e);
+      return; // ingredients failed — stop here
+    }
+    // ── Step 2: load heat event (non-critical — never blocks ingredients) ──
+    try {
+      const heatRes = await fetch(`${API_URL}/api/ingredients?level=${lvl}`);
       if (heatRes.ok) {
         const heatData = await heatRes.json();
         setHeatEventId(heatData.heat_event_id || 'idle_calm');
       }
     } catch (e) {
-      console.warn('[SeasonTwoLab] loadIngredients failed:', e?.message || e);
+      // Heat event fetch failed — silently keep idle_calm, ingredients still show
+      console.warn('[SeasonTwoLab] heat event fetch failed (non-fatal):', e?.message || e);
     }
   }, []);
 
