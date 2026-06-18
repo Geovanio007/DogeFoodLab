@@ -1,59 +1,73 @@
-/* DogeFood Lab — Service Worker Registration v7 (final)
- * -------------------------------------------------------
- * SW is permanently disabled. This file is a full compatibility
- * shim that exports every function the app imports so the build
- * never fails, regardless of which component imports what.
+/* DogeFood Lab — Service Worker Registration v8
+ * ------------------------------------------------
+ * SW is now REGISTERED LAZILY by NotificationContext when the
+ * user toggles notifications ON in Settings. We no longer
+ * register on page load (that previously caused an update loop
+ * with the buggy v3 fetch handler).
  *
- * Exported no-ops (all callers compile and run without errors):
+ * The new SW (`/service-worker.js` v8) has NO fetch handler,
+ * so registering it is safe for the MyDoge in-app WebView.
  *
- *   register(config)         — index.js
- *   unregister()             — index.js
- *   setUpdateCallback(fn)    — VersionContext.jsx
- *   skipWaiting()            — VersionContext.jsx (applyUpdate)
- *   checkForUpdates()        — VersionContext.jsx (visibilitychange)
+ * Functions exported here are intentionally minimal — they just
+ * wrap the browser API so callers don't need to know about it.
  *
- * Version update notifications still work normally:
- * VersionContext polls /version.json every 5 min independently
- * of the SW — that path is completely unaffected by this shim.
- *
- * DO NOT re-enable SW registration without fixing the fetch handler
- * to return `new Response(null, { status: 504 })` on failure —
- * returning undefined crashes the MyDoge WebView.
+ * Other exports (setUpdateCallback, skipWaiting, checkForUpdates)
+ * remain no-ops because VersionContext polls /version.json
+ * independently of the SW.
  */
 
-// ─── Called by VersionContext to hook into SW update events.
-// SW is disabled so this callback will never fire via SW.
-// VersionContext's /version.json polling still works independently.
-export function setUpdateCallback(callback) {
-  // no-op — SW disabled, update events will never fire via SW
-}
+const SW_URL = '/service-worker.js';
 
-// ─── Called by VersionContext.applyUpdate() before reloading.
-// With no active SW there is nothing to skip — reload proceeds normally.
-export function skipWaiting() {
-  // no-op — no active SW to skip waiting on
-}
+export async function registerPushServiceWorker() {
+  if (typeof window === 'undefined') return null;
+  if (!('serviceWorker' in navigator)) return null;
+  if (!('PushManager' in window)) return null;
 
-// ─── Called by VersionContext on tab visibilitychange.
-// No SW registered so there is nothing to check for updates.
-export function checkForUpdates() {
-  // no-op — no active SW to check
-}
+  try {
+    // If a SW is already controlling the page, reuse it.
+    const existing = await navigator.serviceWorker.getRegistration(SW_URL);
+    if (existing && existing.active) return existing;
 
-// ─── Called by index.js on page load. Fully disabled.
-export function register(config) {
-  // no-op — SW registration is permanently disabled
-}
-
-// ─── Called by index.js on page load.
-// Still performs real cleanup to evict any old SW lingering
-// in users' browsers from before the kill-switch was deployed.
-export function unregister() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations()
-      .then((regs) => {
-        regs.forEach((r) => { try { r.unregister(); } catch (e) { /* noop */ } });
-      })
-      .catch(() => { /* noop */ });
+    const reg = await navigator.serviceWorker.register(SW_URL, { scope: '/' });
+    // Wait for the SW to be ready before returning so PushManager works.
+    await navigator.serviceWorker.ready;
+    return reg;
+  } catch (err) {
+    console.warn('[SW] register failed:', err);
+    return null;
   }
+}
+
+export async function unregisterPushServiceWorker() {
+  if (typeof window === 'undefined') return;
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map((r) => r.unregister().catch(() => false)));
+  } catch (_) { /* noop */ }
+}
+
+// ─── Legacy compatibility shims (kept so existing imports compile) ────────────
+
+export function setUpdateCallback(_callback) {
+  // no-op — VersionContext handles updates via /version.json polling
+}
+
+export function skipWaiting() {
+  // no-op — VersionContext.applyUpdate() just reloads the page
+}
+
+export function checkForUpdates() {
+  // no-op
+}
+
+export function register(_config) {
+  // no-op on page load — registration is now triggered by NotificationContext
+  // when the user enables notifications. Keeping this export prevents
+  // build failures in any file that still imports it.
+}
+
+export function unregister() {
+  // Kept for backwards compatibility; equivalent to unregisterPushServiceWorker.
+  unregisterPushServiceWorker();
 }
