@@ -226,11 +226,14 @@ const InnerApp = () => {
   };
 
   // Get the effective player address (wallet or telegram or guest)
-  // NOTE: use lowercase `tg_` everywhere to match `MainMenu`, treat creation
-  // payloads, and the leaderboard split logic. Mixing `TG_` and `tg_` in the
-  // past created duplicate player documents in MongoDB (see admin migration
-  // endpoint `/api/admin/merge-duplicate-telegram-players`).
-  const effectiveAddress = address || (telegramUser ? `tg_${telegramUser.id}` : null) || (guestUser ? (guestUser.guest_id || guestUser.id) : null);
+  // IMPORTANT: use UPPERCASE `TG_` because that is the canonical form used by
+  // the migration (`/api/admin/merge-duplicate-telegram-players`). The
+  // canonical player document in MongoDB has `address: "TG_<id>"` so any
+  // direct `find_one({address: ...})` lookups (e.g. arena join, activity
+  // $lookup) match correctly without case-sensitivity issues. Endpoints that
+  // route through `find_player_by_address` (e.g. /api/player/{address}/profile
+  // called by MainMenu with lowercase) handle both cases regardless.
+  const effectiveAddress = address || (telegramUser ? `TG_${telegramUser.id}` : null) || (guestUser ? (guestUser.guest_id || guestUser.id) : null);
 
   return (
     <GameProvider>
