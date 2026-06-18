@@ -89,8 +89,6 @@ const InnerApp = () => {
 
   // Show notification prompt after user is ready to play (after 10 seconds, once per session)
   // Skip entirely for MyDoge wallet browser — it does not support push notifications
-  const isMyDogeBrowser = /MyDoge/i.test(navigator.userAgent);
-
   useEffect(() => {
     if (isMyDogeBrowser) return; // MyDoge wallet browser: skip notification prompt
     const hasSeenPrompt = sessionStorage.getItem('dogefood_notification_prompt_shown');
@@ -317,6 +315,9 @@ const InnerApp = () => {
 };
 
 // Main App component that wraps with providers
+// Detected once at module load — never changes during a session
+const isMyDogeBrowser = typeof navigator !== 'undefined' && /MyDoge/i.test(navigator.userAgent);
+
 function App() {
   return (
     <>
