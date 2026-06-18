@@ -88,7 +88,11 @@ const InnerApp = () => {
   }, []);
 
   // Show notification prompt after user is ready to play (after 10 seconds, once per session)
+  // Skip entirely for MyDoge wallet browser — it does not support push notifications
+  const isMyDogeBrowser = /MyDoge/i.test(navigator.userAgent);
+
   useEffect(() => {
+    if (isMyDogeBrowser) return; // MyDoge wallet browser: skip notification prompt
     const hasSeenPrompt = sessionStorage.getItem('dogefood_notification_prompt_shown');
     const isUserReady = !showWelcome && !isLoading && !isCheckingRegistration;
     
@@ -100,7 +104,7 @@ const InnerApp = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [showWelcome, isLoading, isCheckingRegistration, notificationsEnabled, permissionStatus]);
+  }, [showWelcome, isLoading, isCheckingRegistration, notificationsEnabled, permissionStatus, isMyDogeBrowser]);
 
   // Handle welcome screen visibility based on Telegram status
   useEffect(() => {
@@ -282,7 +286,7 @@ const InnerApp = () => {
             {/* Always show main routes after loading - authentication is optional */}
             <Suspense fallback={<LoadingScreen />}>
             <Routes>
-              <Route path="/" element={<MenuErrorBoundary><MainMenu /></MenuErrorBoundary>} />
+              <Route path="/" element={<MenuErrorBoundary><MainMenu playerAddress={effectiveAddress || 'GUEST_USER'} /></MenuErrorBoundary>} />
               <Route path="/lab" element={<SeasonTwoLab playerAddress={effectiveAddress || 'GUEST_USER'} />} />
               <Route path="/lab/legacy" element={<GameLabRedesign playerAddress={effectiveAddress || 'GUEST_USER'} />} />
               <Route path="/nfts" element={<MyTreats />} />
@@ -304,7 +308,7 @@ const InnerApp = () => {
         {/* Notification Permission Prompt (web push). For Telegram users we
             don't show this — they enable notifications from Settings, and the
             backend messages them via the bot. */}
-        {showNotificationPrompt && !isTelegram && (
+        {showNotificationPrompt && !isTelegram && !isMyDogeBrowser && (
           <NotificationPrompt onClose={() => setShowNotificationPrompt(false)} />
         )}
       </div>
