@@ -303,6 +303,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const [selectingCharacter, setSelectingCharacter] = useState(false);
 
   const [ingredients, setIngredients] = useState([]);
+  const [heatEventId, setHeatEventId] = useState('idle_calm');
   const [selectedIngredients, setSelectedIngredients] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -377,15 +378,24 @@ const SeasonTwoLab = ({ playerAddress }) => {
 
   const loadIngredients = useCallback(async (lvl) => {
     try {
-      const res = await fetch(`${API_URL}/api/ingredients/unlocked/${lvl}`);
-      if (!res.ok) return;
-      const data = await res.json();
+      // Fetch unlocked ingredients + heat event state in parallel
+      const [unlockedRes, heatRes] = await Promise.all([
+        fetch(`${API_URL}/api/ingredients/unlocked/${lvl}`),
+        fetch(`${API_URL}/api/ingredients?level=${lvl}`),
+      ]);
+      if (!unlockedRes.ok) return;
+      const data = await unlockedRes.json();
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data?.ingredients)
           ? data.ingredients
           : [];
       setIngredients(list);
+      // Pick up active heat event from the ingredients response
+      if (heatRes.ok) {
+        const heatData = await heatRes.json();
+        setHeatEventId(heatData.heat_event_id || 'idle_calm');
+      }
     } catch (e) {
       console.warn('[SeasonTwoLab] loadIngredients failed:', e?.message || e);
     }
@@ -666,11 +676,22 @@ const SeasonTwoLab = ({ playerAddress }) => {
             onChange={(c) => { playClick && playClick(); setCategoryFilter(c); }}
           />
 
+          {/* Heat event surge banner */}
+          {(heatEventId === 'lab_surge' || heatEventId === 'crit_state') && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold animate-pulse">
+              <span>⚡</span>
+              <span>
+                {heatEventId === 'lab_surge' ? 'Lab Surge Active — Rare & Epic ingredients have boosted drop rates!' : 'Critical Mix Active — Rare, Epic & Legendary ingredients are supercharged!'}
+              </span>
+            </div>
+          )}
+
           <IngredientTray
             ingredients={filteredIngredients}
             selectedIngredients={selectedIngredients}
             onPick={addIngredient}
             loading={loading}
+            heatEventId={heatEventId}
           />
         </main>
 
@@ -1150,7 +1171,14 @@ const CategoryFilters = ({ categories, active, onChange }) => (
   </div>
 );
 
-const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading }) => {
+const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading, heatEventId = 'idle_calm' }) => {
+  // Which categories get a surge glow based on the active heat event
+  const surgeCategories = heatEventId === 'lab_surge'
+    ? ['Rare', 'Epic']
+    : heatEventId === 'crit_state'
+    ? ['Rare', 'Epic', 'Legendary']
+    : [];
+  const isSurgeActive = surgeCategories.length > 0;
   if (loading) {
     return (
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2" data-testid="ingredient-tray-loading">
@@ -1189,10 +1217,17 @@ const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading }) =
                 ? 'opacity-40 cursor-not-allowed'
                 : 'hover:-translate-y-0.5 hover:bg-white/[0.06] active:scale-95'
             )}
-            style={{
-              borderColor: rar.hex + '88',
-              boxShadow: isPicked ? 'none' : `0 0 18px ${rar.glow}, inset 0 0 12px ${tint}22`,
-            }}
+            style={(() => {
+              const isSurge = isSurgeActive && surgeCategories.includes(ing.category);
+              return {
+                borderColor: isSurge ? '#38bdf8' : rar.hex + '88',
+                boxShadow: isPicked
+                  ? 'none'
+                  : isSurge
+                  ? `0 0 28px #38bdf8cc, 0 0 12px #38bdf866, inset 0 0 16px #38bdf822`
+                  : `0 0 18px ${rar.glow}, inset 0 0 12px ${tint}22`,
+              };
+            })()}
           >
             <span className="text-3xl sm:text-4xl drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] flex items-center justify-center">
               {meta.icon ? (
@@ -1213,6 +1248,11 @@ const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading }) =
             <span className="absolute top-1.5 left-1.5 text-[8px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full" style={{ color: rar.hex, background: rar.hex + '22', border: `1px solid ${rar.hex}66` }}>
               {rar.label}
             </span>
+            {isSurgeActive && surgeCategories.includes(ing.category) && (
+              <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 animate-pulse whitespace-nowrap">
+                ⚡ SURGE
+              </span>
+            )}
             {typeof ing.count === 'number' && (
               <span className="absolute top-1.5 right-1.5 text-[10px] font-mono font-bold text-white/80 bg-black/60 rounded-full px-1.5 py-0.5">×{ing.count}</span>
             )}
