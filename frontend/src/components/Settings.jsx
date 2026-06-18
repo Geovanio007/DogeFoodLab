@@ -434,13 +434,6 @@ const Settings = () => {
                   </div>
                   <Switch checked={visualSettings.autoMix} onCheckedChange={(checked) => updateVisualSetting('autoMix', checked)} data-testid="auto-mix-toggle" />
                 </div>
-                <div className={`flex items-center justify-between p-4 rounded-xl ${isDarkMode ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                  <div>
-                    <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Push Notifications</div>
-                    <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>Get notified about events and features</div>
-                  </div>
-                  <Switch checked={visualSettings.notifications} onCheckedChange={(checked) => updateVisualSetting('notifications', checked)} data-testid="notifications-toggle" />
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
