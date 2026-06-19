@@ -307,18 +307,6 @@ const SeasonTwoLab = ({ playerAddress }) => {
 
   const [ingredients, setIngredients] = useState([]);
   const [heatEventId, setHeatEventId] = useState('idle_calm');
-  const shibaRef = useRef(null);   // ref to ShibaGrowth so 🐕 tap button triggers animation
-
-  // Called by 🐕 tap button — triggers Shiba animation AND collects the treat
-  const handleFeedShiba = useCallback((treatId) => {
-    // Find the treat rarity from brewingTreats
-    const treat = brewingTreats.find(t => t.id === treatId);
-    const rarity = treat?.rarity || 'Common';
-    // Trigger Shiba animation via ref
-    if (shibaRef.current?.feed) shibaRef.current.feed(treatId, rarity);
-    // Collect the treat (handles all normal animations + points)
-    handleCollect(treatId);
-  }, [brewingTreats, handleCollect]);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -494,7 +482,16 @@ const SeasonTwoLab = ({ playerAddress }) => {
       setCollectingId(null);
     }
   }, [collectingId, playerAddress, playSuccess, loadBrewingTreats, loadPlayerData, brewingTreats]);
-   
+
+  // Shiba ref + feed handler — declared after brewingTreats and handleCollect to avoid TDZ
+  const shibaRef = useRef(null);
+  const handleFeedShiba = useCallback((treatId) => {
+    const treat = brewingTreats.find(t => t.id === treatId);
+    const rarity = treat?.rarity || 'Common';
+    if (shibaRef.current?.feed) shibaRef.current.feed(treatId, rarity);
+    handleCollect(treatId);
+  }, [brewingTreats, handleCollect]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
