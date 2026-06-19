@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Beaker, Zap, ChevronLeft, X, TrendingUp, Bot, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
 import INGREDIENT_ICONS from '../config/ingredientIcons';
 import { useAudio } from '../contexts/AudioContext';
+import { useTelegram } from '../contexts/TelegramContext';
 import { useMusic } from '../contexts/MusicContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import HappyHourBanner from './HappyHourBanner';
@@ -287,6 +288,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const { playClick, playBrewing, playSuccess, playRare, soundEnabled, toggleSound } = useAudio() || {};
   const { } = useMusic() || {};
   const { scheduleTreatReadyNotification } = useNotifications() || {};
+  const { isTelegram } = useTelegram() || {};
 
   // --- core data ---
   const [playerLevel, setPlayerLevel] = useState(1);
@@ -305,6 +307,18 @@ const SeasonTwoLab = ({ playerAddress }) => {
 
   const [ingredients, setIngredients] = useState([]);
   const [heatEventId, setHeatEventId] = useState('idle_calm');
+  const shibaRef = useRef(null);   // ref to ShibaGrowth so 🐕 tap button triggers animation
+
+  // Called by 🐕 tap button — triggers Shiba animation AND collects the treat
+  const handleFeedShiba = useCallback((treatId) => {
+    // Find the treat rarity from brewingTreats
+    const treat = brewingTreats.find(t => t.id === treatId);
+    const rarity = treat?.rarity || 'Common';
+    // Trigger Shiba animation via ref
+    if (shibaRef.current?.feed) shibaRef.current.feed(treatId, rarity);
+    // Collect the treat (handles all normal animations + points)
+    handleCollect(treatId);
+  }, [brewingTreats, handleCollect]);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -656,14 +670,6 @@ const SeasonTwoLab = ({ playerAddress }) => {
           {/* Happy Hour banner from legacy flow */}
           <HappyHourBanner />
 
-          {brewingTreats.length > 0 && (
-            <BrewingTreatsPanel
-              treats={brewingTreats}
-              onCollect={handleCollect}
-              collectingId={collectingId}
-            />
-          )}
-
           <ReactorChamber
             selectedIngredients={selectedIngredients}
             ingredients={ingredients}
@@ -706,8 +712,20 @@ const SeasonTwoLab = ({ playerAddress }) => {
             playerAddress={playerAddress}
             onStatusUpdate={handleDailyStatusUpdate}
           />
+          {/* Ready Treats — lives directly above Shiba so drag distance is minimal */}
+          {brewingTreats.length > 0 && (
+            <BrewingTreatsPanel
+              treats={brewingTreats}
+              onCollect={handleCollect}
+              collectingId={collectingId}
+              isTelegram={isTelegram}
+              onFeedShiba={handleFeedShiba}
+            />
+          )}
+
           {/* Shiba Growth System — drag ready treats to feed */}
           <ShibaGrowth
+            ref={shibaRef}
             playerAddress={playerAddress}
             onTreatFed={handleCollect}
           />
@@ -1555,7 +1573,7 @@ function formatTimer(secs) {
 }
 
 /* ── Individual flask card ── */
-const FlaskCard = ({ treat, onCollect, isCollecting }) => {
+const FlaskCard = ({ treat, onCollect, isCollecting, isTelegram, onFeedShiba }) => {
   const rarity = treat?.rarity || 'Common';
   const fc = flaskColor(rarity);
   const timerData = treat?.timer || {};
@@ -1692,21 +1710,41 @@ const FlaskCard = ({ treat, onCollect, isCollecting }) => {
 
       {/* Timer / Collect */}
       {isReady ? (
-        <button
-          onClick={() => onCollect(treat.id)}
-          disabled={isCollecting}
-          style={{
-            padding: '6px 14px', borderRadius: 99, fontSize: 11, fontWeight: 800,
-            letterSpacing: '0.06em', textTransform: 'uppercase',
-            cursor: isCollecting ? 'wait' : 'pointer',
-            background: isCollecting ? 'rgba(255,255,255,0.08)'
-              : `linear-gradient(135deg, ${fc.liquid}ee, ${fc.liquid}99)`,
-            color: isCollecting ? 'rgba(255,255,255,0.3)' : '#000',
-            border: 'none',
-            boxShadow: isCollecting ? 'none' : `0 4px 14px ${fc.glow}`,
-            transition: 'all 0.2s',
-          }}
-        >{isCollecting ? '…' : 'Collect'}</button>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          {/* Feed Shiba button — shown for non-Telegram mobile users as tap alternative to drag */}
+          {!isTelegram && onFeedShiba && (
+            <button
+              onClick={() => { onFeedShiba(treat.id); }}
+              disabled={isCollecting}
+              title="Feed to Shiba & collect"
+              style={{
+                padding: '6px 10px', borderRadius: 99, fontSize: 11, fontWeight: 900,
+                cursor: isCollecting ? 'wait' : 'pointer',
+                background: isCollecting ? 'rgba(255,255,255,0.05)' : 'rgba(251,191,36,0.15)',
+                color: isCollecting ? 'rgba(255,255,255,0.3)' : '#fbbf24',
+                border: '1px solid rgba(251,191,36,0.4)',
+                boxShadow: isCollecting ? 'none' : '0 0 10px rgba(251,191,36,0.25)',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+              }}
+            >{isCollecting ? '…' : '🐕'}</button>
+          )}
+          <button
+            onClick={() => onCollect(treat.id)}
+            disabled={isCollecting}
+            style={{
+              padding: '6px 14px', borderRadius: 99, fontSize: 11, fontWeight: 800,
+              letterSpacing: '0.06em', textTransform: 'uppercase',
+              cursor: isCollecting ? 'wait' : 'pointer',
+              background: isCollecting ? 'rgba(255,255,255,0.08)'
+                : `linear-gradient(135deg, ${fc.liquid}ee, ${fc.liquid}99)`,
+              color: isCollecting ? 'rgba(255,255,255,0.3)' : '#000',
+              border: 'none',
+              boxShadow: isCollecting ? 'none' : `0 4px 14px ${fc.glow}`,
+              transition: 'all 0.2s',
+            }}
+          >{isCollecting ? '…' : 'Collect'}</button>
+        </div>
       ) : (
         <div style={{
           fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
@@ -1730,7 +1768,7 @@ const FlaskCard = ({ treat, onCollect, isCollecting }) => {
 };
 
 /* ── Brewing panel ── */
-const BrewingTreatsPanel = ({ treats, onCollect, collectingId }) => {
+const BrewingTreatsPanel = ({ treats, onCollect, collectingId, isTelegram, onFeedShiba }) => {
   const readyCount = treats.filter(t =>
     (t?.timer?.remaining_seconds ?? 0) <= 0 || t.brewing_status === 'ready'
   ).length;
@@ -1783,6 +1821,8 @@ const BrewingTreatsPanel = ({ treats, onCollect, collectingId }) => {
             treat={treat}
             onCollect={onCollect}
             isCollecting={collectingId === treat.id}
+            isTelegram={isTelegram}
+            onFeedShiba={onFeedShiba}
           />
         ))}
       </div>
