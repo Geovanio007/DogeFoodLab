@@ -96,7 +96,8 @@ const InnerApp = () => {
     
     if (isUserReady && !notificationsEnabled && permissionStatus !== 'denied' && !hasSeenPrompt) {
       const timer = setTimeout(() => {
-        setShowNotificationPrompt(true);
+        // Notification prompt disabled for all browsers
+        // setShowNotificationPrompt(true);
         sessionStorage.setItem('dogefood_notification_prompt_shown', 'true');
       }, 10000); // Show after 10 seconds of gameplay
       
