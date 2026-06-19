@@ -9,6 +9,7 @@ import HappyHourBanner from './HappyHourBanner';
 import SpinWheel from './SpinWheel';
 import DailyLimitTracker from './DailyLimitTracker';
 import { KernelOfWowStatus, KernelBonusResult } from './KernelOfWow';
+import ShibaGrowth from './ShibaGrowth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -704,6 +705,11 @@ const SeasonTwoLab = ({ playerAddress }) => {
           <DailyLimitTracker
             playerAddress={playerAddress}
             onStatusUpdate={handleDailyStatusUpdate}
+          />
+          {/* Shiba Growth System — drag ready treats to feed */}
+          <ShibaGrowth
+            playerAddress={playerAddress}
+            onTreatFed={handleCollect}
           />
           <ShibaAssistant tip={shibaTip} overload={overload} selectedCount={selectedIngredients.length} />
           <ComboDiscoveryHint ingredients={ingredients} selected={selectedIngredients} />
@@ -1572,18 +1578,46 @@ const FlaskCard = ({ treat, onCollect, isCollecting }) => {
   const bubbling = !isReady && secsLeft > 0;
   const liquidY = 84 - (fillPct / 100) * 79; // SVG coords: top of fill inside flask
 
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragStart = (e) => {
+    if (!isReady) { e.preventDefault(); return; }
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      treatId: treat.id,
+      rarity: treat.rarity || 'Common',
+      name: treat.name || 'Treat',
+    }));
+  };
+
   return (
-    <div style={{
-      position: 'relative', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', gap: 8, padding: '12px 8px 10px',
-      borderRadius: 20, border: `1px solid ${fc.liquid}44`,
-      background: `radial-gradient(circle at 50% 0%, ${fc.glass}, rgba(5,3,13,0.93) 70%)`,
-      boxShadow: isReady
-        ? `0 0 24px ${fc.glow}, 0 0 6px ${fc.glow}`
-        : `0 0 10px ${fc.glow}33`,
-      minWidth: 95, flex: '1 1 90px', maxWidth: 125,
-      transition: 'box-shadow 0.4s',
-    }}>
+    <div
+      draggable={isReady}
+      onDragStart={handleDragStart}
+      onDragEnd={() => setIsDragging(false)}
+      style={{
+        position: 'relative', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: 8, padding: '12px 8px 10px',
+        borderRadius: 20, border: `1px solid ${fc.liquid}44`,
+        background: `radial-gradient(circle at 50% 0%, ${fc.glass}, rgba(5,3,13,0.93) 70%)`,
+        boxShadow: isReady
+          ? `0 0 24px ${fc.glow}, 0 0 6px ${fc.glow}`
+          : `0 0 10px ${fc.glow}33`,
+        minWidth: 95, flex: '1 1 90px', maxWidth: 125,
+        transition: 'box-shadow 0.4s, transform 0.2s',
+        cursor: isReady ? 'grab' : 'default',
+        opacity: isDragging ? 0.5 : 1,
+        transform: isDragging ? 'scale(0.92)' : 'scale(1)',
+      }}>
+      {/* Drag hint for ready treats */}
+      {isReady && (
+        <div style={{
+          position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)',
+          fontSize: 8, fontWeight: 700, color: fc.liquid, whiteSpace: 'nowrap',
+          opacity: 0.7, letterSpacing: '0.05em',
+        }}>↑ drag to feed</div>
+      )}
       {/* Rarity badge */}
       <div style={{
         fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em',
