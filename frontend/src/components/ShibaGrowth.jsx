@@ -262,7 +262,7 @@ const XPBar = ({ xp, stage }) => {
 };
 
 // ─── Main ShibaGrowth component ───────────────────────────────────────────────
-const ShibaGrowth = ({ playerAddress, onTreatFed }) => {
+const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed }, ref) => {
   const [pet, setPet] = useState(null);
   const [isFeeding, setIsFeeding] = useState(false);
   const [isHappy, setIsHappy] = useState(false);
@@ -328,6 +328,11 @@ const ShibaGrowth = ({ playerAddress, onTreatFed }) => {
   // ── Drag and drop handlers ───────────────────────────────────────────────────
   const onDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
   const onDragLeave = () => setIsDragOver(false);
+  // Expose feed() to parent via ref so the 🐕 tap button can trigger animations
+  React.useImperativeHandle(ref, () => ({
+    feed: (treatId, rarity) => feedTreat(treatId, rarity || 'Common'),
+  }), [feedTreat]);
+
   const onDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
@@ -529,6 +534,8 @@ const ShibaGrowth = ({ playerAddress, onTreatFed }) => {
       `}</style>
     </section>
   );
-};
+});
+
+// Expose feedTreat so parent can call shiba.current.feed(treatId, rarity)
 
 export default ShibaGrowth;
