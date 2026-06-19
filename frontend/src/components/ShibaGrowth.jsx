@@ -224,7 +224,7 @@ const FloatingXP = ({ value, rarity, onDone }) => {
       textShadow: `0 0 12px ${col}`,
       whiteSpace: 'nowrap',
     }}>
-      +{value} XP ✨
+      +{value} XP 
     </div>
   );
 };
@@ -241,7 +241,7 @@ const XPBar = ({ xp, stage }) => {
     <div style={{ width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,0.55)', marginBottom: 4 }}>
         <span>{cur?.name}</span>
-        <span>{nxt ? `${Math.floor(pct)}% → ${nxt.name}` : '✨ MAX STAGE'}</span>
+        <span>{nxt ? `${Math.floor(pct)}% → ${nxt.name}` : ' MAX STAGE'}</span>
       </div>
       <div style={{
         height: 8, borderRadius: 99, background: 'rgba(255,255,255,0.07)',
@@ -404,7 +404,7 @@ const ShibaGrowth = ({ playerAddress, onTreatFed }) => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, position: 'relative', zIndex: 1 }}>
         <div>
           <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: stageInfo.color, marginBottom: 1 }}>
-            🐕 Lab Companion
+             Lab Companion
           </div>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>Reactor Pup</div>
         </div>
@@ -427,7 +427,7 @@ const ShibaGrowth = ({ playerAddress, onTreatFed }) => {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <div style={{ fontSize: 18, fontWeight: 900, color: stageInfo.color, textShadow: `0 0 20px ${stageInfo.color}` }}>
-            ✨ EVOLVED! ✨
+             EVOLVED! 
           </div>
         </div>
       )}
