@@ -487,8 +487,10 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const shibaRef = useRef(null);
   const handleFeedShiba = useCallback((treatId) => {
     const treat = brewingTreats.find(t => t.id === treatId);
-    const rarity = treat?.rarity || 'Common';
+    const rarity = treat?.rarity || treat?.category || 'Common';
+    // Step 1: trigger Shiba animation + XP (does NOT collect the treat)
     if (shibaRef.current?.feed) shibaRef.current.feed(treatId, rarity);
+    // Step 2: collect the treat (normal flow — points, animations, etc.)
     handleCollect(treatId);
   }, [brewingTreats, handleCollect]);
 
@@ -724,7 +726,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
           <ShibaGrowth
             ref={shibaRef}
             playerAddress={playerAddress}
-            onTreatFed={handleCollect}
+            onCollect={handleCollect}
           />
           <ShibaAssistant tip={shibaTip} overload={overload} selectedCount={selectedIngredients.length} />
           <ComboDiscoveryHint ingredients={ingredients} selected={selectedIngredients} />
