@@ -488,8 +488,13 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const handleFeedShiba = useCallback((treatId) => {
     const treat = brewingTreats.find(t => t.id === treatId);
     const rarity = treat?.rarity || treat?.category || 'Common';
+    console.log('[Lab] handleFeedShiba:', treatId, 'rarity:', rarity, 'shibaRef:', !!shibaRef.current);
     // Step 1: trigger Shiba animation + XP (does NOT collect the treat)
-    if (shibaRef.current?.feed) shibaRef.current.feed(treatId, rarity);
+    if (shibaRef.current?.feed) {
+      shibaRef.current.feed(treatId, rarity);
+    } else {
+      console.warn('[Lab] shibaRef.current.feed not available');
+    }
     // Step 2: collect the treat (normal flow — points, animations, etc.)
     handleCollect(treatId);
   }, [brewingTreats, handleCollect]);
@@ -1710,8 +1715,8 @@ const FlaskCard = ({ treat, onCollect, isCollecting, isTelegram, onFeedShiba }) 
       {/* Timer / Collect */}
       {isReady ? (
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          {/* Feed Shiba button — shown for non-Telegram mobile users as tap alternative to drag */}
-          {!isTelegram && onFeedShiba && (
+          {/* Feed Shiba button — shown for all users: tap to feed pet + collect */}
+          {onFeedShiba && (
             <button
               onClick={() => { onFeedShiba(treat.id); }}
               disabled={isCollecting}
