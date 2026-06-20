@@ -284,7 +284,7 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
         console.log('[Shiba] pet loaded:', data.current_xp, 'xp stage', data.current_stage);
       } else if (res.status === 404) {
         console.log('[Shiba] no pet found, creating…');
-        const cr = await fetch(`${API_URL}/api/shiba/${playerAddress}/create`, { method: 'POST' });
+        const cr = await fetch(`${API_URL}/api/shiba/create/${playerAddress}`, { method: 'POST' });
         if (cr.ok) {
           const newPet = await cr.json();
           setPet(newPet);
@@ -316,7 +316,7 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
     if (!activePet) {
       console.log('[Shiba] pet null — auto-creating');
       try {
-        const cr = await fetch(`${API_URL}/api/shiba/${playerAddress}/create`, { method: 'POST' });
+        const cr = await fetch(`${API_URL}/api/shiba/create/${playerAddress}`, { method: 'POST' });
         if (cr.ok) {
           activePet = await cr.json();
           setPet(activePet);
@@ -352,7 +352,7 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
 
     // Persist to backend
     try {
-      const res = await fetch(`${API_URL}/api/shiba/${playerAddress}/feed`, {
+      const res = await fetch(`${API_URL}/api/shiba/feed/${playerAddress}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ treat_id: treatId, treat_rarity: treatRarity, xp_gained: xpGain }),
