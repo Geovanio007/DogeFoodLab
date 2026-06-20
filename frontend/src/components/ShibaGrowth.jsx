@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 // ─── Growth stage config ──────────────────────────────────────────────────────
 const STAGES = [
@@ -275,18 +275,30 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
 
   // ── Load or create pet ──────────────────────────────────────────────────────
   const loadPet = useCallback(async () => {
-    if (!playerAddress) return;
+    if (!playerAddress) { setLoading(false); return; }
     try {
       const res = await fetch(`${API_URL}/api/shiba/${playerAddress}`);
       if (res.ok) {
-        setPet(await res.json());
+        const data = await res.json();
+        setPet(data);
+        console.log('[Shiba] pet loaded:', data.current_xp, 'xp stage', data.current_stage);
       } else if (res.status === 404) {
-        // Create new pet
+        console.log('[Shiba] no pet found, creating…');
         const cr = await fetch(`${API_URL}/api/shiba/${playerAddress}/create`, { method: 'POST' });
-        if (cr.ok) setPet(await cr.json());
+        if (cr.ok) {
+          const newPet = await cr.json();
+          setPet(newPet);
+          console.log('[Shiba] pet created:', newPet.pet_id);
+        } else {
+          const err = await cr.text();
+          console.error('[Shiba] create failed:', cr.status, err);
+        }
+      } else {
+        const err = await res.text();
+        console.error('[Shiba] load failed:', res.status, err);
       }
     } catch (e) {
-      console.warn('Shiba load failed:', e);
+      console.error('[Shiba] loadPet error:', e);
     } finally {
       setLoading(false);
     }
@@ -294,25 +306,37 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
 
   useEffect(() => { loadPet(); }, [loadPet]);
 
-  // ── Feed treat: handles ONLY animation + XP update + backend /feed call ─────
-  // Does NOT call onTreatFed — the parent (handleFeedShiba) calls handleCollect
-  // separately so we never double-collect. Drag path also handled here: onDrop
-  // calls feedTreat then fires onTreatFed once below.
+  // ── Feed treat: animation + XP update + backend /feed call ─────────────────
   const feedTreat = useCallback(async (treatId, treatRarity) => {
-    if (isFeeding) return;
-    // Auto-create pet if not loaded yet (race condition on first feed)
+    console.log('[Shiba] feedTreat called:', treatId, treatRarity, 'isFeeding:', isFeeding, 'pet:', !!pet);
+    if (isFeeding) { console.warn('[Shiba] blocked: already feeding'); return; }
+
+    // Auto-create pet if not yet loaded
     let activePet = pet;
     if (!activePet) {
+      console.log('[Shiba] pet null — auto-creating');
       try {
         const cr = await fetch(`${API_URL}/api/shiba/${playerAddress}/create`, { method: 'POST' });
-        if (cr.ok) { activePet = await cr.json(); setPet(activePet); }
-        else return;
-      } catch { return; }
+        if (cr.ok) {
+          activePet = await cr.json();
+          setPet(activePet);
+          console.log('[Shiba] auto-created pet:', activePet.pet_id);
+        } else {
+          console.error('[Shiba] auto-create failed:', cr.status, await cr.text());
+          return;
+        }
+      } catch (e) {
+        console.error('[Shiba] auto-create error:', e);
+        return;
+      }
     }
+
     setIsFeeding(true);
     setIsDragOver(false);
     const xpGain = RARITY_XP[treatRarity] ?? 8;
-    // Optimistic update
+    console.log('[Shiba] feeding — rarity:', treatRarity, 'xp gain:', xpGain);
+
+    // Optimistic UI update
     const prevPet = { ...activePet };
     const newXP = (activePet.current_xp ?? 0) + xpGain;
     const newStage = STAGES.reduce((acc, s) => newXP >= s.xpRequired ? s.id : acc, 0);
@@ -320,8 +344,13 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
     setPet(p => ({ ...p, current_xp: newXP, current_stage: newStage, total_treats_fed: (p.total_treats_fed ?? 0) + 1 }));
     setFloatingXP({ value: xpGain, rarity: treatRarity, id: Date.now() });
     if (evolved) { setJustEvolved(true); setTimeout(() => setJustEvolved(false), 3000); }
-    setTimeout(() => { setIsFeeding(false); setIsHappy(true); setTimeout(() => setIsHappy(false), 2500); }, 900);
-    // Persist XP to backend — do not call onTreatFed here (parent handles collect)
+    setTimeout(() => {
+      setIsFeeding(false);
+      setIsHappy(true);
+      setTimeout(() => setIsHappy(false), 2500);
+    }, 900);
+
+    // Persist to backend
     try {
       const res = await fetch(`${API_URL}/api/shiba/${playerAddress}/feed`, {
         method: 'POST',
@@ -331,8 +360,16 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
       if (res.ok) {
         const data = await res.json();
         setPet(data.pet);
+        console.log('[Shiba] feed saved — new xp:', data.pet?.current_xp, 'stage:', data.pet?.current_stage);
+      } else {
+        const err = await res.text();
+        console.error('[Shiba] feed API error:', res.status, err);
+        setPet(prevPet);
       }
-    } catch { setPet(prevPet); }
+    } catch (e) {
+      console.error('[Shiba] feed network error:', e);
+      setPet(prevPet);
+    }
   }, [pet, isFeeding, playerAddress]);
 
   // ── Drag and drop handlers ───────────────────────────────────────────────────
