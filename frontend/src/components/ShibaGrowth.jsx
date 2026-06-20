@@ -262,7 +262,7 @@ const XPBar = ({ xp, stage }) => {
 };
 
 // ─── Main ShibaGrowth component ───────────────────────────────────────────────
-const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed }, ref) => {
+const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, ref) => {
   const [pet, setPet] = useState(null);
   const [isFeeding, setIsFeeding] = useState(false);
   const [isHappy, setIsHappy] = useState(false);
@@ -294,24 +294,34 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed }, ref) => {
 
   useEffect(() => { loadPet(); }, [loadPet]);
 
-  // ── Feed treat (called from drag drop OR treat click) ─────────────────────
+  // ── Feed treat: handles ONLY animation + XP update + backend /feed call ─────
+  // Does NOT call onTreatFed — the parent (handleFeedShiba) calls handleCollect
+  // separately so we never double-collect. Drag path also handled here: onDrop
+  // calls feedTreat then fires onTreatFed once below.
   const feedTreat = useCallback(async (treatId, treatRarity) => {
-    if (!pet || isFeeding) return;
+    if (isFeeding) return;
+    // Auto-create pet if not loaded yet (race condition on first feed)
+    let activePet = pet;
+    if (!activePet) {
+      try {
+        const cr = await fetch(`${API_URL}/api/shiba/${playerAddress}/create`, { method: 'POST' });
+        if (cr.ok) { activePet = await cr.json(); setPet(activePet); }
+        else return;
+      } catch { return; }
+    }
     setIsFeeding(true);
     setIsDragOver(false);
     const xpGain = RARITY_XP[treatRarity] ?? 8;
     // Optimistic update
-    const prevPet = { ...pet };
-    const newXP = (pet.current_xp ?? 0) + xpGain;
+    const prevPet = { ...activePet };
+    const newXP = (activePet.current_xp ?? 0) + xpGain;
     const newStage = STAGES.reduce((acc, s) => newXP >= s.xpRequired ? s.id : acc, 0);
-    const evolved = newStage > (pet.current_stage ?? 0);
+    const evolved = newStage > (activePet.current_stage ?? 0);
     setPet(p => ({ ...p, current_xp: newXP, current_stage: newStage, total_treats_fed: (p.total_treats_fed ?? 0) + 1 }));
     setFloatingXP({ value: xpGain, rarity: treatRarity, id: Date.now() });
     if (evolved) { setJustEvolved(true); setTimeout(() => setJustEvolved(false), 3000); }
     setTimeout(() => { setIsFeeding(false); setIsHappy(true); setTimeout(() => setIsHappy(false), 2500); }, 900);
-    // Fire the actual collect via parent callback (triggers all normal animations)
-    if (onTreatFed) onTreatFed(treatId);
-    // Persist to backend
+    // Persist XP to backend — do not call onTreatFed here (parent handles collect)
     try {
       const res = await fetch(`${API_URL}/api/shiba/${playerAddress}/feed`, {
         method: 'POST',
@@ -323,7 +333,7 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed }, ref) => {
         setPet(data.pet);
       }
     } catch { setPet(prevPet); }
-  }, [pet, isFeeding, playerAddress, onTreatFed]);
+  }, [pet, isFeeding, playerAddress]);
 
   // ── Drag and drop handlers ───────────────────────────────────────────────────
   const onDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
@@ -338,7 +348,14 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed }, ref) => {
     setIsDragOver(false);
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
-      if (data?.treatId) feedTreat(data.treatId, data.rarity || 'Common');
+      if (data?.treatId) {
+        // Animation + XP
+        feedTreat(data.treatId, data.rarity || 'Common');
+        // Collect the treat (via parent) — fires once here for drag path
+        // onCollect handles the treat collection for drag path
+        if (onCollect) onCollect(data.treatId);
+        else if (onTreatFed) onTreatFed(data.treatId);
+      }
     } catch {}
   };
 
