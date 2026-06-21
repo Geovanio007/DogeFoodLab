@@ -202,19 +202,24 @@ const SpinWheel = ({ playerAddress, onPrizeWon }) => {
             )}
 
             {/* ── Telegram community banner (ad spot) ── */}
-            <a
-              href="https://t.me/DogeFoodonDogeOS"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full"
-              data-testid="spin-wheel-telegram-banner"
-            >
-              <img
-                src="/TGBanner.png"
-                alt="Join our Telegram community"
-                className="w-full h-auto block"
-              />
-            </a>
+            <div className="px-4 pt-4">
+              <a
+                href="https://t.me/DogeFoodonDogeOS"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full rounded-xl overflow-hidden relative group"
+                style={{ border: '1px solid rgba(56,189,248,0.25)', boxShadow: '0 0 16px 0 rgba(56,189,248,0.1)' }}
+                data-testid="spin-wheel-telegram-banner"
+              >
+                <img
+                  src="/TGBanner.png"
+                  alt="Join our Telegram community"
+                  className="w-full block transition-transform duration-300 group-hover:scale-105"
+                  style={{ aspectRatio: '5 / 1', objectFit: 'cover', objectPosition: '50% 60%' }}
+                />
+                <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 12px rgba(0,0,0,0.25)' }} />
+              </a>
+            </div>
 
             {/* header */}
             <div className="relative px-6 pt-5 pb-2 text-center">
