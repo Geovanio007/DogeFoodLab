@@ -208,16 +208,20 @@ const SpinWheel = ({ playerAddress, onPrizeWon }) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full rounded-xl overflow-hidden relative group"
-                style={{ border: '1px solid rgba(56,189,248,0.25)', boxShadow: '0 0 16px 0 rgba(56,189,248,0.1)' }}
+                style={{ border: '1px solid rgba(56,189,248,0.25)', boxShadow: '0 0 16px 0 rgba(56,189,248,0.12)' }}
                 data-testid="spin-wheel-telegram-banner"
               >
-                <img
-                  src="/TGBanner.png"
-                  alt="Join our Telegram community"
-                  className="w-full block transition-transform duration-300 group-hover:scale-105"
-                  style={{ aspectRatio: '5 / 1', objectFit: 'cover', objectPosition: '50% 60%' }}
+                <video
+                  src="/Bannerad.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="w-full block transition-transform duration-300 group-hover:scale-[1.03]"
+                  style={{ aspectRatio: '832 / 352', objectFit: 'contain', background: '#06101f' }}
                 />
-                <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 12px rgba(0,0,0,0.25)' }} />
+                <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 12px rgba(0,0,0,0.2)' }} />
               </a>
             </div>
 
@@ -234,28 +238,30 @@ const SpinWheel = ({ playerAddress, onPrizeWon }) => {
             </div>
 
             {/* ── 3D Wheel Area ── */}
-            <div className="relative flex justify-center py-3" style={{ perspective: '900px' }}>
-              {/* neon ring glow */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] h-[360px] rounded-full -z-10"
-                style={{ boxShadow: '0 0 60px 8px rgba(56,189,248,0.12), inset 0 0 60px 8px rgba(56,189,248,0.06)' }} />
+            <div className="relative flex justify-center py-1" style={{ perspective: '900px' }}>
+              <div style={{ transform: 'scale(0.86)', transformOrigin: 'center center' }}>
+                {/* neon ring glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] h-[360px] rounded-full -z-10"
+                  style={{ boxShadow: '0 0 60px 8px rgba(56,189,248,0.12), inset 0 0 60px 8px rgba(56,189,248,0.06)' }} />
 
-              {/* pointer */}
-              <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20" style={{ filter: 'drop-shadow(0 2px 8px rgba(56,189,248,0.6))' }}>
-                <svg width="32" height="36" viewBox="0 0 32 36">
-                  <polygon points="16,36 2,0 30,0" fill="#38bdf8" />
-                  <polygon points="16,30 6,4 26,4" fill="#0ea5e9" />
-                </svg>
-              </div>
+                {/* pointer */}
+                <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20" style={{ filter: 'drop-shadow(0 2px 8px rgba(56,189,248,0.6))' }}>
+                  <svg width="32" height="36" viewBox="0 0 32 36">
+                    <polygon points="16,36 2,0 30,0" fill="#38bdf8" />
+                    <polygon points="16,30 6,4 26,4" fill="#0ea5e9" />
+                  </svg>
+                </div>
 
-              {/* wheel with 3D tilt */}
-              <div style={{
-                transform: `rotateX(6deg) rotate(${rotation}deg)`,
-                transition: spinning ? 'transform 4.5s cubic-bezier(0.12, 0.75, 0.1, 1)' : 'none',
-                transformStyle: 'preserve-3d',
-                filter: spinning ? 'brightness(1.1)' : 'none',
-              }}>
-                <canvas ref={wheelRef} width={340} height={340} className="rounded-full"
-                  style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 3px rgba(56,189,248,0.25), inset 0 0 20px rgba(0,0,0,0.3)' }} />
+                {/* wheel with 3D tilt */}
+                <div style={{
+                  transform: `rotateX(6deg) rotate(${rotation}deg)`,
+                  transition: spinning ? 'transform 4.5s cubic-bezier(0.12, 0.75, 0.1, 1)' : 'none',
+                  transformStyle: 'preserve-3d',
+                  filter: spinning ? 'brightness(1.1)' : 'none',
+                }}>
+                  <canvas ref={wheelRef} width={340} height={340} className="rounded-full"
+                    style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 3px rgba(56,189,248,0.25), inset 0 0 20px rgba(0,0,0,0.3)' }} />
+                </div>
               </div>
             </div>
 
