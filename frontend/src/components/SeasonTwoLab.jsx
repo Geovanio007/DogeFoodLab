@@ -1731,7 +1731,12 @@ const FlaskCard = ({ treat, onCollect, isCollecting, isTelegram, onFeedShiba }) 
                 transition: 'all 0.2s',
                 whiteSpace: 'nowrap',
               }}
-            >{isCollecting ? '…' : '🐕'}</button>
+            >
+              {isCollecting
+                ? '…'
+                : <img src="/Pup.png" alt="Feed pet" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+              }
+            </button>
           )}
           <button
             onClick={() => onCollect(treat.id)}
