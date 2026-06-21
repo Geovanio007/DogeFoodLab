@@ -1195,7 +1195,199 @@ const WalkthroughModal = ({ onClose }) => {
   );
 };
 
-const MainMenu = () => {
+const DISCLAIMER_SECTIONS = [
+  {
+    title: '1. Entertainment Purposes Only',
+    body: [
+      'DogeFood Lab is a blockchain-enabled social gaming experience created primarily for entertainment, creativity, and community engagement.',
+      'All gameplay systems, mechanics, rewards, treats, NFTs, and progression features are designed for fun purposes only and should not be interpreted as financial products, investment opportunities, or guaranteed income systems.',
+      'The game is intended to provide an enjoyable and interactive experience within the DogeFood ecosystem.',
+    ],
+  },
+  {
+    title: '2. No Guaranteed Value of $LAB Token',
+    body: [
+      'While players may collect, claim, hold, or interact with the $LAB token within the DogeFood Lab ecosystem, DogeFood Lab and its team make absolutely no guarantees regarding:',
+    ],
+    list: ['Current or future market value', 'Liquidity or tradability', 'Exchange listings', 'Profitability', 'Future utility', 'Price appreciation'],
+    after: [
+      'The $LAB token may fluctuate in value or hold no monetary value at any given time.',
+      'Participation in DogeFood Lab should never be considered an expectation of financial return or profit.',
+    ],
+  },
+  {
+    title: '3. Not Financial or Investment Advice',
+    body: ['Nothing within DogeFood Lab, including gameplay, rewards, announcements, token systems, NFTs, leaderboards, or community discussions, constitutes:'],
+    list: ['Financial advice', 'Investment advice', 'Trading advice', 'Legal advice'],
+    after: ['Users are solely responsible for conducting their own research and making their own independent decisions before interacting with any blockchain assets or third-party marketplaces.'],
+  },
+  {
+    title: '4. Blockchain & Technical Risks',
+    body: ['By participating in DogeFood Lab, users acknowledge the inherent risks associated with blockchain technology, including but not limited to:'],
+    list: ['Wallet vulnerabilities', 'Smart contract risks', 'Network congestion', 'Failed transactions', 'Token volatility', 'Third-party platform failures', 'Loss of access to wallets or private keys'],
+    after: ['DogeFood Lab cannot guarantee uninterrupted functionality and shall not be held responsible for losses resulting from blockchain or technical issues beyond our control.'],
+  },
+  {
+    title: '5. User Responsibility',
+    body: ['Users are responsible for:'],
+    list: ['Securing their wallets and private keys', 'Understanding blockchain transactions', 'Complying with local laws and regulations', 'Using the platform responsibly'],
+    after: ['Participation in DogeFood Lab is voluntary and entirely at the user\u2019s own risk.'],
+  },
+  {
+    title: '6. No Guarantees of Earnings',
+    body: [
+      'DogeFood Lab is designed as a fun-first gaming ecosystem.',
+      'Any rewards, points, treats, NFTs, or tokens earned through gameplay are part of the entertainment experience and should not be viewed as employment, salary, passive income, or guaranteed earnings.',
+      'Gameplay outcomes and reward systems may change, reset, rebalance, or be removed at any time as the game evolves.',
+    ],
+  },
+  {
+    title: '7. Third-Party Platforms',
+    body: [
+      'DogeFood Lab may integrate with or reference third-party wallets, marketplaces, blockchain networks, social platforms, or services.',
+      'We are not responsible for the functionality, security, policies, or availability of third-party services.',
+      'Users interact with third-party platforms at their own discretion and risk.',
+    ],
+  },
+  {
+    title: '8. Changes to the Game',
+    body: ['DogeFood Lab reserves the right to modify, suspend, rebalance, or discontinue any aspect of the game, including:'],
+    list: ['Gameplay mechanics', 'Reward systems', 'NFTs', 'Tokens', 'Seasons', 'Features', 'Access methods'],
+    after: ['Changes may occur without prior notice.'],
+  },
+  {
+    title: '9. Acceptance of Disclaimer',
+    body: [
+      'By using DogeFood Lab, you confirm that you understand and accept this disclaimer and acknowledge that DogeFood Lab is fundamentally a community entertainment game experience built around fun, creativity, and experimentation within the Dogecoin ecosystem.',
+    ],
+  },
+];
+
+const DisclaimerModal = ({ onClose }) => {
+  return (
+    <div
+      data-testid="disclaimer-modal"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 10000,
+        background: 'rgba(4,3,15,0.92)',
+        backdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '16px',
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{
+        width: '100%', maxWidth: 480, maxHeight: '85vh',
+        background: 'linear-gradient(160deg, #0f1623 0%, #080c14 100%)',
+        border: '1px solid rgba(56,189,248,0.25)',
+        borderRadius: 24,
+        boxShadow: '0 0 60px rgba(56,189,248,0.12), 0 20px 60px rgba(0,0,0,0.7)',
+        overflow: 'hidden',
+        display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Header */}
+        <div style={{
+          position: 'relative', padding: '20px 24px 14px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0,
+        }}>
+          <button
+            onClick={onClose}
+            data-testid="disclaimer-close-button"
+            aria-label="Close disclaimer"
+            style={{
+              position: 'absolute', top: 14, right: 14,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '50%', width: 30, height: 30,
+              color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
+              fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >✕</button>
+          <h2 style={{
+            margin: 0, fontSize: 19, fontWeight: 900, color: '#e2e8f0',
+            paddingRight: 36,
+          }}>
+            DogeFood Lab — User Disclaimer
+          </h2>
+          <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(148,163,184,0.7)' }}>
+            Last Updated: June 2026
+          </p>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{
+          padding: '18px 24px 24px',
+          overflowY: 'auto',
+          color: 'rgba(226,232,240,0.85)',
+          fontSize: 13,
+          lineHeight: 1.6,
+        }}>
+          <p style={{ margin: '0 0 10px' }}>
+            Welcome to DogeFood Lab. Before participating in the game, claiming rewards, interacting with blockchain features, or using any related services, please carefully read and understand the following disclaimer.
+          </p>
+          <p style={{ margin: '0 0 20px', color: 'rgba(226,232,240,0.95)', fontWeight: 600 }}>
+            By accessing or using DogeFood Lab, you acknowledge and agree to the terms below.
+          </p>
+
+          {DISCLAIMER_SECTIONS.map((section, idx) => (
+            <div key={idx} style={{
+              marginBottom: idx === DISCLAIMER_SECTIONS.length - 1 ? 0 : 20,
+              paddingBottom: idx === DISCLAIMER_SECTIONS.length - 1 ? 0 : 16,
+              borderBottom: idx === DISCLAIMER_SECTIONS.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)',
+            }}>
+              <h3 style={{
+                margin: '0 0 8px', fontSize: 13.5, fontWeight: 800,
+                color: '#7dd3fc', letterSpacing: '0.01em',
+              }}>
+                {section.title}
+              </h3>
+              {section.body.map((p, i) => (
+                <p key={i} style={{ margin: '0 0 8px' }}>{p}</p>
+              ))}
+              {section.list && (
+                <ul style={{ margin: '0 0 8px', paddingLeft: 18, listStyle: 'disc' }}>
+                  {section.list.map((item, i) => (
+                    <li key={i} style={{ margin: '0 0 4px' }}>{item}</li>
+                  ))}
+                </ul>
+              )}
+              {section.after && section.after.map((p, i) => (
+                <p key={i} style={{ margin: '0 0 8px' }}>{p}</p>
+              ))}
+            </div>
+          ))}
+
+          <p style={{
+            margin: '20px 0 0', textAlign: 'center', fontSize: 13, fontWeight: 800,
+            color: '#fbbf24', letterSpacing: '0.01em',
+          }}>
+            Play for fun. Experiment responsibly. Feed the meme.
+          </p>
+        </div>
+
+        {/* Footer action */}
+        <div style={{
+          padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0,
+        }}>
+          <button
+            onClick={onClose}
+            data-testid="disclaimer-acknowledge-button"
+            style={{
+              width: '100%', padding: '12px', borderRadius: 14,
+              background: 'linear-gradient(135deg,#0ea5e9,#3b82f6,#8b5cf6)',
+              border: 'none', color: '#fff', fontWeight: 800, fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            Got It
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
   const { address, isConnected } = useAccount();
   const { nftBalance, isNFTHolder, loading: nftLoading } = useNFTVerification();
   const { user, currentLevel, points, dispatch, loadPlayerData } = useGame();
@@ -1214,6 +1406,7 @@ const MainMenu = () => {
     setShowWalkthrough(false);
   }, []);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [showGuestSignup, setShowGuestSignup] = useState(false);
   const [guestUsername, setGuestUsername] = useState('');
   const [guestSignupError, setGuestSignupError] = useState('');
@@ -1236,7 +1429,12 @@ const MainMenu = () => {
   const [profileLoaded, setProfileLoaded] = useState(false);  // true once first profile fetch completes
 
   const isLoggedIn = isConnected || guestUser || (isTelegram && telegramUser);
-  const effectiveAddress = address || guestUser?.guest_id || guestUser?.id || (telegramUser ? `tg_${telegramUser.id}` : null);
+  // Prefer the address passed down from App.js (same value the Lab page uses,
+  // built once as `TG_${telegramUser.id}` uppercase) so menu and Lab never disagree.
+  // Only fall back to building it locally if MainMenu is ever rendered without the prop.
+  const effectiveAddress = (playerAddressProp && playerAddressProp !== 'GUEST_USER')
+    ? playerAddressProp
+    : (address || guestUser?.guest_id || guestUser?.id || (telegramUser ? `TG_${telegramUser.id}` : null));
   const effectiveLevel = (isConnected && currentLevel) ? currentLevel : playerLevel;
   // Once the profile fetch has completed (profileLoaded=true), always use playerPoints
   // — even if it's 0. Only fall back to GameContext points before the first fetch.
@@ -1299,13 +1497,13 @@ const MainMenu = () => {
   }, [isConnected, address]);
 
   useEffect(() => {
-    if (!isTelegram || !telegramUser) return;
-
-    const tgAddress = `tg_${telegramUser.id}`;
+    if (!isTelegram || !telegramUser || !effectiveAddress) return;
 
     const fetchTgProfile = async () => {
       try {
-        const res = await fetch(`${BACKEND_URL}/api/player/${tgAddress}/profile`);
+        // Same endpoint + same address format the Lab page uses, so menu
+        // and Lab can never disagree on points again.
+        const res = await fetch(`${BACKEND_URL}/api/player/${effectiveAddress}`);
         if (!res.ok) {
           setProfileLoaded(true);
           return;
@@ -1340,7 +1538,7 @@ const MainMenu = () => {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', onFocus);
     };
-  }, [isTelegram, telegramUser]);
+  }, [isTelegram, telegramUser, effectiveAddress]);
 
   useEffect(() => {
     if (isConnected && address && !nftLoading) {
@@ -1385,11 +1583,11 @@ const MainMenu = () => {
         setIsEditingUsername(false);
         // Re-fetch profile to keep points and level in sync
         try {
-          const profileRes = await fetch(`${BACKEND_URL}/api/player/${effectiveAddress}/profile`);
+          const profileRes = await fetch(`${BACKEND_URL}/api/player/${effectiveAddress}`);
           if (profileRes.ok) {
             const p = await profileRes.json();
-            setPlayerPoints(p.points || 0);
-            setPlayerLevel(p.level || 1);
+            setPlayerPoints(p.points ?? 0);
+            setPlayerLevel(p.level ?? 1);
           }
         } catch {}
       }
@@ -1909,7 +2107,17 @@ const MainMenu = () => {
         <div className="text-[10px] text-slate-500 mt-0.5">
           @DogeOsFoodNFT · t.me/DogeFoodonDogeOS
         </div>
+        <button
+          onClick={() => setShowDisclaimer(true)}
+          data-testid="open-disclaimer-button"
+          className="text-[10px] text-slate-600 hover:text-slate-400 underline underline-offset-2 transition-colors mt-1"
+        >
+          Disclaimer
+        </button>
       </footer>
+
+      {showDisclaimer && <DisclaimerModal onClose={() => setShowDisclaimer(false)} />}
+
 
       <SpinWheelCTA />
 
