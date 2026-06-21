@@ -1712,6 +1712,45 @@ const MenuPlayerStats = ({ address, isLoggedIn }) => {
   );
 };
 
+// â”€â”€â”€ World Cup Celebration (compact video card) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const WorldCupCelebration = () => {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <div className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="worldcup-celebration-card">
+      <div className="h-0.5 bg-gradient-to-r from-yellow-400 via-green-400 to-yellow-400" />
+      <div className="px-3 sm:px-4 pt-2.5 pb-1.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-yellow-500/20 to-green-500/20 flex items-center justify-center">
+            <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-white leading-tight">World Cup Celebration</div>
+            <div className="text-[8px] text-slate-500 uppercase tracking-widest">DogeFood Lab is cheering</div>
+          </div>
+        </div>
+        <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-green-300 bg-green-500/15 border border-green-500/30 rounded-full px-2 py-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          Live
+        </span>
+      </div>
+      <div className="px-3 sm:px-4 pb-3">
+        <video
+          src="/Worldcup.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          onError={() => setFailed(true)}
+          className="w-full h-32 sm:h-40 object-cover rounded-lg border border-white/[0.06] bg-black"
+          data-testid="worldcup-video"
+        />
+      </div>
+    </div>
+  );
+};
+
 const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
   const { address, isConnected } = useAccount();
   const { nftBalance, isNFTHolder, loading: nftLoading } = useNFTVerification();
@@ -2033,6 +2072,9 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
               className="w-full h-auto block"
             />
           </div>
+
+          {/* â”€â”€ World Cup Celebration â”€â”€ */}
+          <WorldCupCelebration />
 
           {/* â”€â”€ Mobile: Share & Earn + Quick Stats â”€â”€ */}
           <div className="lg:hidden space-y-3">
