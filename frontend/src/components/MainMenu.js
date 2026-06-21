@@ -16,14 +16,14 @@ import {
   Wallet, UserPlus, Crown, Store, Camera, Zap, ChevronRight,
   BookOpen, Activity, TrendingUp, Share2, Home, Star,
   ArrowRight, ChevronLeft, Users, MessageCircle, Send,
-  Rocket, Reply, Smile
+  Rocket, Reply, Smile, Swords, Gift, Target, Award, Gem, Flame, BarChart3
 } from 'lucide-react';
 import PointsSwapWidget from './PointsSwapWidget';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const SEASON_2_END = new Date('2026-09-17T00:00:00Z').getTime(); // Season 2: Jun 17 – Sep 17 2026
+const SEASON_2_END = new Date('2026-09-17T00:00:00Z').getTime(); // Season 2: Jun 17 â€“ Sep 17 2026
 
-// ─── Season Countdown ────────────────────────────────────────
+// â”€â”€â”€ Season Countdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SeasonCountdown = ({ compact }) => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
@@ -69,11 +69,11 @@ const SeasonCountdown = ({ compact }) => {
   );
 };
 
-// ─── Player Ticker Carousel ───────────────────────────────────
+// â”€â”€â”€ Player Ticker Carousel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Baseline snapshot: saved once on first load, rolls forward every 24h.
 // "Last seen" snapshot: updated every poll so % reflects live movement vs baseline.
 const TICKER_BASELINE_KEY = 'dogefood_ticker_baseline';   // {timestamp, data: {addr: pts}}
-const TICKER_SEEN_KEY     = 'dogefood_ticker_seen';       // {data: {addr: pts}} – no TTL
+const TICKER_SEEN_KEY     = 'dogefood_ticker_seen';       // {data: {addr: pts}} â€“ no TTL
 const TICKER_BASELINE_TTL = 24 * 60 * 60 * 1000;         // 24 h
 
 const PlayerTickerCarousel = () => {
@@ -92,7 +92,7 @@ const PlayerTickerCarousel = () => {
 
       const now = Date.now();
 
-      // ── Baseline snapshot (the 24 h reference point) ──────────────────
+      // â”€â”€ Baseline snapshot (the 24 h reference point) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       // Only reset when 24 h have elapsed; otherwise preserve it so %
       // keeps accumulating across page refreshes / 5-min polls.
       let baseline = {};
@@ -101,7 +101,7 @@ const PlayerTickerCarousel = () => {
         if (raw) {
           const parsed = JSON.parse(raw);
           if (now - parsed.timestamp < TICKER_BASELINE_TTL) {
-            // Still within 24 h window — keep using the saved baseline
+            // Still within 24 h window â€” keep using the saved baseline
             baseline = parsed.data || {};
           } else {
             // 24 h elapsed: roll the baseline forward using last-seen values
@@ -117,7 +117,7 @@ const PlayerTickerCarousel = () => {
             baseline = fresh;
           }
         } else {
-          // Very first load — seed baseline with current points
+          // Very first load â€” seed baseline with current points
           const fresh = {};
           data.forEach(p => { fresh[p.address] = p.points; });
           localStorage.setItem(TICKER_BASELINE_KEY, JSON.stringify({ timestamp: now, data: fresh }));
@@ -125,26 +125,26 @@ const PlayerTickerCarousel = () => {
         }
       } catch {}
 
-      // ── Update the "last seen" snapshot (no TTL — just current standings) ──
+      // â”€â”€ Update the "last seen" snapshot (no TTL â€” just current standings) â”€â”€
       try {
         const seen = {};
         data.forEach(p => { seen[p.address] = p.points; });
         localStorage.setItem(TICKER_SEEN_KEY, JSON.stringify({ data: seen }));
       } catch {}
 
-      // ── Build ticker items using baseline for % calculation ────────────
+      // â”€â”€ Build ticker items using baseline for % calculation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       const items = data.slice(0, 20).map(player => {
         const prev = baseline[player.address];
         let pct = 0;
         let baselineWasZero = false;
         if (prev == null) {
-          // Player not yet in baseline — show neutral
+          // Player not yet in baseline â€” show neutral
           pct = 0;
         } else if (prev > 0) {
           // Normal % change
           pct = ((player.points - prev) / prev) * 100;
         } else {
-          // prev === 0: S2 fresh start — show absolute points gained, flag for renderer
+          // prev === 0: S2 fresh start â€” show absolute points gained, flag for renderer
           baselineWasZero = true;
           pct = player.points > 0 ? player.points : 0;
         }
@@ -170,7 +170,7 @@ const PlayerTickerCarousel = () => {
     return () => clearInterval(iv);
   }, [buildTickerItems]);
 
-  // Smooth CSS animation ticker — no JS loop needed
+  // Smooth CSS animation ticker â€” no JS loop needed
   // Duplicate items so the loop is seamless
   const displayed = tickerItems.length > 0 ? [...tickerItems, ...tickerItems] : [];
 
@@ -219,7 +219,7 @@ const PlayerTickerCarousel = () => {
           const pctColor = isUp ? '#34d399' : isDown ? '#f87171' : '#94a3b8';
           // When baseline was 0 (S2 fresh start), show "+Npts" instead of a % number
           const pctDisplay = item.baselineWasZero
-            ? (item.pct > 0 ? `+${item.pct.toLocaleString()}pts` : '—')
+            ? (item.pct > 0 ? `+${item.pct.toLocaleString()}pts` : 'â€”')
             : `${sign}${item.pct.toFixed(2)}%`;
 
           return (
@@ -277,8 +277,8 @@ const PlayerTickerCarousel = () => {
   );
 };
 
-// ─── Emoji Picker (simple) ───────────────────────────────────
-const QUICK_EMOJIS = ['😀','😂','🔥','❤️','👍','👏','🎉','💎','✨','🐶','🏆','💪','🤩','😎','🚀','⭐','💛','🎯','🪄','🎮'];
+// â”€â”€â”€ Emoji Picker (simple) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const QUICK_EMOJIS = ['ðŸ˜€','ðŸ˜‚','ðŸ”¥','â¤ï¸','ðŸ‘','ðŸ‘','ðŸŽ‰','ðŸ’Ž','âœ¨','ðŸ¶','ðŸ†','ðŸ’ª','ðŸ¤©','ðŸ˜Ž','ðŸš€','â­','ðŸ’›','ðŸŽ¯','ðŸª„','ðŸŽ®'];
 
 const EmojiPicker = ({ onSelect, onClose }) => (
   <div className="absolute bottom-full mb-2 left-0 bg-[#1a2035] border border-white/10 rounded-xl p-2 shadow-xl z-50" data-testid="emoji-picker">
@@ -292,7 +292,7 @@ const EmojiPicker = ({ onSelect, onClose }) => (
   </div>
 );
 
-// ─── Live Chat Component ─────────────────────────────────────
+// â”€â”€â”€ Live Chat Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const LiveChat = ({ isLoggedIn, effectiveAddress, username }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -486,7 +486,7 @@ const LiveChat = ({ isLoggedIn, effectiveAddress, username }) => {
   );
 };
 
-// ─── Live Activity Table ─────────────────────────────────────
+// â”€â”€â”€ Live Activity Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const LiveActivityTable = () => {
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -561,7 +561,7 @@ const rarityBg = {
                       <Beaker className={`w-3.5 h-3.5 ${rarityColor[item.rarity] || 'text-slate-400'}`} />
                     </div>
                     <span className="text-xs text-white truncate max-w-[120px]">
-  {item.activity_type === 'spin' ? '🎰 ' : ''}{item.treat_name || 'Unnamed'}
+  {item.activity_type === 'spin' ? 'ðŸŽ° ' : ''}{item.treat_name || 'Unnamed'}
 </span>
                   </div>
                 </td>
@@ -596,7 +596,7 @@ const rarityBg = {
   );
 };
 
-// ─── Navigation Items ────────────────────────────────────────
+// â”€â”€â”€ Navigation Items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const navItems = [
   { path: '/', icon: Home, label: 'Home', color: 'text-sky-400', bgColor: 'bg-sky-500/10' },
   { path: '/lab', icon: Beaker, label: 'Lab', color: 'text-yellow-400', bgColor: 'bg-yellow-500/10', needsAuth: true },
@@ -607,7 +607,7 @@ const navItems = [
   { path: '/settings', icon: Settings, label: 'Settings', color: 'text-slate-400', bgColor: 'bg-slate-500/10' },
 ];
 
-// ─── Left Sidebar ────────────────────────────────────────────
+// â”€â”€â”€ Left Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const Sidebar = ({ onAuthRequired, onReferralClick }) => (
   <nav className="hidden lg:flex flex-col w-52 shrink-0 py-4" data-testid="menu-sidebar">
     <button
@@ -665,7 +665,7 @@ const Sidebar = ({ onAuthRequired, onReferralClick }) => (
   </nav>
 );
 
-// ─── Mobile Navigation Strip ─────────────────────────────────
+// â”€â”€â”€ Mobile Navigation Strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MobileNavStrip = ({ onAuthRequired }) => (
   <div className="lg:hidden overflow-x-auto scrollbar-hide border-b border-white/[0.06] bg-[#0d1117]" data-testid="mobile-nav-strip">
     <div className="flex items-center gap-1 px-3 py-2 min-w-max">
@@ -698,7 +698,7 @@ const MobileNavStrip = ({ onAuthRequired }) => (
   </div>
 );
 
-// ─── Promotional Banner Card ──────────────────────────────────
+// â”€â”€â”€ Promotional Banner Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const PromoBanner = ({ icon: Icon, iconBg, title, subtitle, borderColor, gradientFrom, gradientTo, onClick, testId }) => (
   <button
     onClick={onClick}
@@ -725,7 +725,7 @@ const PromoBanner = ({ icon: Icon, iconBg, title, subtitle, borderColor, gradien
   </button>
 );
 
-// ─── Feature Card ─────────────────────────────────────────────
+// â”€â”€â”€ Feature Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FeatureCard = ({ icon: Icon, label, gradient, iconColor, borderColor, to, state, onClick, badge, testId }) => (
   <Link to={to} state={state} onClick={onClick} className="block group" data-testid={testId}>
     <div className={`relative overflow-hidden rounded-2xl border ${borderColor} bg-gradient-to-b ${gradient} p-4 sm:p-5 text-center hover:scale-[1.05] hover:-translate-y-1 transition-all duration-200`}
@@ -745,13 +745,13 @@ const FeatureCard = ({ icon: Icon, label, gradient, iconColor, borderColor, to, 
   </Link>
 );
 
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MAIN MENU COMPONENT
-// ═══════════════════════════════════════════════════════════════
-/* ─── Spin Wheel CTA Bubble ─────────────────────────────────────────────────
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* â”€â”€â”€ Spin Wheel CTA Bubble â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Floating corner widget that draws a mini version of the actual wheel.
    Tapping navigates to /lab where the real SpinWheel lives.
-   ─────────────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const WHEEL_COLORS = [
   '#3b82f6','#8b5cf6','#06b6d4','#fbbf24','#ef4444',
   '#10b981','#ec4899','#14b8a6','#a855f7','#f97316',
@@ -862,7 +862,7 @@ const SpinWheelCTA = () => {
           cursor: 'pointer', zIndex: 2,
         }}
         aria-label="Dismiss"
-      >✕</button>
+      >âœ•</button>
 
       {/* The wheel bubble */}
       <button
@@ -894,49 +894,49 @@ const SpinWheelCTA = () => {
 };
 
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   GAME WALKTHROUGH — shown on first visit, re-openable via "?" button
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   GAME WALKTHROUGH â€” shown on first visit, re-openable via "?" button
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const WALKTHROUGH_KEY = 'dogefood_walkthrough_v1_done';
 
 const STEPS = [
   {
-    emoji: '🧪',
+    emoji: 'ðŸ§ª',
     title: 'Welcome to DogeFood Lab!',
     color: '#38bdf8',
     badge: 'START HERE',
     badgeColor: 'rgba(56,189,248,0.2)',
     badgeText: '#38bdf8',
-    description: "You're a Doge Scientist on a mission to craft legendary treats and climb the leaderboard. Here's everything you need to know to get started. Swipe through to master the Lab! 🐾",
+    description: "You're a Doge Scientist on a mission to craft legendary treats and climb the leaderboard. Here's everything you need to know to get started. Swipe through to master the Lab! ðŸ¾",
     tips: [
       ' Create treats to earn Points & XP',
-      ' Points → $LAB tokens at season end',
+      ' Points â†’ $LAB tokens at season end',
       ' Top 50 scientists earn token rewards',
     ],
   },
   {
-    emoji: '⚗️',
-    title: 'Step 1 — Create Treats in the Lab',
+    emoji: 'âš—ï¸',
+    title: 'Step 1 â€” Create Treats in the Lab',
     color: '#facc15',
     badge: 'THE LAB',
     badgeColor: 'rgba(250,204,21,0.15)',
     badgeText: '#facc15',
     description: "Tap the Lab tab on the menu to open your Reactor Chamber. Select up to 5 ingredients from your inventory to craft a treat. Higher-tier ingredients unlock rarer treats.",
     tips: [
-      ' Tap Lab → choose ingredients → Brew',
+      ' Tap Lab â†’ choose ingredients â†’ Brew',
       '5 ingredients = best rarity chance',
       ' Mix Legendary/Mythic ingredients for top treats',
       ' New ingredients unlock as you level up',
     ],
   },
   {
-    emoji: '⏳',
-    title: 'Step 2 — Wait for the Timer',
+    emoji: 'â³',
+    title: 'Step 2 â€” Wait for the Timer',
     color: '#a855f7',
     badge: 'BREWING',
     badgeColor: 'rgba(168,85,247,0.15)',
     badgeText: '#a855f7',
-    description: "Once you brew, your treat needs time to cook in the Reactor. The brewing timer counts down — higher rarity treats take longer. Watch for Heat Events in the Arena to cut brewing time by 50%!",
+    description: "Once you brew, your treat needs time to cook in the Reactor. The brewing timer counts down â€” higher rarity treats take longer. Watch for Heat Events in the Arena to cut brewing time by 50%!",
     tips: [
       ' Overclock Heat Event = 50% faster brewing',
       ' Come back when the timer hits 0:00',
@@ -945,76 +945,76 @@ const STEPS = [
     ],
   },
   {
-    emoji: '🎁',
-    title: 'Step 3 — Collect Your Treat',
+    emoji: 'ðŸŽ',
+    title: 'Step 3 â€” Collect Your Treat',
     color: '#2dd4bf',
     badge: 'COLLECT',
     badgeColor: 'rgba(45,212,191,0.15)',
     badgeText: '#2dd4bf',
     description: "When the brew timer finishes, head back to the Lab and tap Collect. A cinematic reveal shows your treat's rarity and the Points + XP you earned. Rarer treats = more rewards!",
     tips: [
-      ' Golden Hour Heat Event = Points ×2 on collect',
-      ' Watch the cinematic reveal — it’s rarity-based',
-      ' Mythic treats earn 500–1000 points each',
+      ' Golden Hour Heat Event = Points Ã—2 on collect',
+      ' Watch the cinematic reveal â€” itâ€™s rarity-based',
+      ' Mythic treats earn 500â€“1000 points each',
       ' Keep a daily streak for XP bonuses',
     ],
   },
   {
-    emoji: '🖼️',
-    title: 'Step 4 — View Your Collection',
+    emoji: 'ðŸ–¼ï¸',
+    title: 'Step 4 â€” View Your Collection',
     color: '#ec4899',
     badge: 'MY TREATS',
     badgeColor: 'rgba(236,72,153,0.15)',
     badgeText: '#ec4899',
-    description: "Tap My Treats from the menu to see every treat you've ever crafted — your permanent NFT-style collection. S1 treats show their original art; S2 treats show their rarity image. You can also list treats for sale on the Marketplace.",
+    description: "Tap My Treats from the menu to see every treat you've ever crafted â€” your permanent NFT-style collection. S1 treats show their original art; S2 treats show their rarity image. You can also list treats for sale on the Marketplace.",
     tips: [
-      ' Filter by rarity: Common → Mythic',
+      ' Filter by rarity: Common â†’ Mythic',
       ' Tap List for Sale to put a treat on market',
-      ' S1 badge = Season 1 · 🟢 S2 badge = Season 2',
+      ' S1 badge = Season 1 Â· ðŸŸ¢ S2 badge = Season 2',
       ' Your earned $LAB tokens show here too',
     ],
   },
   {
-    emoji: '🏟️',
-    title: 'Step 5 — Join the Arena',
+    emoji: 'ðŸŸï¸',
+    title: 'Step 5 â€” Join the Arena',
     color: '#f97316',
     badge: 'ARENA',
     badgeColor: 'rgba(249,115,22,0.15)',
     badgeText: '#f97316',
-    description: "The Arena is a 24-hour competitive event. Pay the 50-point entry fee to join, then earn Arena Score by collecting treats during the session. The prize pool builds from entry fees — top players share it at settlement.",
+    description: "The Arena is a 24-hour competitive event. Pay the 50-point entry fee to join, then earn Arena Score by collecting treats during the session. The prize pool builds from entry fees â€” top players share it at settlement.",
     tips: [
-      ' Entry fee: 50 pts — goes into the prize pool',
+      ' Entry fee: 50 pts â€” goes into the prize pool',
       ' Rank #1 wins 50% of the total pool',
-      ' Predict the winner for a 3× points payout',
+      ' Predict the winner for a 3Ã— points payout',
       ' Arena Score = treats collected after joining',
     ],
   },
   {
-    emoji: '🎰',
-    title: 'Step 6 — Spin the Daily Wheel',
+    emoji: 'ðŸŽ°',
+    title: 'Step 6 â€” Spin the Daily Wheel',
     color: '#06b6d4',
     badge: 'DAILY SPIN',
     badgeColor: 'rgba(6,182,212,0.15)',
     badgeText: '#06b6d4',
     description: "Once every 24 hours you get a free spin in the Lab. Land on bonus points, extra ingredient slots, XP boosts or rare ingredient drops. Tap the spinning wheel CTA on the main menu to go straight there!",
     tips: [
-      ' Free once per day — don’t miss it',
+      ' Free once per day â€” donâ€™t miss it',
       ' Prizes: points, XP, extra brews, ingredients',
       ' Spin outcomes appear in the Live Activity feed',
       ' Tap the spinning bubble on the main menu',
     ],
   },
   {
-    emoji: '🏆',
-    title: 'Step 7 — Check the Leaderboard',
+    emoji: 'ðŸ†',
+    title: 'Step 7 â€” Check the Leaderboard',
     color: '#fbbf24',
     badge: 'LEADERBOARD',
     badgeColor: 'rgba(251,191,36,0.15)',
     badgeText: '#fbbf24',
-    description: "The Leaderboard ranks all scientists by total Points. Top 50 players earn $LAB token rewards at season end — the higher your rank, the larger your share. Tap any player's name to see their Stats Card.",
+    description: "The Leaderboard ranks all scientists by total Points. Top 50 players earn $LAB token rewards at season end â€” the higher your rank, the larger your share. Tap any player's name to see their Stats Card.",
     tips: [
       ' Rank 1 earns the largest $LAB allocation',
-      ' Tap a player → Stats Card shows their breakdown',
+      ' Tap a player â†’ Stats Card shows their breakdown',
       ' Your current rank and points show at the top',
       ' Rankings reset at the start of each new season',
     ],
@@ -1079,7 +1079,7 @@ const WalkthroughModal = ({ onClose }) => {
             color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
             fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
-        >✕</button>
+        >âœ•</button>
 
         <div style={{ padding: '24px 24px 20px' }}>
           {/* Step counter */}
@@ -1114,7 +1114,7 @@ const WalkthroughModal = ({ onClose }) => {
                   <span
                     style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationColor: `${s.badgeText}66` }}
                     onClick={() => goTo(ROUTE_MAP[s.badge])}
-                  >{s.badge} ↗</span>
+                  >{s.badge} â†—</span>
                 ) : s.badge}
               </div>
               <h2 style={{
@@ -1157,7 +1157,7 @@ const WalkthroughModal = ({ onClose }) => {
                   borderRadius: 12, color: 'rgba(255,255,255,0.5)',
                   cursor: 'pointer', fontSize: 13, fontWeight: 600,
                 }}
-              >← Back</button>
+              >â† Back</button>
             )}
             <button
               onClick={() => {
@@ -1173,7 +1173,7 @@ const WalkthroughModal = ({ onClose }) => {
                 letterSpacing: '0.04em',
                 boxShadow: `0 0 16px ${s.color}22`,
               }}
-            >{isLast ? '🚀 Start Playing!' : 'Next →'}</button>
+            >{isLast ? 'ðŸš€ Start Playing!' : 'Next â†’'}</button>
           </div>
 
           {/* Skip */}
@@ -1302,12 +1302,12 @@ const DisclaimerModal = ({ onClose }) => {
               color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
               fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          >✕</button>
+          >âœ•</button>
           <h2 style={{
             margin: 0, fontSize: 19, fontWeight: 900, color: '#e2e8f0',
             paddingRight: 36,
           }}>
-            DogeFood Lab — User Disclaimer
+            DogeFood Lab â€” User Disclaimer
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(148,163,184,0.7)' }}>
             Last Updated: June 2026
@@ -1387,6 +1387,331 @@ const DisclaimerModal = ({ onClose }) => {
   );
 };
 
+const MENU_RARITY_COLORS = {
+  Starter:   'text-amber-400',
+  Common:    'text-gray-400',
+  Uncommon:  'text-teal-400',
+  Rare:      'text-blue-400',
+  Epic:      'text-purple-400',
+  Legendary: 'text-yellow-400',
+  Mythic:    'text-pink-400',
+};
+
+// â”€â”€â”€ Interactive 7-Day Activity Line Chart (SVG, no extra deps) â”€â”€
+const ActivityLineChart = ({ daily, metric }) => {
+  const [hover, setHover] = useState(null);
+
+  const points = React.useMemo(() => {
+    const entries = Object.entries(daily || {})
+      .sort(([a], [b]) => new Date(a) - new Date(b));
+    return entries.map(([day, data]) => ({
+      day,
+      value: Number(data?.[metric] || 0),
+    }));
+  }, [daily, metric]);
+
+  if (!points.length) {
+    return (
+      <div className="h-32 flex items-center justify-center text-[11px] text-slate-500">
+        No activity yet â€” go craft some treats!
+      </div>
+    );
+  }
+
+  const W = 320, H = 120, PAD_X = 14, PAD_TOP = 14, PAD_BOTTOM = 22;
+  const maxV = Math.max(...points.map(p => p.value), 1);
+  const stepX = points.length > 1 ? (W - PAD_X * 2) / (points.length - 1) : 0;
+  const plotH = H - PAD_TOP - PAD_BOTTOM;
+
+  const coords = points.map((p, i) => ({
+    ...p,
+    x: PAD_X + i * stepX,
+    y: PAD_TOP + (plotH - (p.value / maxV) * plotH),
+  }));
+
+  const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L ${coords[coords.length - 1].x.toFixed(1)} ${H - PAD_BOTTOM} L ${coords[0].x.toFixed(1)} ${H - PAD_BOTTOM} Z`;
+
+  const METRIC_COLORS = { points: '#38bdf8', treats: '#fbbf24', xp: '#a78bfa' };
+  const color = METRIC_COLORS[metric] || '#38bdf8';
+
+  const dayLabel = (day) => {
+    const d = new Date(day + 'T12:00:00');
+    return d.toLocaleDateString('en', { weekday: 'short' }).slice(0, 1);
+  };
+  const isToday = (day) => new Date().toDateString() === new Date(day + 'T12:00:00').toDateString();
+
+  return (
+    <div className="relative w-full" data-testid="menu-activity-chart">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={`menu-area-${metric}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* gridlines */}
+        {[0.25, 0.5, 0.75].map((g) => (
+          <line
+            key={g}
+            x1={PAD_X} x2={W - PAD_X}
+            y1={PAD_TOP + plotH * g} y2={PAD_TOP + plotH * g}
+            stroke="#ffffff" strokeOpacity="0.05" strokeWidth="1"
+          />
+        ))}
+
+        <path d={areaPath} fill={`url(#menu-area-${metric})`} />
+        <path d={linePath} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+
+        {coords.map((c, i) => (
+          <g key={c.day}>
+            {/* invisible wide hit area for easy hover/tap */}
+            <rect
+              x={c.x - Math.max(stepX / 2, 12)} y={0}
+              width={Math.max(stepX, 24)} height={H}
+              fill="transparent"
+              onMouseEnter={() => setHover(i)}
+              onMouseLeave={() => setHover(null)}
+              onClick={() => setHover(hover === i ? null : i)}
+              style={{ cursor: 'pointer' }}
+            />
+            <circle
+              cx={c.x} cy={c.y}
+              r={hover === i ? 5 : 3.5}
+              fill={isToday(c.day) ? '#fde047' : color}
+              stroke="#0d1117" strokeWidth="2"
+            />
+            <text
+              x={c.x} y={H - 6}
+              textAnchor="middle"
+              fontSize="9"
+              fill={isToday(c.day) ? '#fde047' : '#64748b'}
+              fontWeight={isToday(c.day) ? 700 : 400}
+            >
+              {isToday(c.day) ? 'â€¢' : dayLabel(c.day)}
+            </text>
+          </g>
+        ))}
+      </svg>
+
+      {hover !== null && (
+        <div
+          className="absolute -translate-x-1/2 -translate-y-full pointer-events-none px-2 py-1 rounded-md bg-[#0d1117] border border-white/10 shadow-lg whitespace-nowrap"
+          style={{
+            left: `${(coords[hover].x / W) * 100}%`,
+            top: `${(coords[hover].y / H) * 100}%`,
+          }}
+        >
+          <div className="text-[9px] text-slate-400">
+            {new Date(coords[hover].day + 'T12:00:00').toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })}
+          </div>
+          <div className="text-xs font-bold" style={{ color }}>
+            {coords[hover].value.toLocaleString()} <span className="text-slate-400 font-normal">{metric}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// â”€â”€â”€ Menu Player Stats Card (shown under the Scientist card) â”€â”€â”€â”€â”€
+const MenuPlayerStats = ({ address, isLoggedIn }) => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [metric, setMetric] = useState('points');
+
+  useEffect(() => {
+    if (!isLoggedIn || !address || address === 'GUEST_USER') {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(`${BACKEND_URL}/api/player-stats/${address}`);
+        if (!res.ok) throw new Error('Failed to load your stats');
+        const data = await res.json();
+        if (!cancelled) setStats(data);
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchStats();
+    return () => { cancelled = true; };
+  }, [address, isLoggedIn]);
+
+  if (!isLoggedIn) return null;
+
+  const METRICS = [
+    { key: 'points', label: 'Points', icon: TrendingUp, color: 'text-sky-400', active: 'bg-sky-500/20 text-sky-300 border-sky-500/40' },
+    { key: 'treats', label: 'Treats', icon: Beaker, color: 'text-yellow-400', active: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40' },
+    { key: 'xp', label: 'XP', icon: Zap, color: 'text-purple-400', active: 'bg-purple-500/20 text-purple-300 border-purple-500/40' },
+  ];
+
+  return (
+    <div className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="menu-player-stats-card">
+      <div className="h-0.5 bg-gradient-to-r from-sky-400 via-purple-400 to-yellow-400" />
+      <div className="p-3 sm:p-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500/20 to-purple-500/20 flex items-center justify-center">
+              <Activity className="w-4 h-4 text-sky-400" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-white leading-tight">Your Activity</div>
+              <div className="text-[9px] text-slate-500 uppercase tracking-widest">Last 7 Days</div>
+            </div>
+          </div>
+          {stats?.rank && (
+            <div className="flex items-center gap-1.5 bg-[#0d1117] rounded-lg px-2.5 py-1.5 border border-yellow-500/20">
+              <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+              <span className="text-sm font-black text-white">#{stats.rank}</span>
+              <span className="text-[9px] text-slate-500">/ {stats.total_players}</span>
+            </div>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="h-40 flex flex-col items-center justify-center gap-2">
+            <div className="w-6 h-6 border-2 border-sky-500/30 border-t-sky-400 rounded-full animate-spin" />
+            <span className="text-[11px] text-slate-500">Loading your statsâ€¦</span>
+          </div>
+        ) : error ? (
+          <div className="h-24 flex items-center justify-center text-[11px] text-red-400" data-testid="menu-player-stats-error">{error}</div>
+        ) : stats ? (
+          <>
+            {/* Arena Activity */}
+            <div className="flex items-center gap-1.5 mb-2">
+              <Swords className="w-3.5 h-3.5 text-rose-400" />
+              <span className="text-[10px] font-semibold text-white uppercase tracking-wide">Arena</span>
+            </div>
+            <div className="grid grid-cols-4 gap-1.5 mb-3">
+              <div className="text-center p-2 rounded-lg bg-gradient-to-br from-emerald-900/40 to-green-900/30 border border-emerald-500/20" data-testid="stat-arena-wins">
+                <div className="text-base font-black text-emerald-400">{stats.arena?.wins ?? 0}</div>
+                <div className="text-[8px] text-emerald-300/70 uppercase">Wins</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-gradient-to-br from-rose-900/40 to-red-900/30 border border-rose-500/20" data-testid="stat-arena-losses">
+                <div className="text-base font-black text-rose-400">{stats.arena?.losses ?? 0}</div>
+                <div className="text-[8px] text-rose-300/70 uppercase">Losses</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[#0d1117] border border-white/[0.06]" data-testid="stat-arena-winrate">
+                <div className="text-base font-black text-sky-400">{stats.arena?.win_rate ?? 0}%</div>
+                <div className="text-[8px] text-slate-400 uppercase">Win Rate</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[#0d1117] border border-white/[0.06]" data-testid="stat-arena-participation">
+                <div className="text-base font-black text-white">{stats.arena?.participations ?? 0}</div>
+                <div className="text-[8px] text-slate-400 uppercase">Entries</div>
+              </div>
+            </div>
+
+            {/* Bonuses */}
+            <div className="flex items-center gap-1.5 mb-2">
+              <Gift className="w-3.5 h-3.5 text-pink-400" />
+              <span className="text-[10px] font-semibold text-white uppercase tracking-wide">Bonuses Earned</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 mb-3">
+              <div className="text-center p-2 rounded-lg bg-gradient-to-br from-pink-900/40 to-fuchsia-900/30 border border-pink-500/20" data-testid="stat-bonus-total">
+                <div className="text-base font-black text-pink-400">+{(stats.bonuses?.total ?? 0).toLocaleString()}</div>
+                <div className="text-[8px] text-pink-300/70 uppercase">Total Bonus</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[#0d1117] border border-white/[0.06]" data-testid="stat-bonus-kernel">
+                <div className="text-base font-black text-amber-400">+{(stats.bonuses?.kernel_bonus_total ?? 0).toLocaleString()}</div>
+                <div className="text-[8px] text-slate-400 uppercase">Kernel</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[#0d1117] border border-white/[0.06]" data-testid="stat-bonus-vip">
+                <div className="text-base font-black text-yellow-400">+{(stats.bonuses?.vip_bonus ?? 0).toLocaleString()}</div>
+                <div className="text-[8px] text-slate-400 uppercase">VIP</div>
+              </div>
+            </div>
+
+            {/* Core stats */}
+            <div className="grid grid-cols-4 gap-1.5 mb-3">
+              <div className="text-center p-2 rounded-lg bg-[#0d1117] border border-white/[0.06]" data-testid="stat-treats">
+                <div className="text-base font-black text-white">{stats.stats?.treats_created ?? 0}</div>
+                <div className="text-[8px] text-slate-400 uppercase">Treats</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[#0d1117] border border-white/[0.06]" data-testid="stat-points-7d">
+                <div className="text-base font-black text-green-400">{(stats.stats?.points_earned ?? 0).toLocaleString()}</div>
+                <div className="text-[8px] text-slate-400 uppercase">7d Pts</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[#0d1117] border border-white/[0.06]" data-testid="stat-xp-7d">
+                <div className="text-base font-black text-blue-400">{(stats.stats?.xp_gained ?? 0).toLocaleString()}</div>
+                <div className="text-[8px] text-slate-400 uppercase">7d XP</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[#0d1117] border border-white/[0.06]" data-testid="stat-recipes">
+                <div className="text-base font-black text-purple-400">{stats.stats?.unique_formulas ?? 0}</div>
+                <div className="text-[8px] text-slate-400 uppercase">Recipes</div>
+              </div>
+            </div>
+
+            {/* Streak + Best Rarity */}
+            <div className="grid grid-cols-2 gap-1.5 mb-3">
+              <div className="bg-gradient-to-br from-orange-500/15 to-red-500/15 border border-orange-500/20 rounded-lg p-2 flex items-center gap-2" data-testid="stat-streak">
+                <Flame className="w-4 h-4 text-orange-400 shrink-0" />
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-black text-white">{stats.streak?.current ?? 0}</span>
+                    <span className="text-[9px] text-orange-300">day streak</span>
+                  </div>
+                  <div className="text-[9px] text-orange-400/80">{stats.streak?.title || 'New Chef'}</div>
+                </div>
+              </div>
+              <div className="bg-[#0d1117] border border-white/[0.06] rounded-lg p-2 flex items-center gap-2" data-testid="stat-best-rarity">
+                <Gem className="w-4 h-4 text-yellow-400 shrink-0" />
+                <div>
+                  <div className={`text-base font-black ${MENU_RARITY_COLORS[stats.stats?.best_rarity] || 'text-white'}`}>
+                    {stats.stats?.best_rarity || 'None'}
+                  </div>
+                  <div className="text-[9px] text-slate-400">Best Find</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Line Chart */}
+            <div className="bg-[#0d1117] rounded-lg border border-white/[0.06] p-2.5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5 text-sky-400" />
+                  <span className="text-[10px] font-semibold text-white uppercase tracking-wide">Activity Trend</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {METRICS.map((m) => {
+                    const Icon = m.icon;
+                    const isActive = metric === m.key;
+                    return (
+                      <button
+                        key={m.key}
+                        onClick={() => setMetric(m.key)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md border text-[9px] font-semibold transition-colors ${
+                          isActive ? m.active : 'border-white/[0.06] text-slate-500 hover:text-slate-300'
+                        }`}
+                        data-testid={`chart-metric-${m.key}`}
+                      >
+                        <Icon className="w-3 h-3" />
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <ActivityLineChart daily={stats.daily_breakdown} metric={metric} />
+            </div>
+
+            <div className="text-center text-[8px] text-slate-600 mt-2">Tap a point to inspect a day</div>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
 const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
   const { address, isConnected } = useAccount();
   const { nftBalance, isNFTHolder, loading: nftLoading } = useNFTVerification();
@@ -1437,7 +1762,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
     : (address || guestUser?.guest_id || guestUser?.id || (telegramUser ? `TG_${telegramUser.id}` : null));
   const effectiveLevel = (isConnected && currentLevel) ? currentLevel : playerLevel;
   // Once the profile fetch has completed (profileLoaded=true), always use playerPoints
-  // — even if it's 0. Only fall back to GameContext points before the first fetch.
+  // â€” even if it's 0. Only fall back to GameContext points before the first fetch.
   const effectivePoints = profileLoaded ? playerPoints : (points || 0);
   const isAuthenticated = isConnected || isTelegram || guestUser;
 
@@ -1509,7 +1834,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
           return;
         }
         const p = await res.json();
-        // p.points may be 0 legitimately — use nullish coalescing, not ||
+        // p.points may be 0 legitimately â€” use nullish coalescing, not ||
         setUsername(p.nickname || telegramUser.first_name || '');
         setProfileImage(p.profile_image ?? null);
         setPlayerLevel(p.level ?? 1);
@@ -1616,7 +1941,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
   return (
     <div className="min-h-screen bg-[#0d1117]" data-testid="main-menu">
 
-      {/* ─── Top Header ──────────────────────────────────── */}
+      {/* â”€â”€â”€ Top Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <header className="z-40 bg-[#0d1117] border-b border-white/[0.06]">
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 h-[56px] flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 lg:hidden">
@@ -1697,10 +2022,10 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
         <main className="flex-1 min-w-0 px-3 sm:px-5 py-4 space-y-4 sm:space-y-5">
 
-          {/* ── Player Points Ticker ── */}
+          {/* â”€â”€ Player Points Ticker â”€â”€ */}
           <PlayerTickerCarousel />
 
-          {/* ── Season 2 Banner ── */}
+          {/* â”€â”€ Season 2 Banner â”€â”€ */}
           <div className="w-full overflow-hidden rounded-xl">
             <img
               src="/Season2banner.jpg"
@@ -1709,7 +2034,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             />
           </div>
 
-          {/* ── Mobile: Share & Earn + Quick Stats ── */}
+          {/* â”€â”€ Mobile: Share & Earn + Quick Stats â”€â”€ */}
           <div className="lg:hidden space-y-3">
             <button
               onClick={handleReferralClick}
@@ -1740,7 +2065,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             )}
           </div>
 
-          {/* ── Player Profile Card ── */}
+          {/* â”€â”€ Player Profile Card â”€â”€ */}
           {isLoggedIn && (
             <div className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="player-profile-card">
               <div className="h-0.5 bg-gradient-to-r from-yellow-400 via-sky-400 to-purple-400" />
@@ -1809,7 +2134,10 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             </div>
           )}
 
-          {/* ── Three Promotional Banners ── */}
+          {/* â”€â”€ Player Stats / Activity Card (under the Scientist card) â”€â”€ */}
+          <MenuPlayerStats address={effectiveAddress} isLoggedIn={isLoggedIn} />
+
+          {/* â”€â”€ Three Promotional Banners â”€â”€ */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <PromoBanner
               icon={Crown}
@@ -1846,7 +2174,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             />
           </div>
 
-          {/* ── Featured Banner (Lab CTA + Happy Hour) ── */}
+          {/* â”€â”€ Featured Banner (Lab CTA + Happy Hour) â”€â”€ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link to="/lab" onClick={handleLabAccess}>
               <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a2744] to-[#151b28] border border-sky-500/15 p-5 sm:p-6 hover:border-sky-400/30 hover:-translate-y-0.5 transition-all duration-200 group"
@@ -1908,7 +2236,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             </div>
           </div>
 
-          {/* ── Feature Cards ── */}
+          {/* â”€â”€ Feature Cards â”€â”€ */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -1929,14 +2257,14 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             </div>
           </div>
 
-          {/* ── Points Swap Widget ── */}
+          {/* â”€â”€ Points Swap Widget â”€â”€ */}
           <PointsSwapWidget
             playerPoints={effectivePoints || 0}
             isLoggedIn={!!isLoggedIn}
             effectiveAddress={effectiveAddress}
           />
 
-          {/* ── Live Activity Table ── */}
+          {/* â”€â”€ Live Activity Table â”€â”€ */}
           <div className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden">
             <div className="flex items-center gap-0 border-b border-white/[0.06]">
               {[
@@ -1995,7 +2323,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             )}
           </div>
 
-          {/* ── Mobile Live Chat ── */}
+          {/* â”€â”€ Mobile Live Chat â”€â”€ */}
           <div className="lg:hidden bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="mobile-inline-chat">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
               <MessageCircle className="w-4 h-4 text-emerald-400" />
@@ -2032,7 +2360,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
           </div>
         </main>
 
-        {/* RIGHT SIDEBAR — Live Chat (Desktop only) */}
+        {/* RIGHT SIDEBAR â€” Live Chat (Desktop only) */}
         <aside className="hidden lg:flex flex-col w-80 shrink-0 border-l border-white/[0.06]" data-testid="chat-sidebar">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
             <MessageCircle className="w-4 h-4 text-emerald-400" />
@@ -2060,7 +2388,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
         </aside>
       </div>
 
-      {/* ─── Social Links Footer ─── */}
+      {/* â”€â”€â”€ Social Links Footer â”€â”€â”€ */}
       <footer
         data-testid="menu-social-footer"
         className="px-4 sm:px-6 mt-6 mb-4 pb-24 sm:pb-6 flex flex-col items-center gap-2.5"
@@ -2105,7 +2433,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
           </a>
         </div>
         <div className="text-[10px] text-slate-500 mt-0.5">
-          @DogeOsFoodNFT · t.me/DogeFoodonDogeOS
+          @DogeOsFoodNFT Â· t.me/DogeFoodonDogeOS
         </div>
         <button
           onClick={() => setShowDisclaimer(true)}
@@ -2121,7 +2449,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
       <SpinWheelCTA />
 
-      {/* Walkthrough "?" re-open button — bottom-left corner */}
+      {/* Walkthrough "?" re-open button â€” bottom-left corner */}
       <button
         onClick={() => setShowWalkthrough(true)}
         title="Game Guide"
@@ -2142,7 +2470,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
       <MusicPlayer />
 
-      {/* ─── Auth Modal ── */}
+      {/* â”€â”€â”€ Auth Modal â”€â”€ */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" data-testid="auth-modal">
           <div className="bg-[#151b28] rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-white/[0.06] relative">
