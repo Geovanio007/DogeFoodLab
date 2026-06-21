@@ -219,7 +219,7 @@ const PlayerTickerCarousel = () => {
           const pctColor = isUp ? '#34d399' : isDown ? '#f87171' : '#94a3b8';
           // When baseline was 0 (S2 fresh start), show "+Npts" instead of a % number
           const pctDisplay = item.baselineWasZero
-            ? (item.pct > 0 ? `+${item.pct.toLocaleString()}pts` : 'â€”')
+            ? (item.pct > 0 ? `+${item.pct.toLocaleString()}pts` : '\u2014')
             : `${sign}${item.pct.toFixed(2)}%`;
 
           return (
@@ -862,7 +862,7 @@ const SpinWheelCTA = () => {
           cursor: 'pointer', zIndex: 2,
         }}
         aria-label="Dismiss"
-      >âœ•</button>
+      >{'\u2715'}</button>
 
       {/* The wheel bubble */}
       <button
@@ -1413,7 +1413,7 @@ const ActivityLineChart = ({ daily, metric }) => {
   if (!points.length) {
     return (
       <div className="h-32 flex items-center justify-center text-[11px] text-slate-500">
-        No activity yet â€” go craft some treats!
+        No activity yet - go craft some treats!
       </div>
     );
   }
@@ -1489,7 +1489,7 @@ const ActivityLineChart = ({ daily, metric }) => {
               fill={isToday(c.day) ? '#fde047' : '#64748b'}
               fontWeight={isToday(c.day) ? 700 : 400}
             >
-              {isToday(c.day) ? 'â€¢' : dayLabel(c.day)}
+              {isToday(c.day) ? '\u2022' : dayLabel(c.day)}
             </text>
           </g>
         ))}
