@@ -278,7 +278,7 @@ const PlayerTickerCarousel = () => {
 };
 
 // â”€â”€â”€ Emoji Picker (simple) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const QUICK_EMOJIS = ['ðŸ˜€','ðŸ˜‚','ðŸ”¥','â¤ï¸','ðŸ‘','ðŸ‘','ðŸŽ‰','ðŸ’Ž','âœ¨','ðŸ¶','ðŸ†','ðŸ’ª','ðŸ¤©','ðŸ˜Ž','ðŸš€','â­','ðŸ’›','ðŸŽ¯','ðŸª„','ðŸŽ®'];
+const QUICK_EMOJIS = ['\u{1F600}','\u{1F602}','\u{1F525}','\u2764\uFE0F','\u{1F44D}','\u{1F44F}','\u{1F389}','\u{1F48E}','\u2728','\u{1F436}','\u{1F3C6}','\u{1F4AA}','\u{1F929}','\u{1F60E}','\u{1F680}','\u2B50','\u{1F49B}','\u{1F3AF}','\u{1FA84}','\u{1F3AE}'];
 
 const EmojiPicker = ({ onSelect, onClose }) => (
   <div className="absolute bottom-full mb-2 left-0 bg-[#1a2035] border border-white/10 rounded-xl p-2 shadow-xl z-50" data-testid="emoji-picker">
@@ -561,7 +561,7 @@ const rarityBg = {
                       <Beaker className={`w-3.5 h-3.5 ${rarityColor[item.rarity] || 'text-slate-400'}`} />
                     </div>
                     <span className="text-xs text-white truncate max-w-[120px]">
-  {item.activity_type === 'spin' ? 'ðŸŽ° ' : ''}{item.treat_name || 'Unnamed'}
+  {item.activity_type === 'spin' ? '\u{1F3B0} ' : ''}{item.treat_name || 'Unnamed'}
 </span>
                   </div>
                 </td>
@@ -901,42 +901,42 @@ const WALKTHROUGH_KEY = 'dogefood_walkthrough_v1_done';
 
 const STEPS = [
   {
-    emoji: 'ðŸ§ª',
+    emoji: '\u{1F9EA}',
     title: 'Welcome to DogeFood Lab!',
     color: '#38bdf8',
     badge: 'START HERE',
     badgeColor: 'rgba(56,189,248,0.2)',
     badgeText: '#38bdf8',
-    description: "You're a Doge Scientist on a mission to craft legendary treats and climb the leaderboard. Here's everything you need to know to get started. Swipe through to master the Lab! ðŸ¾",
+    description: "You're a Doge Scientist on a mission to craft legendary treats and climb the leaderboard. Here's everything you need to know to get started. Swipe through to master the Lab! \u{1F43E}",
     tips: [
       ' Create treats to earn Points & XP',
-      ' Points â†’ $LAB tokens at season end',
+      ' Points \u2192 $LAB tokens at season end',
       ' Top 50 scientists earn token rewards',
     ],
   },
   {
-    emoji: 'âš—ï¸',
-    title: 'Step 1 â€” Create Treats in the Lab',
+    emoji: '\u2697\uFE0F',
+    title: 'Step 1 \u2014 Create Treats in the Lab',
     color: '#facc15',
     badge: 'THE LAB',
     badgeColor: 'rgba(250,204,21,0.15)',
     badgeText: '#facc15',
     description: "Tap the Lab tab on the menu to open your Reactor Chamber. Select up to 5 ingredients from your inventory to craft a treat. Higher-tier ingredients unlock rarer treats.",
     tips: [
-      ' Tap Lab â†’ choose ingredients â†’ Brew',
+      ' Tap Lab \u2192 choose ingredients \u2192 Brew',
       '5 ingredients = best rarity chance',
       ' Mix Legendary/Mythic ingredients for top treats',
       ' New ingredients unlock as you level up',
     ],
   },
   {
-    emoji: 'â³',
-    title: 'Step 2 â€” Wait for the Timer',
+    emoji: '\u23F3',
+    title: 'Step 2 \u2014 Wait for the Timer',
     color: '#a855f7',
     badge: 'BREWING',
     badgeColor: 'rgba(168,85,247,0.15)',
     badgeText: '#a855f7',
-    description: "Once you brew, your treat needs time to cook in the Reactor. The brewing timer counts down â€” higher rarity treats take longer. Watch for Heat Events in the Arena to cut brewing time by 50%!",
+    description: "Once you brew, your treat needs time to cook in the Reactor. The brewing timer counts down \u2014 higher rarity treats take longer. Watch for Heat Events in the Arena to cut brewing time by 50%!",
     tips: [
       ' Overclock Heat Event = 50% faster brewing',
       ' Come back when the timer hits 0:00',
@@ -945,76 +945,76 @@ const STEPS = [
     ],
   },
   {
-    emoji: 'ðŸŽ',
-    title: 'Step 3 â€” Collect Your Treat',
+    emoji: '\u{1F381}',
+    title: 'Step 3 \u2014 Collect Your Treat',
     color: '#2dd4bf',
     badge: 'COLLECT',
     badgeColor: 'rgba(45,212,191,0.15)',
     badgeText: '#2dd4bf',
     description: "When the brew timer finishes, head back to the Lab and tap Collect. A cinematic reveal shows your treat's rarity and the Points + XP you earned. Rarer treats = more rewards!",
     tips: [
-      ' Golden Hour Heat Event = Points Ã—2 on collect',
-      ' Watch the cinematic reveal â€” itâ€™s rarity-based',
-      ' Mythic treats earn 500â€“1000 points each',
+      ' Golden Hour Heat Event = Points \u00D72 on collect',
+      ' Watch the cinematic reveal \u2014 it\u2019s rarity-based',
+      ' Mythic treats earn 500\u20131000 points each',
       ' Keep a daily streak for XP bonuses',
     ],
   },
   {
-    emoji: 'ðŸ–¼ï¸',
-    title: 'Step 4 â€” View Your Collection',
+    emoji: '\u{1F5BC}\uFE0F',
+    title: 'Step 4 \u2014 View Your Collection',
     color: '#ec4899',
     badge: 'MY TREATS',
     badgeColor: 'rgba(236,72,153,0.15)',
     badgeText: '#ec4899',
-    description: "Tap My Treats from the menu to see every treat you've ever crafted â€” your permanent NFT-style collection. S1 treats show their original art; S2 treats show their rarity image. You can also list treats for sale on the Marketplace.",
+    description: "Tap My Treats from the menu to see every treat you've ever crafted \u2014 your permanent NFT-style collection. S1 treats show their original art; S2 treats show their rarity image. You can also list treats for sale on the Marketplace.",
     tips: [
-      ' Filter by rarity: Common â†’ Mythic',
+      ' Filter by rarity: Common \u2192 Mythic',
       ' Tap List for Sale to put a treat on market',
-      ' S1 badge = Season 1 Â· ðŸŸ¢ S2 badge = Season 2',
+      ' S1 badge = Season 1 \u00B7 \u{1F7E2} S2 badge = Season 2',
       ' Your earned $LAB tokens show here too',
     ],
   },
   {
-    emoji: 'ðŸŸï¸',
-    title: 'Step 5 â€” Join the Arena',
+    emoji: '\u{1F3DF}\uFE0F',
+    title: 'Step 5 \u2014 Join the Arena',
     color: '#f97316',
     badge: 'ARENA',
     badgeColor: 'rgba(249,115,22,0.15)',
     badgeText: '#f97316',
-    description: "The Arena is a 24-hour competitive event. Pay the 50-point entry fee to join, then earn Arena Score by collecting treats during the session. The prize pool builds from entry fees â€” top players share it at settlement.",
+    description: "The Arena is a 24-hour competitive event. Pay the 50-point entry fee to join, then earn Arena Score by collecting treats during the session. The prize pool builds from entry fees \u2014 top players share it at settlement.",
     tips: [
-      ' Entry fee: 50 pts â€” goes into the prize pool',
+      ' Entry fee: 50 pts \u2014 goes into the prize pool',
       ' Rank #1 wins 50% of the total pool',
-      ' Predict the winner for a 3Ã— points payout',
+      ' Predict the winner for a 3\u00D7 points payout',
       ' Arena Score = treats collected after joining',
     ],
   },
   {
-    emoji: 'ðŸŽ°',
-    title: 'Step 6 â€” Spin the Daily Wheel',
+    emoji: '\u{1F3B0}',
+    title: 'Step 6 \u2014 Spin the Daily Wheel',
     color: '#06b6d4',
     badge: 'DAILY SPIN',
     badgeColor: 'rgba(6,182,212,0.15)',
     badgeText: '#06b6d4',
     description: "Once every 24 hours you get a free spin in the Lab. Land on bonus points, extra ingredient slots, XP boosts or rare ingredient drops. Tap the spinning wheel CTA on the main menu to go straight there!",
     tips: [
-      ' Free once per day â€” donâ€™t miss it',
+      ' Free once per day \u2014 don\u2019t miss it',
       ' Prizes: points, XP, extra brews, ingredients',
       ' Spin outcomes appear in the Live Activity feed',
       ' Tap the spinning bubble on the main menu',
     ],
   },
   {
-    emoji: 'ðŸ†',
-    title: 'Step 7 â€” Check the Leaderboard',
+    emoji: '\u{1F3C6}',
+    title: 'Step 7 \u2014 Check the Leaderboard',
     color: '#fbbf24',
     badge: 'LEADERBOARD',
     badgeColor: 'rgba(251,191,36,0.15)',
     badgeText: '#fbbf24',
-    description: "The Leaderboard ranks all scientists by total Points. Top 50 players earn $LAB token rewards at season end â€” the higher your rank, the larger your share. Tap any player's name to see their Stats Card.",
+    description: "The Leaderboard ranks all scientists by total Points. Top 50 players earn $LAB token rewards at season end \u2014 the higher your rank, the larger your share. Tap any player's name to see their Stats Card.",
     tips: [
       ' Rank 1 earns the largest $LAB allocation',
-      ' Tap a player â†’ Stats Card shows their breakdown',
+      ' Tap a player \u2192 Stats Card shows their breakdown',
       ' Your current rank and points show at the top',
       ' Rankings reset at the start of each new season',
     ],
@@ -1079,7 +1079,7 @@ const WalkthroughModal = ({ onClose }) => {
             color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
             fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
-        >âœ•</button>
+        >{'\u2715'}</button>
 
         <div style={{ padding: '24px 24px 20px' }}>
           {/* Step counter */}
@@ -1114,7 +1114,7 @@ const WalkthroughModal = ({ onClose }) => {
                   <span
                     style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationColor: `${s.badgeText}66` }}
                     onClick={() => goTo(ROUTE_MAP[s.badge])}
-                  >{s.badge} â†—</span>
+                  >{s.badge} {'\u2197'}</span>
                 ) : s.badge}
               </div>
               <h2 style={{
@@ -1157,7 +1157,7 @@ const WalkthroughModal = ({ onClose }) => {
                   borderRadius: 12, color: 'rgba(255,255,255,0.5)',
                   cursor: 'pointer', fontSize: 13, fontWeight: 600,
                 }}
-              >â† Back</button>
+              >{'\u2190'} Back</button>
             )}
             <button
               onClick={() => {
@@ -1173,7 +1173,7 @@ const WalkthroughModal = ({ onClose }) => {
                 letterSpacing: '0.04em',
                 boxShadow: `0 0 16px ${s.color}22`,
               }}
-            >{isLast ? 'ðŸš€ Start Playing!' : 'Next â†’'}</button>
+            >{isLast ? '\u{1F680} Start Playing!' : 'Next \u2192'}</button>
           </div>
 
           {/* Skip */}
@@ -1302,12 +1302,12 @@ const DisclaimerModal = ({ onClose }) => {
               color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
               fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          >âœ•</button>
+          >{'\u2715'}</button>
           <h2 style={{
             margin: 0, fontSize: 19, fontWeight: 900, color: '#e2e8f0',
             paddingRight: 36,
           }}>
-            DogeFood Lab â€” User Disclaimer
+            DogeFood Lab {'\u2014'} User Disclaimer
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(148,163,184,0.7)' }}>
             Last Updated: June 2026
@@ -1581,7 +1581,7 @@ const MenuPlayerStats = ({ address, isLoggedIn }) => {
         {loading ? (
           <div className="h-40 flex flex-col items-center justify-center gap-2">
             <div className="w-6 h-6 border-2 border-sky-500/30 border-t-sky-400 rounded-full animate-spin" />
-            <span className="text-[11px] text-slate-500">Loading your statsâ€¦</span>
+            <span className="text-[11px] text-slate-500">Loading your stats{'\u2026'}</span>
           </div>
         ) : error ? (
           <div className="h-24 flex items-center justify-center text-[11px] text-red-400" data-testid="menu-player-stats-error">{error}</div>
@@ -2433,7 +2433,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
           </a>
         </div>
         <div className="text-[10px] text-slate-500 mt-0.5">
-          @DogeOsFoodNFT Â· t.me/DogeFoodonDogeOS
+          @DogeOsFoodNFT {'\u00B7'} t.me/DogeFoodonDogeOS
         </div>
         <button
           onClick={() => setShowDisclaimer(true)}
