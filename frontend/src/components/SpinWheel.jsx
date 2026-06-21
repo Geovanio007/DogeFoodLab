@@ -201,6 +201,21 @@ const SpinWheel = ({ playerAddress, onPrizeWon }) => {
               </div>
             )}
 
+            {/* ── Telegram community banner (ad spot) ── */}
+            <a
+              href="https://t.me/DogeFoodonDogeOS"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full"
+              data-testid="spin-wheel-telegram-banner"
+            >
+              <img
+                src="/TGBanner.png"
+                alt="Join our Telegram community"
+                className="w-full h-auto block"
+              />
+            </a>
+
             {/* header */}
             <div className="relative px-6 pt-5 pb-2 text-center">
               <button onClick={() => !spinning && setIsOpen(false)}
