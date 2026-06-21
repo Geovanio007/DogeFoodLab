@@ -22,19 +22,32 @@ const DebugOverlay = () => {
       params.get('debug') === '1' ||
       window.localStorage?.getItem('dogefood_debug') === '1';
 
+    // A device that explicitly dismissed the overlay ("off") stays quiet
+    // for the rest of the day, even if another warning/error fires —
+    // unless `?debug=1` is used again to force it back on.
+    let snoozed = false;
+    try {
+      const snoozedUntil = Number(window.localStorage?.getItem('dogefood_debug_snoozed_until') || 0);
+      snoozed = snoozedUntil > Date.now();
+    } catch (_) { /* ignore */ }
+
     // Always install the listeners so the overlay can reveal itself the
     // moment something crashes — even without `?debug=1`. In MyDoge's
     // in-app browser there's no URL bar, so users can't append the flag.
     // We keep the overlay HIDDEN until either:
     //   • `?debug=1` (manual opt-in for debugging), or
     //   • an actual error / unhandled rejection / console.error fires
-    //     while the app is running.
+    //     while the app is running (unless snoozed — see above).
     if (forced) {
+      snoozed = false;
+      try {
+        window.localStorage?.setItem('dogefood_debug', '1');
+        window.localStorage?.removeItem('dogefood_debug_snoozed_until');
+      } catch (_) { /* ignore */ }
       setEnabled(true);
-      try { window.localStorage?.setItem('dogefood_debug', '1'); } catch (_) { /* ignore */ }
     }
 
-    const reveal = () => setEnabled(true);
+    const reveal = () => { if (!snoozed) setEnabled(true); };
     const push = (type, message) => {
       const text = typeof message === 'string' ? message : String(message);
       setEntries((prev) => [
@@ -74,10 +87,22 @@ const DebugOverlay = () => {
 
   const clear = () => setEntries([]);
   const disable = () => {
-    try { window.localStorage?.removeItem('dogefood_debug'); } catch (_) { /* ignore */ }
-    const url = new URL(window.location.href);
-    url.searchParams.delete('debug');
-    window.location.replace(url.toString());
+    try {
+      window.localStorage?.removeItem('dogefood_debug');
+      window.localStorage?.setItem('dogefood_debug_snoozed_until', String(Date.now() + 24 * 60 * 60 * 1000));
+    } catch (_) { /* ignore */ }
+    // Hide immediately — don't wait on a navigation that some in-app
+    // wallet browsers (no URL bar, restricted history API) may block.
+    setEnabled(false);
+    setEntries([]);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('debug');
+      const next = url.toString();
+      if (next !== window.location.href) {
+        window.history.replaceState({}, '', next);
+      }
+    } catch (_) { /* ignore — URL/history API unavailable, that's fine, overlay is already hidden */ }
   };
 
   if (!enabled) return null;
