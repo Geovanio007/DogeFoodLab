@@ -1,5 +1,10 @@
 name = "dogefoodlabfrontend"
 compatibility_date = "2026-06-24"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
 
 [assets]
-directory = "./build"
+directory = "build"
+not_found_handling = "single-page-application"
