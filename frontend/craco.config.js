@@ -19,7 +19,7 @@ const DOGEOS_CSS_RE = /node_modules[\\/]@dogeos[\\/]dogeos-sdk[\\/]dist[\\/].+\.
 module.exports = {
   webpack: {
     configure: (webpackConfig) => {
-      // ── Node polyfills ────────────────────────────────────────────────
+      // â”€â”€ Node polyfills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       webpackConfig.resolve = webpackConfig.resolve || {};
       webpackConfig.resolve.fallback = {
         ...(webpackConfig.resolve.fallback || {}),
@@ -40,9 +40,13 @@ module.exports = {
         tls: false,
         child_process: false,
         starknet: false,
+        // @metamask/sdk (via wagmi) optionally imports this React-Native-only
+        // package which doesn't exist in a web build. Resolve it to an empty
+        // module so it's not a fatal "Module not found" error.
+        '@react-native-async-storage/async-storage': false,
       };
 
-      // ── Stub unused multi-chain SDKs ──────────────────────────────────
+      // â”€â”€ Stub unused multi-chain SDKs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       // DogeOS SDK transitively imports adapters for Sui, Tron, Solana,
       // Cosmos, etc. We only use EVM, so replace these modules (and any
       // of their subpaths) with a safe no-op stub to avoid runtime crashes.
@@ -72,7 +76,7 @@ module.exports = {
         resolve: { fullySpecified: false },
       });
 
-      // ── DogeOS SDK CSS: bypass Tailwind / PostCSS ──────────────────────
+      // â”€â”€ DogeOS SDK CSS: bypass Tailwind / PostCSS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       // CRA's CSS handling sits inside the big `oneOf` array of the main rule.
       // We add an exclusion for the DogeOS SDK CSS and inject a dedicated
       // rule that uses style-loader + css-loader only.
@@ -116,6 +120,8 @@ module.exports = {
         ...(webpackConfig.ignoreWarnings || []),
         /Failed to parse source map/,
         /Critical dependency: require function is used in a way/,
+        /Critical dependency: the request of a dependency is an expression/,
+        /Can't resolve '@react-native-async-storage\/async-storage'/,
       ];
 
       return webpackConfig;
