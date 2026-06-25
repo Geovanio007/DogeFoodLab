@@ -118,6 +118,48 @@ const InnerApp = () => {
     }
   }, [isTelegram, isTelegramLoading]);
 
+  // Auto-register a connected wallet as a player, silently, with a friendly
+  // default nickname derived from the address. There is no registration
+  // modal in this build — players start playing immediately on connect —
+  // so this is the only place a wallet player's document gets created.
+  // Without it, the player can create/collect treats with no document to
+  // credit (silently zero points) and never appears on the leaderboard.
+  const autoRegisterWalletPlayer = async (walletAddress, signal) => {
+    try {
+      const shortAddr = `${walletAddress.slice(0, 6)}${walletAddress.slice(-4)}`;
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/player`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+        body: JSON.stringify({
+          address: walletAddress, // PlayerCreate requires `address`, not `wallet_address`
+          nickname: `Scientist ${shortAddr}`,
+        }),
+      });
+      if (signal.aborted) return;
+      if (response.ok) {
+        const playerData = await response.json().catch(() => null);
+        setUserRegistered(true);
+        setAuthType((playerData && playerData.auth_type) || 'wallet');
+        setShowRegistration(false);
+        console.log('✅ Wallet player auto-registered:', walletAddress);
+      } else {
+        // Backend rejected creation for some reason (e.g. validation) —
+        // don't block play, just leave userRegistered false so nothing
+        // crashes; the player can still use the app, this only means the
+        // leaderboard/points-crediting gap may persist until they retry.
+        console.warn('Wallet auto-registration failed:', response.status);
+        setUserRegistered(false);
+        setAuthType('wallet');
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      console.error('Wallet auto-registration error:', error);
+      setUserRegistered(false);
+      setAuthType('wallet');
+    }
+  };
+
   // Check registration status for both wallet and Telegram authentication.
   //
   // Hardened against the menu-crash on MyDoge in-app browser:
@@ -178,15 +220,22 @@ const InnerApp = () => {
               setShowRegistration(false);
               console.log("✅ Wallet user already registered:", playerData.nickname);
             } else {
-              setUserRegistered(false);
-              setShowRegistration(true);
-              setAuthType('wallet');
+              // Player doc exists (e.g. created mid-treat by a defensive
+              // backend fallback) but has no nickname yet — same as a 404,
+              // silently create/complete registration below.
+              await autoRegisterWalletPlayer(address, controller.signal);
             }
           } else if (response.status === 404) {
             if (controller.signal.aborted) return;
-            setUserRegistered(false);
-            setShowRegistration(true);
-            setAuthType('wallet');
+            // No player document exists yet for this wallet at all. There is
+            // no registration modal in this build (auth is optional, players
+            // can play immediately) — so instead of just flipping a flag
+            // nothing renders, actually create the player record now. Without
+            // this, the player can create and "collect" treats that silently
+            // award zero points (no document to credit) and they never show
+            // up on the leaderboard, since it requires a player doc with a
+            // nickname to exist.
+            await autoRegisterWalletPlayer(address, controller.signal);
           }
 
         } else {
