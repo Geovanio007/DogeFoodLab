@@ -21,9 +21,9 @@ import {
 import PointsSwapWidget from './PointsSwapWidget';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const SEASON_2_END = new Date('2026-09-17T00:00:00Z').getTime(); // Season 2: Jun 17 â€“ Sep 17 2026
+const SEASON_2_END = new Date('2026-09-17T00:00:00Z').getTime(); // Season 2: Jun 17 – Sep 17 2026
 
-// â”€â”€â”€ Season Countdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Season Countdown ────────────────────────────────────────
 const SeasonCountdown = ({ compact }) => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
@@ -69,11 +69,11 @@ const SeasonCountdown = ({ compact }) => {
   );
 };
 
-// â”€â”€â”€ Player Ticker Carousel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Player Ticker Carousel ───────────────────────────────────
 // Baseline snapshot: saved once on first load, rolls forward every 24h.
 // "Last seen" snapshot: updated every poll so % reflects live movement vs baseline.
 const TICKER_BASELINE_KEY = 'dogefood_ticker_baseline';   // {timestamp, data: {addr: pts}}
-const TICKER_SEEN_KEY     = 'dogefood_ticker_seen';       // {data: {addr: pts}} â€“ no TTL
+const TICKER_SEEN_KEY     = 'dogefood_ticker_seen';       // {data: {addr: pts}} – no TTL
 const TICKER_BASELINE_TTL = 24 * 60 * 60 * 1000;         // 24 h
 
 const PlayerTickerCarousel = () => {
@@ -92,7 +92,7 @@ const PlayerTickerCarousel = () => {
 
       const now = Date.now();
 
-      // â”€â”€ Baseline snapshot (the 24 h reference point) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Baseline snapshot (the 24 h reference point) ──────────────────
       // Only reset when 24 h have elapsed; otherwise preserve it so %
       // keeps accumulating across page refreshes / 5-min polls.
       let baseline = {};
@@ -101,7 +101,7 @@ const PlayerTickerCarousel = () => {
         if (raw) {
           const parsed = JSON.parse(raw);
           if (now - parsed.timestamp < TICKER_BASELINE_TTL) {
-            // Still within 24 h window â€” keep using the saved baseline
+            // Still within 24 h window — keep using the saved baseline
             baseline = parsed.data || {};
           } else {
             // 24 h elapsed: roll the baseline forward using last-seen values
@@ -117,7 +117,7 @@ const PlayerTickerCarousel = () => {
             baseline = fresh;
           }
         } else {
-          // Very first load â€” seed baseline with current points
+          // Very first load — seed baseline with current points
           const fresh = {};
           data.forEach(p => { fresh[p.address] = p.points; });
           localStorage.setItem(TICKER_BASELINE_KEY, JSON.stringify({ timestamp: now, data: fresh }));
@@ -125,26 +125,26 @@ const PlayerTickerCarousel = () => {
         }
       } catch {}
 
-      // â”€â”€ Update the "last seen" snapshot (no TTL â€” just current standings) â”€â”€
+      // ── Update the "last seen" snapshot (no TTL — just current standings) ──
       try {
         const seen = {};
         data.forEach(p => { seen[p.address] = p.points; });
         localStorage.setItem(TICKER_SEEN_KEY, JSON.stringify({ data: seen }));
       } catch {}
 
-      // â”€â”€ Build ticker items using baseline for % calculation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Build ticker items using baseline for % calculation ────────────
       const items = data.slice(0, 20).map(player => {
         const prev = baseline[player.address];
         let pct = 0;
         let baselineWasZero = false;
         if (prev == null) {
-          // Player not yet in baseline â€” show neutral
+          // Player not yet in baseline — show neutral
           pct = 0;
         } else if (prev > 0) {
           // Normal % change
           pct = ((player.points - prev) / prev) * 100;
         } else {
-          // prev === 0: S2 fresh start â€” show absolute points gained, flag for renderer
+          // prev === 0: S2 fresh start — show absolute points gained, flag for renderer
           baselineWasZero = true;
           pct = player.points > 0 ? player.points : 0;
         }
@@ -170,7 +170,7 @@ const PlayerTickerCarousel = () => {
     return () => clearInterval(iv);
   }, [buildTickerItems]);
 
-  // Smooth CSS animation ticker â€” no JS loop needed
+  // Smooth CSS animation ticker — no JS loop needed
   // Duplicate items so the loop is seamless
   const displayed = tickerItems.length > 0 ? [...tickerItems, ...tickerItems] : [];
 
@@ -277,7 +277,7 @@ const PlayerTickerCarousel = () => {
   );
 };
 
-// â”€â”€â”€ Emoji Picker (simple) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Emoji Picker (simple) ───────────────────────────────────
 const QUICK_EMOJIS = ['\u{1F600}','\u{1F602}','\u{1F525}','\u2764\uFE0F','\u{1F44D}','\u{1F44F}','\u{1F389}','\u{1F48E}','\u2728','\u{1F436}','\u{1F3C6}','\u{1F4AA}','\u{1F929}','\u{1F60E}','\u{1F680}','\u2B50','\u{1F49B}','\u{1F3AF}','\u{1FA84}','\u{1F3AE}'];
 
 const EmojiPicker = ({ onSelect, onClose }) => (
@@ -292,7 +292,7 @@ const EmojiPicker = ({ onSelect, onClose }) => (
   </div>
 );
 
-// â”€â”€â”€ Live Chat Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Live Chat Component ─────────────────────────────────────
 const LiveChat = ({ isLoggedIn, effectiveAddress, username }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -486,7 +486,7 @@ const LiveChat = ({ isLoggedIn, effectiveAddress, username }) => {
   );
 };
 
-// â”€â”€â”€ Live Activity Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Live Activity Table ─────────────────────────────────────
 const LiveActivityTable = () => {
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -596,7 +596,7 @@ const rarityBg = {
   );
 };
 
-// â”€â”€â”€ Navigation Items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Navigation Items ────────────────────────────────────────
 const navItems = [
   { path: '/', icon: Home, label: 'Home', color: 'text-sky-400', bgColor: 'bg-sky-500/10' },
   { path: '/lab', icon: Beaker, label: 'Lab', color: 'text-yellow-400', bgColor: 'bg-yellow-500/10', needsAuth: true },
@@ -607,7 +607,7 @@ const navItems = [
   { path: '/settings', icon: Settings, label: 'Settings', color: 'text-slate-400', bgColor: 'bg-slate-500/10' },
 ];
 
-// â”€â”€â”€ Left Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Left Sidebar ────────────────────────────────────────────
 const Sidebar = ({ onAuthRequired, onReferralClick }) => (
   <nav className="hidden lg:flex flex-col w-52 shrink-0 py-4" data-testid="menu-sidebar">
     <button
@@ -665,7 +665,7 @@ const Sidebar = ({ onAuthRequired, onReferralClick }) => (
   </nav>
 );
 
-// â”€â”€â”€ Mobile Navigation Strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Mobile Navigation Strip ─────────────────────────────────
 const MobileNavStrip = ({ onAuthRequired }) => (
   <div className="lg:hidden overflow-x-auto scrollbar-hide border-b border-white/[0.06] bg-[#0d1117]" data-testid="mobile-nav-strip">
     <div className="flex items-center gap-1 px-3 py-2 min-w-max">
@@ -698,7 +698,7 @@ const MobileNavStrip = ({ onAuthRequired }) => (
   </div>
 );
 
-// â”€â”€â”€ Promotional Banner Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Promotional Banner Card ──────────────────────────────────
 const PromoBanner = ({ icon: Icon, iconBg, title, subtitle, borderColor, gradientFrom, gradientTo, onClick, testId }) => (
   <button
     onClick={onClick}
@@ -725,7 +725,7 @@ const PromoBanner = ({ icon: Icon, iconBg, title, subtitle, borderColor, gradien
   </button>
 );
 
-// â”€â”€â”€ Feature Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Feature Card ─────────────────────────────────────────────
 const FeatureCard = ({ icon: Icon, label, gradient, iconColor, borderColor, to, state, onClick, badge, testId }) => (
   <Link to={to} state={state} onClick={onClick} className="block group" data-testid={testId}>
     <div className={`relative overflow-hidden rounded-2xl border ${borderColor} bg-gradient-to-b ${gradient} p-4 sm:p-5 text-center hover:scale-[1.05] hover:-translate-y-1 transition-all duration-200`}
@@ -748,10 +748,10 @@ const FeatureCard = ({ icon: Icon, label, gradient, iconColor, borderColor, to, 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MAIN MENU COMPONENT
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-/* â”€â”€â”€ Spin Wheel CTA Bubble â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ─── Spin Wheel CTA Bubble ─────────────────────────────────────────────────
    Floating corner widget that draws a mini version of the actual wheel.
    Tapping navigates to /lab where the real SpinWheel lives.
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ─────────────────────────────────────────────────────────────────────────── */
 const WHEEL_COLORS = [
   '#3b82f6','#8b5cf6','#06b6d4','#fbbf24','#ef4444',
   '#10b981','#ec4899','#14b8a6','#a855f7','#f97316',
@@ -895,7 +895,7 @@ const SpinWheelCTA = () => {
 
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   GAME WALKTHROUGH â€” shown on first visit, re-openable via "?" button
+   GAME WALKTHROUGH — shown on first visit, re-openable via "?" button
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const WALKTHROUGH_KEY = 'dogefood_walkthrough_v1_done';
 
@@ -1397,7 +1397,7 @@ const MENU_RARITY_COLORS = {
   Mythic:    'text-pink-400',
 };
 
-// â”€â”€â”€ Interactive 7-Day Activity Line Chart (SVG, no extra deps) â”€â”€
+// ─── Interactive 7-Day Activity Line Chart (SVG, no extra deps) ──
 const ActivityLineChart = ({ daily, metric }) => {
   const [hover, setHover] = useState(null);
 
@@ -1515,7 +1515,7 @@ const ActivityLineChart = ({ daily, metric }) => {
   );
 };
 
-// â”€â”€â”€ Menu Player Stats Card (shown under the Scientist card) â”€â”€â”€â”€â”€
+// ─── Menu Player Stats Card (shown under the Scientist card) ─────
 const MenuPlayerStats = ({ address, isLoggedIn }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1712,7 +1712,7 @@ const MenuPlayerStats = ({ address, isLoggedIn }) => {
   );
 };
 
-// â”€â”€â”€ World Cup Celebration (compact video card) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── World Cup Celebration (compact video card) ──────────────────
 const WorldCupCelebration = () => {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
@@ -1801,7 +1801,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
     : (address || guestUser?.guest_id || guestUser?.id || (telegramUser ? `TG_${telegramUser.id}` : null));
   const effectiveLevel = (isConnected && currentLevel) ? currentLevel : playerLevel;
   // Once the profile fetch has completed (profileLoaded=true), always use playerPoints
-  // â€” even if it's 0. Only fall back to GameContext points before the first fetch.
+  // — even if it's 0. Only fall back to GameContext points before the first fetch.
   const effectivePoints = profileLoaded ? playerPoints : (points || 0);
   const isAuthenticated = isConnected || isTelegram || guestUser;
 
@@ -1873,7 +1873,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
           return;
         }
         const p = await res.json();
-        // p.points may be 0 legitimately â€” use nullish coalescing, not ||
+        // p.points may be 0 legitimately — use nullish coalescing, not ||
         setUsername(p.nickname || telegramUser.first_name || '');
         setProfileImage(p.profile_image ?? null);
         setPlayerLevel(p.level ?? 1);
@@ -1980,7 +1980,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
   return (
     <div className="min-h-screen bg-[#0d1117]" data-testid="main-menu">
 
-      {/* â”€â”€â”€ Top Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Top Header ──────────────────────────────────── */}
       <header className="z-40 bg-[#0d1117] border-b border-white/[0.06]">
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 h-[56px] flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 lg:hidden">
@@ -2061,10 +2061,10 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
         <main className="flex-1 min-w-0 px-3 sm:px-5 py-4 space-y-4 sm:space-y-5">
 
-          {/* â”€â”€ Player Points Ticker â”€â”€ */}
+          {/* ── Player Points Ticker ── */}
           <PlayerTickerCarousel />
 
-          {/* â”€â”€ Season 2 Banner â”€â”€ */}
+          {/* ── Season 2 Banner ── */}
           <div className="w-full overflow-hidden rounded-xl">
             <img
               src="/Season2banner.jpg"
@@ -2073,10 +2073,10 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             />
           </div>
 
-          {/* â”€â”€ World Cup Celebration â”€â”€ */}
+          {/* ── World Cup Celebration ── */}
           <WorldCupCelebration />
 
-          {/* â”€â”€ Mobile: Share & Earn + Quick Stats â”€â”€ */}
+          {/* ── Mobile: Share & Earn + Quick Stats ── */}
           <div className="lg:hidden space-y-3">
             <button
               onClick={handleReferralClick}
@@ -2107,7 +2107,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             )}
           </div>
 
-          {/* â”€â”€ Player Profile Card â”€â”€ */}
+          {/* ── Player Profile Card ── */}
           {isLoggedIn && (
             <div className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="player-profile-card">
               <div className="h-0.5 bg-gradient-to-r from-yellow-400 via-sky-400 to-purple-400" />
@@ -2176,10 +2176,10 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             </div>
           )}
 
-          {/* â”€â”€ Player Stats / Activity Card (under the Scientist card) â”€â”€ */}
+          {/* ── Player Stats / Activity Card (under the Scientist card) ── */}
           <MenuPlayerStats address={effectiveAddress} isLoggedIn={isLoggedIn} />
 
-          {/* â”€â”€ Three Promotional Banners â”€â”€ */}
+          {/* ── Three Promotional Banners ── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <PromoBanner
               icon={Crown}
@@ -2216,7 +2216,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             />
           </div>
 
-          {/* â”€â”€ Featured Banner (Lab CTA + Happy Hour) â”€â”€ */}
+          {/* ── Featured Banner (Lab CTA + Happy Hour) ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link to="/lab" onClick={handleLabAccess}>
               <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a2744] to-[#151b28] border border-sky-500/15 p-5 sm:p-6 hover:border-sky-400/30 hover:-translate-y-0.5 transition-all duration-200 group"
@@ -2278,7 +2278,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             </div>
           </div>
 
-          {/* â”€â”€ Feature Cards â”€â”€ */}
+          {/* ── Feature Cards ── */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -2299,14 +2299,14 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             </div>
           </div>
 
-          {/* â”€â”€ Points Swap Widget â”€â”€ */}
+          {/* ── Points Swap Widget ── */}
           <PointsSwapWidget
             playerPoints={effectivePoints || 0}
             isLoggedIn={!!isLoggedIn}
             effectiveAddress={effectiveAddress}
           />
 
-          {/* â”€â”€ Live Activity Table â”€â”€ */}
+          {/* ── Live Activity Table ── */}
           <div className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden">
             <div className="flex items-center gap-0 border-b border-white/[0.06]">
               {[
@@ -2365,7 +2365,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             )}
           </div>
 
-          {/* â”€â”€ Mobile Live Chat â”€â”€ */}
+          {/* ── Mobile Live Chat ── */}
           <div className="lg:hidden bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="mobile-inline-chat">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
               <MessageCircle className="w-4 h-4 text-emerald-400" />
@@ -2402,7 +2402,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
           </div>
         </main>
 
-        {/* RIGHT SIDEBAR â€” Live Chat (Desktop only) */}
+        {/* RIGHT SIDEBAR — Live Chat (Desktop only) */}
         <aside className="hidden lg:flex flex-col w-80 shrink-0 border-l border-white/[0.06]" data-testid="chat-sidebar">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
             <MessageCircle className="w-4 h-4 text-emerald-400" />
@@ -2430,7 +2430,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
         </aside>
       </div>
 
-      {/* â”€â”€â”€ Social Links Footer â”€â”€â”€ */}
+      {/* ─── Social Links Footer ─── */}
       <footer
         data-testid="menu-social-footer"
         className="px-4 sm:px-6 mt-6 mb-4 pb-24 sm:pb-6 flex flex-col items-center gap-2.5"
@@ -2491,7 +2491,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
       <SpinWheelCTA />
 
-      {/* Walkthrough "?" re-open button â€” bottom-left corner */}
+      {/* Walkthrough "?" re-open button — bottom-left corner */}
       <button
         onClick={() => setShowWalkthrough(true)}
         title="Game Guide"
@@ -2512,7 +2512,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
       <MusicPlayer />
 
-      {/* â”€â”€â”€ Auth Modal â”€â”€ */}
+      {/* ─── Auth Modal ── */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" data-testid="auth-modal">
           <div className="bg-[#151b28] rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-white/[0.06] relative">
