@@ -634,6 +634,8 @@ const MyTreats = () => {
   const [playerPoints, setPlayerPoints] = useState(0);
   const [playerLevel, setPlayerLevel] = useState(1);
   const [playerLabTokens, setPlayerLabTokens] = useState(null);
+  const [estimatedLabTokens, setEstimatedLabTokens] = useState(null);
+  const [estimatedLabRank, setEstimatedLabRank] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [ingredientMap, setIngredientMap] = useState({});
   
@@ -691,10 +693,11 @@ const MyTreats = () => {
       try {
         setLoading(true);
         
-        const [playerResponse, treatsResponse, ingredientsResponse] = await Promise.all([
+        const [playerResponse, treatsResponse, ingredientsResponse, labEstimateResponse] = await Promise.all([
           fetch(`${BACKEND_URL}/api/player/${effectiveAddress}`),
           fetch(`${BACKEND_URL}/api/treats/${effectiveAddress}`),
-          fetch(`${BACKEND_URL}/api/ingredients/catalog`)
+          fetch(`${BACKEND_URL}/api/ingredients/catalog`),
+          fetch(`${BACKEND_URL}/api/player/${effectiveAddress}/lab-estimate`)
         ]);
         
         // Build ingredient ID to name mapping
@@ -721,6 +724,12 @@ const MyTreats = () => {
               points: playerData.points || 0
             }});
           }
+        }
+
+        if (labEstimateResponse.ok) {
+          const labEstimateData = await labEstimateResponse.json();
+          setEstimatedLabTokens(labEstimateData.estimated_lab ?? 0);
+          setEstimatedLabRank(labEstimateData.rank ?? null);
         }
         
         if (treatsResponse.ok) {
@@ -895,10 +904,20 @@ const MyTreats = () => {
           />
           <StatsCard 
             icon={Coins} 
-            value={playerLabTokens != null ? playerLabTokens.toLocaleString() : "0.00"} 
+            value={
+              estimatedLabTokens != null
+                ? estimatedLabTokens.toLocaleString()
+                : (playerLabTokens != null ? playerLabTokens.toLocaleString() : "0")
+            } 
             label="$LAB Tokens" 
             color="blue"
-            subtext={playerLabTokens > 0 ? "Earned from Season 1" : "Top 50 earn $LAB"}
+            subtext={
+              estimatedLabTokens != null
+                ? (estimatedLabRank
+                    ? `Est. for current rank #${estimatedLabRank}`
+                    : "Top 50 earn $LAB — keep climbing!")
+                : (playerLabTokens > 0 ? "Earned from Season 1" : "Top 50 earn $LAB")
+            }
           />
         </div>
 
