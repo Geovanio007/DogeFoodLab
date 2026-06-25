@@ -293,6 +293,140 @@ const EmojiPicker = ({ onSelect, onClose }) => (
 );
 
 // ─── Live Chat Component ─────────────────────────────────────
+// ─── Pack Leaders (Shiba pet XP leaderboard) ─────────────────────────────
+// Mirrors the stage colors/emoji from ShibaGrowth.jsx (the Lab feeding
+// feature) so a pet's card here looks like the same creature, not a
+// generic stat row. Designed as a horizontal "trading card" strip rather
+// than a table — it sits in a slim space above Live Chat and reads more
+// like a mini trophy case than a dense leaderboard.
+const PACK_STAGES = [
+  { name: 'Tiny Pup',    color: '#94a3b8', emoji: '🐶', glow: null },
+  { name: 'Young Pup',   color: '#60a5fa', emoji: '🐕', glow: null },
+  { name: 'Teen Shiba',  color: '#34d399', emoji: '🦮', glow: null },
+  { name: 'Adult Shiba', color: '#f59e0b', emoji: '🐕‍🦺', glow: 'rgba(245,158,11,0.35)' },
+  { name: 'Alpha Shiba', color: '#a78bfa', emoji: '⭐', glow: 'rgba(167,139,250,0.45)' },
+  { name: 'Mythic Lab',  color: '#f97316', emoji: '🌟', glow: 'rgba(249,115,22,0.55)' },
+];
+const PACK_STAGE_XP = [0, 150, 400, 800, 1500, 2800];
+
+const PackLeaderCard = ({ pet, rank }) => {
+  const stage = PACK_STAGES[pet.current_stage] ?? PACK_STAGES[0];
+  const nextThreshold = PACK_STAGE_XP[pet.current_stage + 1];
+  const prevThreshold = PACK_STAGE_XP[pet.current_stage] ?? 0;
+  const progress = nextThreshold
+    ? Math.min(100, Math.round(((pet.current_xp - prevThreshold) / (nextThreshold - prevThreshold)) * 100))
+    : 100; // maxed out (Mythic Lab)
+  const isTop = rank === 1;
+
+  return (
+    <div
+      className="relative shrink-0 w-[124px] rounded-2xl overflow-hidden"
+      data-testid={`pack-leader-card-${rank}`}
+      style={{
+        background: isTop
+          ? 'linear-gradient(160deg, rgba(249,115,22,0.18) 0%, #151b28 65%)'
+          : '#151b28',
+        border: isTop ? '1px solid rgba(249,115,22,0.4)' : '1px solid rgba(255,255,255,0.06)',
+        boxShadow: stage.glow ? `0 0 18px -4px ${stage.glow}` : 'none',
+      }}
+    >
+      {/* Rank badge */}
+      <div
+        className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black z-10"
+        style={{
+          background: isTop ? 'linear-gradient(135deg,#fbbf24,#f97316)' : 'rgba(255,255,255,0.08)',
+          color: isTop ? '#1c1006' : '#94a3b8',
+        }}
+      >
+        {rank}
+      </div>
+
+      {/* Pet portrait */}
+      <div
+        className="flex items-center justify-center pt-4 pb-1.5"
+        style={{
+          background: `radial-gradient(circle at 50% 30%, ${stage.color}22, transparent 70%)`,
+        }}
+      >
+        <span className="text-3xl leading-none" style={{ filter: isTop ? `drop-shadow(0 0 6px ${stage.color})` : 'none' }}>
+          {stage.emoji}
+        </span>
+      </div>
+
+      <div className="px-2 pb-2 text-center">
+        <div className="text-[10px] font-bold truncate" style={{ color: stage.color }}>
+          {stage.name}
+        </div>
+        <div className="text-[11px] font-semibold text-white truncate mt-0.5" title={pet.owner_nickname}>
+          {pet.owner_nickname}
+        </div>
+        <div className="text-[9px] text-slate-500 tabular-nums mt-0.5">
+          {pet.current_xp.toLocaleString()} XP
+        </div>
+
+        {/* Progress toward next stage */}
+        <div className="h-1 rounded-full bg-white/[0.06] mt-1.5 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${progress}%`, background: stage.color }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PackLeaders = () => {
+  const [pets, setPets] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchLeaders = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/shiba/leaderboard?limit=10`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setPets(data.pets || []);
+        }
+      } catch (e) { /* silent — this is a decorative widget, never block the menu */ }
+      finally { if (!cancelled) setLoading(false); }
+    };
+    fetchLeaders();
+    const interval = setInterval(fetchLeaders, 60000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  // Nothing to show yet (no pets fed anywhere) — stay invisible rather
+  // than show an empty shell above the chat.
+  if (!loading && pets.length === 0) return null;
+
+  return (
+    <div className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="pack-leaders-widget">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+        <span className="text-base leading-none">🐾</span>
+        <span className="text-sm font-bold text-white flex-1">Pack Leaders</span>
+        <span className="text-[9px] text-slate-500 uppercase tracking-wide">Top Shiba XP</span>
+      </div>
+      <div className="px-3 py-3 overflow-x-auto">
+        {loading ? (
+          <div className="flex gap-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="shrink-0 w-[124px] h-[124px] rounded-2xl bg-white/[0.03] animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            {pets.map((pet, idx) => (
+              <PackLeaderCard key={pet.owner || idx} pet={pet} rank={idx + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const LiveChat = ({ isLoggedIn, effectiveAddress, username }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2323,6 +2457,11 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             )}
           </div>
 
+          {/* ── Pack Leaders (mobile) ── */}
+          <div className="lg:hidden">
+            <PackLeaders />
+          </div>
+
           {/* ── Mobile Live Chat ── */}
           <div className="lg:hidden bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="mobile-inline-chat">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
@@ -2362,6 +2501,9 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
         {/* RIGHT SIDEBAR — Live Chat (Desktop only) */}
         <aside className="hidden lg:flex flex-col w-80 shrink-0 border-l border-white/[0.06]" data-testid="chat-sidebar">
+          <div className="px-3 pt-3">
+            <PackLeaders />
+          </div>
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
             <MessageCircle className="w-4 h-4 text-emerald-400" />
             <span className="text-sm font-bold text-white flex-1">Live Chat</span>
