@@ -115,9 +115,15 @@ const Leaderboard = () => {
   const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
   const calcRewards = (rank) => {
+    // FIX: the original multipliers (1.5 / 0.7 / 0.2) were tuned per-tier
+    // independently and didn't connect — rank 10 paid 163,636 while rank 11
+    // paid 509,090, more $LAB for a WORSE rank. These corrected multipliers
+    // are solved so each tier's floor sits just above the next tier's
+    // ceiling, guaranteeing every rank pays strictly more than the rank
+    // below it. Verified monotonically decreasing across all 50 ranks.
     if (rank <= 10) return { tokens: Math.floor(DISTRIBUTION.top10.tokens * ((11 - rank) / 55) * 1.5), tier: 'Top 10', mult: '1.5x' };
-    if (rank <= 20) return { tokens: Math.floor(DISTRIBUTION.top20.tokens * ((21 - rank) / 55) * 0.7), tier: 'Top 20', mult: '0.7x' };
-    if (rank <= 50) return { tokens: Math.floor(DISTRIBUTION.top50.tokens * ((51 - rank) / 465) * 0.2), tier: 'Top 50', mult: '0.2x' };
+    if (rank <= 20) return { tokens: Math.floor(DISTRIBUTION.top20.tokens * ((21 - rank) / 55) * 0.21825), tier: 'Top 20', mult: '0.22x' };
+    if (rank <= 50) return { tokens: Math.floor(DISTRIBUTION.top50.tokens * ((51 - rank) / 465) * 0.0596046), tier: 'Top 50', mult: '0.06x' };
     return { tokens: 0, tier: 'Below 50', mult: '-' };
   };
 
