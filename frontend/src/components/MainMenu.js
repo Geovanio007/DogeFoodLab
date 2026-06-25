@@ -294,20 +294,123 @@ const EmojiPicker = ({ onSelect, onClose }) => (
 
 // ─── Live Chat Component ─────────────────────────────────────
 // ─── Pack Leaders (Shiba pet XP leaderboard) ─────────────────────────────
-// Mirrors the stage colors/emoji from ShibaGrowth.jsx (the Lab feeding
-// feature) so a pet's card here looks like the same creature, not a
-// generic stat row. Designed as a horizontal "trading card" strip rather
-// than a table — it sits in a slim space above Live Chat and reads more
-// like a mini trophy case than a dense leaderboard.
+// Renders the SAME pet artwork as the Lab's feeding screen (ShibaGrowth.jsx)
+// — not an emoji stand-in — so a card here genuinely looks like the
+// player's actual pet at its current stage: fur color, face shape, the lab
+// goggles that unlock at Alpha, the crown at Mythic. Designed as a
+// horizontal "trading card" strip rather than a table — it sits in a slim
+// space above Live Chat and reads more like a mini trophy case.
 const PACK_STAGES = [
-  { name: 'Tiny Pup',    color: '#94a3b8', emoji: '🐶', glow: null },
-  { name: 'Young Pup',   color: '#60a5fa', emoji: '🐕', glow: null },
-  { name: 'Teen Shiba',  color: '#34d399', emoji: '🦮', glow: null },
-  { name: 'Adult Shiba', color: '#f59e0b', emoji: '🐕‍🦺', glow: 'rgba(245,158,11,0.35)' },
-  { name: 'Alpha Shiba', color: '#a78bfa', emoji: '⭐', glow: 'rgba(167,139,250,0.45)' },
-  { name: 'Mythic Lab',  color: '#f97316', emoji: '🌟', glow: 'rgba(249,115,22,0.55)' },
+  { name: 'Tiny Pup',    color: '#94a3b8', scale: 0.45, aura: null,         goggles: false, crown: false },
+  { name: 'Young Pup',   color: '#60a5fa', scale: 0.58, aura: null,         goggles: false, crown: false },
+  { name: 'Teen Shiba',  color: '#34d399', scale: 0.72, aura: null,         goggles: false, crown: false },
+  { name: 'Adult Shiba', color: '#f59e0b', scale: 0.85, aura: 'rgba(245,158,11,0.35)', goggles: false, crown: false },
+  { name: 'Alpha Shiba', color: '#a78bfa', scale: 0.95, aura: 'rgba(167,139,250,0.45)', goggles: true,  crown: false },
+  { name: 'Mythic Lab',  color: '#f97316', scale: 1.0,  aura: 'rgba(249,115,22,0.55)',  goggles: true,  crown: true  },
 ];
 const PACK_STAGE_XP = [0, 150, 400, 800, 1500, 2800];
+
+// A calm, static "portrait" rendering of the pet — same fur/face/body
+// construction as the Lab's ShibaFace, just without the feeding/chewing
+// animation states (those don't apply to a leaderboard thumbnail). Keeps
+// the idle blink and a slow tail sway so it doesn't feel like a dead image.
+const PackPetPortrait = ({ stageIndex, size = 64 }) => {
+  const s = PACK_STAGES[stageIndex] ?? PACK_STAGES[0];
+  const [blinkOpen, setBlinkOpen] = useState(true);
+  const [tailAngle, setTailAngle] = useState(0);
+
+  useEffect(() => {
+    const blink = () => { setBlinkOpen(false); setTimeout(() => setBlinkOpen(true), 130); };
+    const iv = setInterval(blink, 3200 + Math.random() * 2200);
+    return () => clearInterval(iv);
+  }, []);
+
+  useEffect(() => {
+    let frame, t = Math.random() * 10;
+    const animate = () => { t += 0.045; setTailAngle(Math.sin(t) * 12); frame = requestAnimationFrame(animate); };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const furColor = '#e8a757';
+  const furDark = '#c47f2a';
+  const innerFur = '#fce0b0';
+  const px = size * (s.scale || 1);
+
+  return (
+    <div style={{ position: 'relative', filter: s.aura ? `drop-shadow(0 0 8px ${s.color}66)` : 'none' }}>
+      {s.aura && (
+        <div style={{
+          position: 'absolute', inset: -10, borderRadius: '50%',
+          background: `radial-gradient(circle, ${s.aura} 0%, transparent 70%)`,
+          animation: 'aura-pulse 2.4s ease-in-out infinite',
+          pointerEvents: 'none',
+        }} />
+      )}
+      <svg width={px} height={px * 1.05} viewBox="0 0 140 148" style={{ overflow: 'visible' }}>
+        {/* Tail */}
+        <g transform={`translate(108, 96) rotate(${tailAngle})`} style={{ transformOrigin: '0 0' }}>
+          <path d="M0 0 Q18 -22 22 -40 Q26 -55 18 -60 Q10 -65 6 -52 Q2 -38 0 -20 Z" fill={furColor} stroke={furDark} strokeWidth="1" />
+          <path d="M0 0 Q14 -18 16 -38 Q17 -50 12 -54" fill="none" stroke={innerFur} strokeWidth="2" opacity="0.6" />
+        </g>
+        {/* Body */}
+        <ellipse cx="70" cy="108" rx="42" ry="34" fill={furColor} stroke={furDark} strokeWidth="1.2" />
+        <ellipse cx="70" cy="100" rx="22" ry="16" fill={innerFur} opacity="0.85" />
+        {/* Front legs + paws */}
+        <rect x="40" y="128" width="16" height="18" rx="8" fill={furColor} stroke={furDark} strokeWidth="1" />
+        <rect x="84" y="128" width="16" height="18" rx="8" fill={furColor} stroke={furDark} strokeWidth="1" />
+        <ellipse cx="48" cy="147" rx="9" ry="5" fill={furDark} />
+        <ellipse cx="92" cy="147" rx="9" ry="5" fill={furDark} />
+        {/* Head */}
+        <ellipse cx="70" cy="68" rx="38" ry="36" fill={furColor} stroke={furDark} strokeWidth="1.3" />
+        {/* Ears */}
+        <path d="M32 52 Q24 26 36 18 Q44 14 48 34 Z" fill={furColor} stroke={furDark} strokeWidth="1" />
+        <path d="M35 50 Q29 32 38 24 Q43 20 46 36 Z" fill={furDark} opacity="0.55" />
+        <path d="M108 52 Q116 26 104 18 Q96 14 92 34 Z" fill={furColor} stroke={furDark} strokeWidth="1" />
+        <path d="M105 50 Q111 32 102 24 Q97 20 94 36 Z" fill={furDark} opacity="0.55" />
+        {/* Face mask */}
+        <ellipse cx="70" cy="72" rx="26" ry="24" fill={innerFur} opacity="0.7" />
+        {/* Eyes */}
+        <ellipse cx="55" cy="64" rx="8" ry={blinkOpen ? 9 : 1.5} fill="#1a0a00" style={{ transition: 'ry 0.08s' }} />
+        {blinkOpen && <>
+          <ellipse cx="57" cy="61" rx="2.5" ry="2.8" fill="white" opacity="0.9" />
+          <ellipse cx="57.5" cy="61.5" rx="1.2" ry="1.4" fill={s.color} opacity="0.7" />
+        </>}
+        <ellipse cx="85" cy="64" rx="8" ry={blinkOpen ? 9 : 1.5} fill="#1a0a00" style={{ transition: 'ry 0.08s' }} />
+        {blinkOpen && <>
+          <ellipse cx="87" cy="61" rx="2.5" ry="2.8" fill="white" opacity="0.9" />
+          <ellipse cx="87.5" cy="61.5" rx="1.2" ry="1.4" fill={s.color} opacity="0.7" />
+        </>}
+        {/* Nose */}
+        <ellipse cx="70" cy="77" rx="7" ry="5" fill="#2d1506" />
+        <ellipse cx="68" cy="75.5" rx="2.5" ry="1.8" fill="rgba(255,255,255,0.3)" />
+        <circle cx="67" cy="78" r="1.4" fill="#1a0a00" />
+        <circle cx="73" cy="78" r="1.4" fill="#1a0a00" />
+        {/* Content half-smile */}
+        <path d="M64 85 Q70 89 76 85" fill="none" stroke="#7c3a00" strokeWidth="1.8" strokeLinecap="round" />
+        {/* Alpha+ lab goggles */}
+        {s.goggles && (
+          <g>
+            <rect x="42" y="56" width="20" height="16" rx="8" fill="none" stroke={s.color} strokeWidth="2.5" opacity="0.8" />
+            <rect x="78" y="56" width="20" height="16" rx="8" fill="none" stroke={s.color} strokeWidth="2.5" opacity="0.8" />
+            <line x1="62" y1="64" x2="78" y2="64" stroke={s.color} strokeWidth="2" opacity="0.8" />
+            <rect x="43" y="57" width="18" height="14" rx="7" fill={s.color} opacity="0.12" />
+            <rect x="79" y="57" width="18" height="14" rx="7" fill={s.color} opacity="0.12" />
+          </g>
+        )}
+        {/* Mythic crown */}
+        {s.crown && (
+          <g transform="translate(52, 16)">
+            <polygon points="18,12 0,20 5,0 18,8 31,0 36,20" fill="#f59e0b" stroke="#d97706" strokeWidth="1" />
+            <circle cx="5" cy="3" r="3" fill="#ef4444" />
+            <circle cx="18" cy="0" r="3.5" fill="#a78bfa" />
+            <circle cx="31" cy="3" r="3" fill="#34d399" />
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+};
 
 const PackLeaderCard = ({ pet, rank }) => {
   const stage = PACK_STAGES[pet.current_stage] ?? PACK_STAGES[0];
@@ -327,7 +430,6 @@ const PackLeaderCard = ({ pet, rank }) => {
           ? 'linear-gradient(160deg, rgba(249,115,22,0.18) 0%, #151b28 65%)'
           : '#151b28',
         border: isTop ? '1px solid rgba(249,115,22,0.4)' : '1px solid rgba(255,255,255,0.06)',
-        boxShadow: stage.glow ? `0 0 18px -4px ${stage.glow}` : 'none',
       }}
     >
       {/* Rank badge */}
@@ -341,16 +443,14 @@ const PackLeaderCard = ({ pet, rank }) => {
         {rank}
       </div>
 
-      {/* Pet portrait */}
+      {/* Pet portrait — real pet art, same as the Lab feeding screen */}
       <div
-        className="flex items-center justify-center pt-4 pb-1.5"
+        className="flex items-center justify-center pt-3 pb-1 h-[78px]"
         style={{
-          background: `radial-gradient(circle at 50% 30%, ${stage.color}22, transparent 70%)`,
+          background: `radial-gradient(circle at 50% 35%, ${stage.color}1c, transparent 70%)`,
         }}
       >
-        <span className="text-3xl leading-none" style={{ filter: isTop ? `drop-shadow(0 0 6px ${stage.color})` : 'none' }}>
-          {stage.emoji}
-        </span>
+        <PackPetPortrait stageIndex={pet.current_stage} size={58} />
       </div>
 
       <div className="px-2 pb-2 text-center">
@@ -423,6 +523,12 @@ const PackLeaders = () => {
           </div>
         )}
       </div>
+      <style>{`
+        @keyframes aura-pulse {
+          0%, 100% { opacity: 0.55; transform: scale(1); }
+          50% { opacity: 0.9; transform: scale(1.08); }
+        }
+      `}</style>
     </div>
   );
 };
