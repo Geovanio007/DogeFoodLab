@@ -338,7 +338,6 @@ const SeasonTwoLab = ({ playerAddress }) => {
       setPlayerXP(data.experience ?? data.xp ?? 0);
       setPlayerXPToNext(data.xp_to_next ?? data.next_level_xp ?? 100);
       setPlayerPoints(data.points ?? 0);
-      setLabBalance(data.lab_balance ?? data.tokens ?? 0);
       setNickname(data.nickname || 'Scientist');
       if (data.selected_character) {
         const char = CHARACTERS.find((c) => c.id === data.selected_character);
@@ -347,6 +346,16 @@ const SeasonTwoLab = ({ playerAddress }) => {
       } else {
         setShowCharacterSelection(true);
       }
+
+      // $LAB estimate — separate, non-blocking fetch using the same
+      // rank-based formula as the Leaderboard page (calcRewards). A
+      // failure here should never affect character-gate / core player
+      // load above, so it's isolated from this function's main try/catch.
+      fetch(`${API_URL}/api/player/${playerAddress}/lab-estimate`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((labData) => { if (labData) setLabBalance(labData.estimated_lab ?? 0); })
+        .catch((e) => console.warn('[SeasonTwoLab] lab-estimate fetch failed (non-fatal):', e?.message || e));
+
       return data.level || 1;
     } catch (e) {
       console.warn('[SeasonTwoLab] loadPlayer failed:', e?.message || e);
