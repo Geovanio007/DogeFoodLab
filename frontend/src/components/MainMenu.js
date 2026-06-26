@@ -332,9 +332,9 @@ const PackPetPortrait = ({ stageIndex, size = 64 }) => {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  const furColor = '#d9853a';
-  const furDark = '#a8632a';
-  const innerFur = '#fbf3e2';
+  const furColor = '#e0a868';
+  const furDark = '#bc8748';
+  const innerFur = '#fdf6e8';
   const px = size * (s.scale || 1);
 
   return (
@@ -347,62 +347,60 @@ const PackPetPortrait = ({ stageIndex, size = 64 }) => {
           pointerEvents: 'none',
         }} />
       )}
-      <svg width={px} height={px * 1.05} viewBox="0 0 140 148" style={{ overflow: 'visible' }}>
+      <svg width={px} height={px * 1.07} viewBox="0 0 140 150" style={{ overflow: 'visible' }}>
         {/* Tail */}
-        <g transform={`translate(108, 96) rotate(${tailAngle})`} style={{ transformOrigin: '0 0' }}>
-          <path d="M0 0 Q20 -20 26 -42 Q30 -58 20 -64 Q10 -68 5 -54 Q0 -38 0 -18 Z" fill={furColor} stroke={furDark} strokeWidth="1.2" />
-          <path d="M2 -6 Q16 -22 19 -42 Q21 -54 15 -58" fill="none" stroke={innerFur} strokeWidth="3" opacity="0.7" strokeLinecap="round" />
+        <g transform={`translate(104, 96) rotate(${tailAngle})`} style={{ transformOrigin: '0 0' }}>
+          <path d="M0 0 Q22 -16 27 -38 Q31 -54 21 -60 Q11 -64 6 -50 Q1 -34 0 -14 Z" fill={furColor} stroke={furDark} strokeWidth="1.2" />
+          <path d="M3 -8 Q17 -20 20 -38 Q22 -48 16 -52" fill="none" stroke={innerFur} strokeWidth="3.5" opacity="0.75" strokeLinecap="round" />
         </g>
+        {/* Back legs */}
+        <ellipse cx="46" cy="132" rx="9" ry="11" fill="#cf9a5c" />
+        <ellipse cx="94" cy="132" rx="9" ry="11" fill="#cf9a5c" />
         {/* Body */}
-        <ellipse cx="70" cy="110" rx="40" ry="32" fill={furColor} stroke={furDark} strokeWidth="1.2" />
-        <path d="M50 100 Q70 88 90 100 Q92 122 70 132 Q48 122 50 100 Z" fill={innerFur} opacity="0.95" />
+        <path d="M70 84 C 94 84, 106 102, 104 120 C 102 136, 88 144, 70 144 C 52 144, 38 136, 36 120 C 34 102, 46 84, 70 84 Z" fill={furColor} stroke={furDark} strokeWidth="1.2" />
+        <path d="M53 104 Q70 95 87 104 Q89 124 70 138 Q51 124 53 104 Z" fill={innerFur} />
         {/* Front legs + cream socks */}
-        <rect x="42" y="128" width="14" height="18" rx="7" fill={furColor} stroke={furDark} strokeWidth="1" />
-        <rect x="84" y="128" width="14" height="18" rx="7" fill={furColor} stroke={furDark} strokeWidth="1" />
-        <ellipse cx="49" cy="146" rx="8" ry="4.5" fill={innerFur} />
-        <ellipse cx="91" cy="146" rx="8" ry="4.5" fill={innerFur} />
-        {/* Ears — sharp, upright, pricked */}
-        <path d="M44 50 L34 14 L58 36 Z" fill={furColor} stroke={furDark} strokeWidth="1.2" />
-        <path d="M45 46 L38 22 L54 37 Z" fill={furDark} opacity="0.5" />
-        <path d="M96 50 L106 14 L82 36 Z" fill={furColor} stroke={furDark} strokeWidth="1.2" />
-        <path d="M95 46 L102 22 L86 37 Z" fill={furDark} opacity="0.5" />
+        <rect x="45" y="120" width="12" height="22" rx="6" fill={furColor} stroke={furDark} strokeWidth="1" />
+        <rect x="83" y="120" width="12" height="22" rx="6" fill={furColor} stroke={furDark} strokeWidth="1" />
+        <ellipse cx="51" cy="142" rx="7" ry="4.5" fill={innerFur} />
+        <ellipse cx="89" cy="142" rx="7" ry="4.5" fill={innerFur} />
+        {/* Ears — soft rounded tips */}
+        <path d="M48 44 Q43 22 51 13 Q58 8 60 28 Q59 40 48 44 Z" fill={furColor} stroke={furDark} strokeWidth="1.2" />
+        <path d="M50 40 Q47 25 52 18 Q56 15 57 28" fill={furDark} opacity="0.4" />
+        <path d="M92 44 Q97 22 89 13 Q82 8 80 28 Q81 40 92 44 Z" fill={furColor} stroke={furDark} strokeWidth="1.2" />
+        <path d="M90 40 Q93 25 88 18 Q84 15 83 28" fill={furDark} opacity="0.4" />
         {/* Head */}
-        <path d="M70 32 C 90 32, 104 46, 104 66 C 104 84, 92 96, 70 98 C 48 96, 36 84, 36 66 C 36 46, 50 32, 70 32 Z" fill={furColor} stroke={furDark} strokeWidth="1.3" />
-        {/* Urajiro face mask */}
-        <path d="M70 54 C 84 54, 92 65, 90 78 C 88 89, 78 95, 70 95 C 62 95, 52 89, 50 78 C 48 65, 56 54, 70 54 Z" fill={innerFur} opacity="0.97" />
-        <ellipse cx="53" cy="52" rx="4.5" ry="3" fill={innerFur} opacity="0.9" transform="rotate(-12 53 52)" />
-        <ellipse cx="87" cy="52" rx="4.5" ry="3" fill={innerFur} opacity="0.9" transform="rotate(12 87 52)" />
-        {/* Eyes — almond, alert */}
-        <ellipse cx="58" cy="62" rx="5.5" ry={blinkOpen ? 7 : 1.3} fill="#1a0a00" transform="rotate(-8 58 62)" style={{ transition: 'ry 0.08s' }} />
-        {blinkOpen && <>
-          <ellipse cx="60" cy="59" rx="1.8" ry="2.2" fill="white" opacity="0.9" />
-          <ellipse cx="60.5" cy="59.5" rx="0.9" ry="1.1" fill={s.color} opacity="0.7" />
-        </>}
-        <ellipse cx="82" cy="62" rx="5.5" ry={blinkOpen ? 7 : 1.3} fill="#1a0a00" transform="rotate(8 82 62)" style={{ transition: 'ry 0.08s' }} />
-        {blinkOpen && <>
-          <ellipse cx="80" cy="59" rx="1.8" ry="2.2" fill="white" opacity="0.9" />
-          <ellipse cx="79.5" cy="59.5" rx="0.9" ry="1.1" fill={s.color} opacity="0.7" />
-        </>}
-        {/* Tapered muzzle */}
-        <path d="M58 73 Q70 69 82 73 Q80 86 70 90 Q60 86 58 73 Z" fill={innerFur} opacity="0.95" />
+        <path d="M70 28 C 91 28, 103 44, 102 62 C 101 76, 93 86, 80 90 L 60 90 C 47 86, 39 76, 38 62 C 37 44, 49 28, 70 28 Z" fill={furColor} stroke={furDark} strokeWidth="1.3" />
+        {/* Urajiro cheeks */}
+        <ellipse cx="52" cy="64" rx="13" ry="15" fill={innerFur} opacity="0.95" />
+        <ellipse cx="88" cy="64" rx="13" ry="15" fill={innerFur} opacity="0.95" />
+        <ellipse cx="55" cy="50" rx="4.5" ry="3" fill={innerFur} opacity="0.9" transform="rotate(-15 55 50)" />
+        <ellipse cx="85" cy="50" rx="4.5" ry="3" fill={innerFur} opacity="0.9" transform="rotate(15 85 50)" />
+        {/* Snout */}
+        <path d="M55 70 Q70 64 85 70 Q86 82 78 90 L62 90 Q54 82 55 70 Z" fill={innerFur} />
+        {/* Eyes — small, almond */}
+        <ellipse cx="56" cy="58" rx="4.2" ry={blinkOpen ? 5.6 : 1.1} fill="#241509" transform="rotate(-10 56 58)" style={{ transition: 'ry 0.08s' }} />
+        {blinkOpen && <ellipse cx="57.3" cy="55.5" rx="1.4" ry="1.7" fill="white" opacity="0.9" />}
+        <ellipse cx="84" cy="58" rx="4.2" ry={blinkOpen ? 5.6 : 1.1} fill="#241509" transform="rotate(10 84 58)" style={{ transition: 'ry 0.08s' }} />
+        {blinkOpen && <ellipse cx="82.7" cy="55.5" rx="1.4" ry="1.7" fill="white" opacity="0.9" />}
         {/* Nose */}
-        <path d="M64 77 Q70 74 76 77 Q76 83 70 86 Q64 83 64 77 Z" fill="#241006" />
-        <ellipse cx="67" cy="78" rx="2" ry="1.3" fill="rgba(255,255,255,0.35)" />
+        <path d="M65 74 Q70 71.5 75 74 Q75 79.5 70 82 Q65 79.5 65 74 Z" fill="#2b1a0c" />
+        <ellipse cx="67.5" cy="75" rx="1.6" ry="1" fill="rgba(255,255,255,0.35)" />
         {/* Content Shiba smile */}
-        <path d="M64 88 Q70 92 76 88" fill="none" stroke="#6b3410" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M64 85 Q70 88.5 76 85" fill="none" stroke="#8a5a2e" strokeWidth="1.5" strokeLinecap="round" />
         {/* Alpha+ lab goggles */}
         {s.goggles && (
           <g>
-            <rect x="42" y="58" width="20" height="16" rx="8" fill="none" stroke={s.color} strokeWidth="2.5" opacity="0.8" />
-            <rect x="78" y="58" width="20" height="16" rx="8" fill="none" stroke={s.color} strokeWidth="2.5" opacity="0.8" />
-            <line x1="62" y1="66" x2="78" y2="66" stroke={s.color} strokeWidth="2" opacity="0.8" />
-            <rect x="43" y="59" width="18" height="14" rx="7" fill={s.color} opacity="0.12" />
-            <rect x="79" y="59" width="18" height="14" rx="7" fill={s.color} opacity="0.12" />
+            <rect x="42" y="52" width="20" height="16" rx="8" fill="none" stroke={s.color} strokeWidth="2.5" opacity="0.8" />
+            <rect x="78" y="52" width="20" height="16" rx="8" fill="none" stroke={s.color} strokeWidth="2.5" opacity="0.8" />
+            <line x1="62" y1="60" x2="78" y2="60" stroke={s.color} strokeWidth="2" opacity="0.8" />
+            <rect x="43" y="53" width="18" height="14" rx="7" fill={s.color} opacity="0.12" />
+            <rect x="79" y="53" width="18" height="14" rx="7" fill={s.color} opacity="0.12" />
           </g>
         )}
         {/* Mythic crown */}
         {s.crown && (
-          <g transform="translate(52, 16)">
+          <g transform="translate(52, 10)">
             <polygon points="18,12 0,20 5,0 18,8 31,0 36,20" fill="#f59e0b" stroke="#d97706" strokeWidth="1" />
             <circle cx="5" cy="3" r="3" fill="#ef4444" />
             <circle cx="18" cy="0" r="3.5" fill="#a78bfa" />
