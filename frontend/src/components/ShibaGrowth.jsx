@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import LabCrateSystem, { CrateAvailableBadge, XP_MILESTONES } from './LabCrateSystem';
+import PetWardrobe from './PetWardrobe';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -271,6 +273,9 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
   const [floatingXP, setFloatingXP] = useState(null);
   const [justEvolved, setJustEvolved] = useState(false);
   const [error, setError] = useState(null);
+  const [pendingCrates, setPendingCrates] = useState([]);
+  const [showCrates, setShowCrates] = useState(false);
+  const [showWardrobe, setShowWardrobe] = useState(false);
   const [loading, setLoading] = useState(true);
   const dropZoneRef = useRef(null);
 
@@ -303,6 +308,14 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
     } finally {
       setLoading(false);
     }
+    // Also load any pending crates
+    try {
+      const cr = await fetch(`${API_URL}/api/shiba/crates/${playerAddress}`);
+      if (cr.ok) {
+        const cd = await cr.json();
+        setPendingCrates(cd.crates || []);
+      }
+    } catch {}
   }, [playerAddress]);
 
   useEffect(() => { loadPet(); }, [loadPet]);
@@ -362,6 +375,11 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
         const data = await res.json();
         setPet(data.pet);
         console.log('[Shiba] feed saved — new xp:', data.pet?.current_xp, 'stage:', data.pet?.current_stage);
+        // Handle earned crates from milestone
+        if (data.crates_earned?.length > 0) {
+          setPendingCrates(prev => [...prev, ...data.crates_earned]);
+          setTimeout(() => setShowCrates(true), 1200); // delay so feed animation completes
+        }
       } else {
         const err = await res.text();
         console.error('[Shiba] feed API error:', res.status, err);
@@ -532,6 +550,37 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
         <XPBar xp={pet?.current_xp ?? 0} stage={stage} />
       </div>
 
+      {/* Wardrobe + Crates buttons */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8, position: 'relative', zIndex: 1 }}>
+        <button
+          onClick={() => setShowWardrobe(true)}
+          style={{
+            flex: 1, padding: '7px 0', borderRadius: 10,
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.7)', fontSize: 10,
+            fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em',
+          }}
+        >
+          👗 Wardrobe
+        </button>
+        {pendingCrates.length > 0 && (
+          <button
+            onClick={() => setShowCrates(true)}
+            style={{
+              flex: 1, padding: '7px 0', borderRadius: 10,
+              background: 'linear-gradient(135deg, #f59e0b33, #f9731633)',
+              border: '1px solid #f59e0b66',
+              color: '#f59e0b', fontSize: 10,
+              fontWeight: 900, cursor: 'pointer', letterSpacing: '0.06em',
+              animation: 'glow-pulse 2s infinite',
+            }}
+          >
+            📦 {pendingCrates.length} Crate{pendingCrates.length > 1 ? 's' : ''}!
+          </button>
+        )}
+      </div>
+
       {/* Stats row */}
       <div style={{
         display: 'flex', gap: 6, position: 'relative', zIndex: 1,
@@ -562,6 +611,31 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
       }}>
         {isDragOver ? '🎯 Drop to feed!' : 'Drag a ready treat onto Reactor Pup to feed'}
       </div>
+
+      {/* Lab Crate modal */}
+      {showCrates && pendingCrates.length > 0 && (
+        <LabCrateSystem
+          playerAddress={playerAddress}
+          pendingCrates={pendingCrates}
+          onCrateOpened={(data) => {
+            console.log('[Shiba] crate opened:', data);
+          }}
+          onAllOpened={() => {
+            setShowCrates(false);
+            setPendingCrates([]);
+            loadPet(); // refresh pet + crate count
+          }}
+        />
+      )}
+
+      {/* Pet Wardrobe modal */}
+      {showWardrobe && (
+        <PetWardrobe
+          playerAddress={playerAddress}
+          petStage={stage}
+          onClose={() => setShowWardrobe(false)}
+        />
+      )}
 
       {/* CSS keyframes injected inline */}
       <style>{`
