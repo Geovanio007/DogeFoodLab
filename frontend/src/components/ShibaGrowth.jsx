@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import LabCrateSystem, { CrateAvailableBadge, XP_MILESTONES } from './LabCrateSystem';
+import COSMETIC_LAYERS, { RENDER_ORDER } from './ShibaCosmetics';
+import { COSMETIC_CATALOGUE } from './PetWardrobe';
+
+const RARITY_COLORS = {
+  Common:    '#94a3b8',
+  Uncommon:  '#34d399',
+  Rare:      '#60a5fa',
+  Epic:      '#c084fc',
+  Legendary: '#f59e0b',
+  Mythic:    '#f97316',
+};
 import PetWardrobe from './PetWardrobe';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -17,7 +28,7 @@ const STAGES = [
 const RARITY_XP = { Common: 8, Uncommon: 18, Rare: 35, Epic: 65, Legendary: 110, Mythic: 200 };
 
 // ─── SVG Shiba face (fully inline, no external assets) ───────────────────────
-const ShibaFace = ({ stage, isFeeding, isHappy, isDragOver, scale }) => {
+const ShibaFace = ({ stage, isFeeding, isHappy, isDragOver, scale, equipped = {} }) => {
   const s = STAGES[stage] ?? STAGES[0];
   const [blinkOpen, setBlinkOpen] = useState(true);
   const [tailAngle, setTailAngle] = useState(0);
@@ -205,6 +216,25 @@ const ShibaFace = ({ stage, isFeeding, isHappy, isDragOver, scale }) => {
             <circle cx="31" cy="3" r="3" fill="#34d399" />
           </g>
         )}
+        {/* ── COSMETIC OVERLAY LAYERS — rendered in correct depth order ── */}
+        {/* 1. Back (wings, jetpack, cape) — behind everything */}
+        {equipped.back && COSMETIC_LAYERS[equipped.back] &&
+          COSMETIC_LAYERS[equipped.back](RARITY_COLORS[(COSMETIC_CATALOGUE.find(c=>c.id===equipped.back)||{}).rarity])}
+        {/* 2. Body (coat, hoodie, armor) — over back, under neck/face/head */}
+        {equipped.body && COSMETIC_LAYERS[equipped.body] &&
+          COSMETIC_LAYERS[equipped.body](RARITY_COLORS[(COSMETIC_CATALOGUE.find(c=>c.id===equipped.body)||{}).rarity])}
+        {/* 3. Neck (chain, collar, medal) */}
+        {equipped.neck && COSMETIC_LAYERS[equipped.neck] &&
+          COSMETIC_LAYERS[equipped.neck](RARITY_COLORS[(COSMETIC_CATALOGUE.find(c=>c.id===equipped.neck)||{}).rarity])}
+        {/* 4. Face (glasses, visor, mask) */}
+        {equipped.face && COSMETIC_LAYERS[equipped.face] &&
+          COSMETIC_LAYERS[equipped.face](RARITY_COLORS[(COSMETIC_CATALOGUE.find(c=>c.id===equipped.face)||{}).rarity])}
+        {/* 5. Head (cap, goggles, crown, helmet) — on top of body */}
+        {equipped.head && COSMETIC_LAYERS[equipped.head] &&
+          COSMETIC_LAYERS[equipped.head](RARITY_COLORS[(COSMETIC_CATALOGUE.find(c=>c.id===equipped.head)||{}).rarity])}
+        {/* 6. Aura — floats below/around (rendered last so it wraps all) */}
+        {equipped.aura && COSMETIC_LAYERS[equipped.aura] &&
+          COSMETIC_LAYERS[equipped.aura](RARITY_COLORS[(COSMETIC_CATALOGUE.find(c=>c.id===equipped.aura)||{}).rarity])}
       </svg>
     </div>
   );
@@ -276,6 +306,7 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
   const [pendingCrates, setPendingCrates] = useState([]);
   const [showCrates, setShowCrates] = useState(false);
   const [showWardrobe, setShowWardrobe] = useState(false);
+  const [equippedCosmetics, setEquippedCosmetics] = useState({});
   const [loading, setLoading] = useState(true);
   const dropZoneRef = useRef(null);
 
@@ -308,12 +339,20 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
     } finally {
       setLoading(false);
     }
-    // Also load any pending crates
+    // Also load pending crates
     try {
       const cr = await fetch(`${API_URL}/api/shiba/crates/${playerAddress}`);
       if (cr.ok) {
         const cd = await cr.json();
         setPendingCrates(cd.crates || []);
+      }
+    } catch {}
+    // Load equipped cosmetics
+    try {
+      const wr = await fetch(`${API_URL}/api/shiba/wardrobe/${playerAddress}`);
+      if (wr.ok) {
+        const wd = await wr.json();
+        setEquippedCosmetics(wd.equipped || {});
       }
     } catch {}
   }, [playerAddress]);
@@ -532,6 +571,7 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
           isHappy={isHappy}
           isDragOver={isDragOver}
           scale={stageInfo.scale}
+          equipped={equippedCosmetics}
         />
 
         {/* Floating XP */}
@@ -634,6 +674,7 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
           playerAddress={playerAddress}
           petStage={stage}
           onClose={() => setShowWardrobe(false)}
+          onEquipChange={(equipped) => setEquippedCosmetics(equipped)}
         />
       )}
 
