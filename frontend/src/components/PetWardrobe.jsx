@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import COSMETIC_LAYERS from './ShibaCosmetics';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -12,7 +13,7 @@ const RARITY_COLORS = {
 };
 
 const CATEGORIES = [
-  { id: 'all',   label: 'All',     icon: '✨' },
+  { id: 'all',   label: 'All',     icon: '🧳' },
   { id: 'head',  label: 'Head',    icon: '🎩' },
   { id: 'face',  label: 'Face',    icon: '🕶️' },
   { id: 'body',  label: 'Body',    icon: '👕' },
@@ -58,51 +59,88 @@ export const COSMETIC_CATALOGUE = [
 
 const CosmeticCard = ({ item, owned, equipped, onEquip, onUnequip }) => {
   const col = RARITY_COLORS[item.rarity] || '#94a3b8';
+  const SvgLayer = COSMETIC_LAYERS[item.id];
   return (
-    <div style={{
-      borderRadius: 14,
-      border: `2px solid ${equipped ? col : owned ? col + '55' : 'rgba(255,255,255,0.06)'}`,
-      background: equipped
-        ? `linear-gradient(160deg, ${col}22, rgba(5,3,13,0.95))`
-        : 'rgba(255,255,255,0.03)',
-      padding: '10px 8px',
-      textAlign: 'center',
-      position: 'relative',
-      opacity: owned ? 1 : 0.35,
-      cursor: owned ? 'pointer' : 'default',
-      transition: 'all 0.25s',
-      boxShadow: equipped ? `0 0 16px ${col}55` : 'none',
-    }}
-    onClick={() => {
-      if (!owned) return;
-      if (equipped) onUnequip(item);
-      else onEquip(item);
-    }}
+    <div
+      style={{
+        borderRadius: 14,
+        border: `2px solid ${equipped ? col : owned ? col + '55' : 'rgba(255,255,255,0.06)'}`,
+        background: equipped
+          ? `linear-gradient(160deg, ${col}22, rgba(5,3,13,0.97))`
+          : 'rgba(255,255,255,0.03)',
+        padding: '8px 6px 6px',
+        textAlign: 'center',
+        position: 'relative',
+        opacity: owned ? 1 : 0.4,
+        cursor: owned ? 'pointer' : 'default',
+        transition: 'all 0.25s',
+        boxShadow: equipped ? `0 0 18px ${col}55, inset 0 0 12px ${col}11` : 'none',
+        userSelect: 'none',
+      }}
+      onClick={() => {
+        if (!owned) return;
+        if (equipped) onUnequip(item);
+        else onEquip(item);
+      }}
     >
+      {/* Equipped checkmark */}
       {equipped && (
         <div style={{
-          position: 'absolute', top: 4, right: 4,
-          width: 14, height: 14, borderRadius: '50%',
+          position: 'absolute', top: 4, right: 4, zIndex: 2,
+          width: 15, height: 15, borderRadius: '50%',
           background: col, display: 'flex', alignItems: 'center',
           justifyContent: 'center', fontSize: 8, fontWeight: 900, color: '#000',
         }}>✓</div>
       )}
-      {!owned && (
-        <div style={{
-          position: 'absolute', inset: 0, borderRadius: 12,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 16,
-        }}>🔒</div>
-      )}
-      <div style={{ fontSize: 26, marginBottom: 4 }}>{item.icon}</div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: 'white', marginBottom: 2, lineHeight: 1.2 }}>{item.name}</div>
-      <div style={{ fontSize: 8, fontWeight: 800, color: col, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{item.rarity}</div>
+
+      {/* SVG icon preview — renders the real in-game cosmetic in a mini viewport */}
+      <div style={{
+        width: '100%', aspectRatio: '1', borderRadius: 10,
+        background: `radial-gradient(circle at 50% 60%, ${col}18, rgba(5,3,13,0.8))`,
+        border: `1px solid ${col}22`,
+        overflow: 'hidden', position: 'relative', marginBottom: 5,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {SvgLayer ? (
+          <svg viewBox="0 0 140 150" width="100%" height="100%"
+            style={{ overflow: 'visible' }}>
+            {SvgLayer(col)}
+          </svg>
+        ) : (
+          <span style={{ fontSize: 22 }}>{item.icon}</span>
+        )}
+        {/* Lock overlay */}
+        {!owned && (
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: 9,
+            background: 'rgba(0,0,0,0.65)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 2,
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="11" width="14" height="10" rx="2" fill={col} opacity="0.8"/>
+              <path d="M8 11V7a4 4 0 018 0v4" stroke={col} strokeWidth="2" strokeLinecap="round" fill="none"/>
+              <circle cx="12" cy="16" r="1.5" fill="#000"/>
+            </svg>
+            <span style={{ fontSize: 7, color: col, fontWeight: 800, opacity: 0.8 }}>LOCKED</span>
+          </div>
+        )}
+      </div>
+
+      <div style={{ fontSize: 9, fontWeight: 700, color: 'white', lineHeight: 1.2, marginBottom: 2 }}>
+        {item.name}
+      </div>
+      <div style={{
+        fontSize: 7, fontWeight: 900, color: col,
+        textTransform: 'uppercase', letterSpacing: '0.1em',
+      }}>
+        {item.rarity}
+      </div>
     </div>
   );
 };
 
-const PetWardrobe = ({ playerAddress, petStage = 0, onClose }) => {
+const PetWardrobe = ({ playerAddress, petStage = 0, onClose, onEquipChange }) => {
   const [inventory, setInventory] = useState({ owned: [], equipped: {} });
   const [activeCategory, setActiveCategory] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -126,6 +164,7 @@ const PetWardrobe = ({ playerAddress, petStage = 0, onClose }) => {
     const newEquipped = { ...inventory.equipped, [item.category]: item.id };
     setInventory(p => ({ ...p, equipped: newEquipped }));
     setSaving(true);
+    if (onEquipChange) onEquipChange(newEquipped);
     try {
       await fetch(`${API_URL}/api/shiba/wardrobe/${playerAddress}/equip`, {
         method: 'POST',
@@ -134,13 +173,14 @@ const PetWardrobe = ({ playerAddress, petStage = 0, onClose }) => {
       });
     } catch (e) { console.warn('[Wardrobe] equip failed:', e); }
     finally { setSaving(false); }
-  }, [inventory.equipped, playerAddress]);
+  }, [inventory.equipped, playerAddress, onEquipChange]);
 
   const unequip = useCallback(async (item) => {
     const newEquipped = { ...inventory.equipped };
     delete newEquipped[item.category];
     setInventory(p => ({ ...p, equipped: newEquipped }));
     setSaving(true);
+    if (onEquipChange) onEquipChange(newEquipped);
     try {
       await fetch(`${API_URL}/api/shiba/wardrobe/${playerAddress}/unequip`, {
         method: 'POST',
@@ -149,7 +189,7 @@ const PetWardrobe = ({ playerAddress, petStage = 0, onClose }) => {
       });
     } catch (e) { console.warn('[Wardrobe] unequip failed:', e); }
     finally { setSaving(false); }
-  }, [inventory.equipped, playerAddress]);
+  }, [inventory.equipped, playerAddress, onEquipChange]);
 
   const visible = COSMETIC_CATALOGUE.filter(c =>
     activeCategory === 'all' || c.category === activeCategory
