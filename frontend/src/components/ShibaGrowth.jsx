@@ -8,8 +8,8 @@ const RARITY_COLORS = {
   Uncommon:  '#34d399',
   Rare:      '#60a5fa',
   Epic:      '#c084fc',
-  Legendary: '#f59e0b',
-  Mythic:    '#f97316',
+  Legendary: '#eab308',
+  Mythic:    '#facc15',
 };
 import PetWardrobe from './PetWardrobe';
 
@@ -20,9 +20,9 @@ const STAGES = [
   { id: 0, name: 'Tiny Pup',    xpRequired: 0,    scale: 0.45, color: '#94a3b8', aura: null,           emoji: '🐶' },
   { id: 1, name: 'Young Pup',   xpRequired: 150,  scale: 0.58, color: '#60a5fa', aura: null,           emoji: '🐕' },
   { id: 2, name: 'Teen Shiba',  xpRequired: 400,  scale: 0.72, color: '#34d399', aura: null,           emoji: '🦮' },
-  { id: 3, name: 'Adult Shiba', xpRequired: 800,  scale: 0.85, color: '#f59e0b', aura: '#f59e0b33',   emoji: '🐕‍🦺' },
+  { id: 3, name: 'Adult Shiba', xpRequired: 800,  scale: 0.85, color: '#eab308', aura: '#eab30833',   emoji: '🐕‍🦺' },
   { id: 4, name: 'Alpha Shiba', xpRequired: 1500, scale: 0.95, color: '#a78bfa', aura: '#a78bfa44',   emoji: '⭐' },
-  { id: 5, name: 'Mythic Lab',  xpRequired: 2800, scale: 1.10, color: '#f97316', aura: '#f9731666',   emoji: '🌟' },
+  { id: 5, name: 'Mythic Lab',  xpRequired: 2800, scale: 1.10, color: '#facc15', aura: '#facc1566',   emoji: '🌟' },
 ];
 
 const RARITY_XP = { Common: 8, Uncommon: 18, Rare: 35, Epic: 65, Legendary: 110, Mythic: 200 };
@@ -210,7 +210,7 @@ const ShibaFace = ({ stage, isFeeding, isHappy, isDragOver, scale, equipped = {}
           // Mythic crown
           <g transform="translate(52, 10)">
             <polygon points="18,12 0,20 5,0 18,8 31,0 36,20"
-              fill="#f59e0b" stroke="#d97706" strokeWidth="1" />
+              fill="#eab308" stroke="#ca8a04" strokeWidth="1" />
             <circle cx="5" cy="3" r="3" fill="#ef4444" />
             <circle cx="18" cy="0" r="3.5" fill="#a78bfa" />
             <circle cx="31" cy="3" r="3" fill="#34d399" />
@@ -244,7 +244,7 @@ const ShibaFace = ({ stage, isFeeding, isHappy, isDragOver, scale, equipped = {}
 const FloatingXP = ({ value, rarity, onDone }) => {
   const col = {
     Common: '#94a3b8', Rare: '#60a5fa', Epic: '#c084fc',
-    Legendary: '#f59e0b', Mythic: '#f97316',
+    Legendary: '#eab308', Mythic: '#facc15',
   }[rarity] || '#34d399';
   useEffect(() => { const t = setTimeout(onDone, 1400); return () => clearTimeout(t); }, [onDone]);
   return (
