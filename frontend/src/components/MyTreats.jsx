@@ -590,36 +590,51 @@ const TreatCard = ({ treat, index, ingredientMap = {}, onListForSale, isListed =
 };
 
 // Stats Card Component
-const StatsCard = ({ icon: Icon, value, label, color = 'green', subtext }) => (
-  <div className={`
-    relative overflow-hidden rounded-2xl
-    bg-gradient-to-br from-slate-800/80 to-slate-900/80
-    backdrop-blur-xl border border-slate-700/50
-    p-4 sm:p-5 transition-all duration-300 hover:border-${color}-500/50
-    group
-  `}>
-    {/* Subtle Glow */}
-    <div className={`absolute inset-0 bg-${color}-500/5 opacity-0 group-hover:opacity-100 transition-opacity`} />
-    
-    <div className="relative flex items-start gap-3">
-      <div className={`
-        w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center
-        bg-${color}-500/20 text-${color}-400
-      `}>
-        <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className={`text-2xl sm:text-3xl font-bold text-${color}-400`}>
-          {value}
+const StatsCard = ({ icon: Icon, value, label, color = 'green', subtext }) => {
+  // Long values (e.g. 7-digit $LAB amounts) need a smaller font so they
+  // fit the card instead of overflowing and getting visually clipped by
+  // the card's overflow-hidden — this was happening on narrow mobile
+  // (grid-cols-2) cards with values like "1,799,330".
+  const valueStr = String(value ?? '');
+  const valueSizeClass =
+    valueStr.length > 9  ? 'text-base sm:text-xl' :
+    valueStr.length > 6  ? 'text-lg sm:text-2xl' :
+    'text-2xl sm:text-3xl';
+
+  return (
+    <div className={`
+      relative overflow-hidden rounded-2xl
+      bg-gradient-to-br from-slate-800/80 to-slate-900/80
+      backdrop-blur-xl border border-slate-700/50
+      p-4 sm:p-5 transition-all duration-300 hover:border-${color}-500/50
+      group
+    `}>
+      {/* Subtle Glow */}
+      <div className={`absolute inset-0 bg-${color}-500/5 opacity-0 group-hover:opacity-100 transition-opacity`} />
+
+      <div className="relative flex items-start gap-3">
+        <div className={`
+          w-9 h-9 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0
+          bg-${color}-500/20 text-${color}-400
+        `}>
+          <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
         </div>
-        <div className="text-xs sm:text-sm text-slate-400">{label}</div>
-        {subtext && (
-          <div className="text-xs text-slate-500 mt-1">{subtext}</div>
-        )}
+        <div className="flex-1 min-w-0">
+          <div
+            className={`${valueSizeClass} font-bold text-${color}-400 leading-tight break-words tabular-nums`}
+            title={valueStr}
+          >
+            {value}
+          </div>
+          <div className="text-xs sm:text-sm text-slate-400">{label}</div>
+          {subtext && (
+            <div className="text-xs text-slate-500 mt-1">{subtext}</div>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const MyTreats = () => {
   const { isConnected, address } = useAccount();
