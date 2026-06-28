@@ -304,9 +304,9 @@ const PACK_STAGES = [
   { name: 'Tiny Pup',    color: '#94a3b8', scale: 0.45, aura: null,         goggles: false, crown: false },
   { name: 'Young Pup',   color: '#60a5fa', scale: 0.58, aura: null,         goggles: false, crown: false },
   { name: 'Teen Shiba',  color: '#34d399', scale: 0.72, aura: null,         goggles: false, crown: false },
-  { name: 'Adult Shiba', color: '#f59e0b', scale: 0.85, aura: 'rgba(245,158,11,0.35)', goggles: false, crown: false },
+  { name: 'Adult Shiba', color: '#eab308', scale: 0.85, aura: 'rgba(234,179,8,0.35)',   goggles: false, crown: false },
   { name: 'Alpha Shiba', color: '#a78bfa', scale: 0.95, aura: 'rgba(167,139,250,0.45)', goggles: true,  crown: false },
-  { name: 'Mythic Lab',  color: '#f97316', scale: 1.0,  aura: 'rgba(249,115,22,0.55)',  goggles: true,  crown: true  },
+  { name: 'Mythic Lab',  color: '#facc15', scale: 1.0,  aura: 'rgba(250,204,21,0.55)',  goggles: true,  crown: true  },
 ];
 const PACK_STAGE_XP = [0, 150, 400, 800, 1500, 2800];
 
@@ -401,7 +401,7 @@ const PackPetPortrait = ({ stageIndex, size = 64 }) => {
         {/* Mythic crown */}
         {s.crown && (
           <g transform="translate(52, 10)">
-            <polygon points="18,12 0,20 5,0 18,8 31,0 36,20" fill="#f59e0b" stroke="#d97706" strokeWidth="1" />
+            <polygon points="18,12 0,20 5,0 18,8 31,0 36,20" fill="#eab308" stroke="#ca8a04" strokeWidth="1" />
             <circle cx="5" cy="3" r="3" fill="#ef4444" />
             <circle cx="18" cy="0" r="3.5" fill="#a78bfa" />
             <circle cx="31" cy="3" r="3" fill="#34d399" />
@@ -436,7 +436,7 @@ const PackLeaderCard = ({ pet, rank }) => {
       <div
         className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black z-10"
         style={{
-          background: isTop ? 'linear-gradient(135deg,#fbbf24,#f97316)' : 'rgba(255,255,255,0.08)',
+          background: isTop ? 'linear-gradient(135deg,#fde047,#eab308)' : 'rgba(255,255,255,0.08)',
           color: isTop ? '#1c1006' : '#94a3b8',
         }}
       >
