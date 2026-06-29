@@ -342,19 +342,31 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
     // Also load pending crates
     try {
       const cr = await fetch(`${API_URL}/api/shiba/crates/${playerAddress}`);
+      console.log('[Shiba] crates fetch status:', cr.status);
       if (cr.ok) {
         const cd = await cr.json();
+        console.log('[Shiba] pending crates:', cd.crates?.length, cd.crates);
         setPendingCrates(cd.crates || []);
+      } else {
+        console.error('[Shiba] crates fetch failed:', cr.status, await cr.text());
       }
-    } catch {}
+    } catch (e) {
+      console.error('[Shiba] crates fetch error:', e);
+    }
     // Load equipped cosmetics
     try {
       const wr = await fetch(`${API_URL}/api/shiba/wardrobe/${playerAddress}`);
+      console.log('[Shiba] wardrobe fetch status:', wr.status);
       if (wr.ok) {
         const wd = await wr.json();
+        console.log('[Shiba] equipped cosmetics:', wd.equipped);
         setEquippedCosmetics(wd.equipped || {});
+      } else {
+        console.error('[Shiba] wardrobe fetch failed:', wr.status, await wr.text());
       }
-    } catch {}
+    } catch (e) {
+      console.error('[Shiba] wardrobe fetch error:', e);
+    }
   }, [playerAddress]);
 
   useEffect(() => { loadPet(); }, [loadPet]);
