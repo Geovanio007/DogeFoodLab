@@ -2273,7 +2273,16 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
               className="w-full h-auto block"
             />
           </div>
-
+          
+          {/* ── Crate Banner ── */}
+          <div className="w-full overflow-hidden rounded-xl" data-testid="crate-banner-menu">
+            <img
+              src="/Cratebanner.png"
+              alt="Crates"
+              className="w-full h-auto block"
+            />
+          </div>
+          
           {/* ── Mobile: Share & Earn + Quick Stats ── */}
           <div className="lg:hidden space-y-3">
             <button
