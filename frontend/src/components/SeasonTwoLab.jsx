@@ -390,6 +390,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
 
   const loadIngredients = useCallback(async (lvl) => {
     // ── Step 1: load ingredients (critical — must always succeed) ──────────
+    let baseList = [];
     try {
       const unlockedRes = await fetch(`${API_URL}/api/ingredients/unlocked/${lvl}`);
       if (!unlockedRes.ok) return;
@@ -399,10 +400,45 @@ const SeasonTwoLab = ({ playerAddress }) => {
         : Array.isArray(data?.ingredients)
           ? data.ingredients
           : [];
+      baseList = list;
       setIngredients(list);
     } catch (e) {
       console.warn('[SeasonTwoLab] loadIngredients failed:', e?.message || e);
       return; // ingredients failed — stop here
+    }
+    // ── Step 1b: merge in any active Lab-Crate-won temporary ingredients ───
+    // (non-critical — a failure here should never hide the player's
+    // normal level-unlocked ingredients above)
+    try {
+      if (playerAddress) {
+        const tempRes = await fetch(`${API_URL}/api/player/${playerAddress}/temp-ingredients`);
+        if (tempRes.ok) {
+          const tempData = await tempRes.json();
+          const tempList = (tempData.ingredients || []).map((t) => ({
+            id: t.id,
+            name: t.name,
+            emoji: t.emoji,
+            color: t.color,
+            category: t.category,
+            description: t.description,
+            is_temp: true,
+            seconds_remaining: t.seconds_remaining,
+          }));
+          if (tempList.length) {
+            // De-dupe by id in case a temp ingredient is also already
+            // permanently unlocked by level — show the temp (timed) card
+            // since that's the more time-sensitive state to surface.
+            const baseIds = new Set(baseList.map((i) => i.id));
+            const merged = [
+              ...tempList,
+              ...baseList.filter((i) => !tempList.some((t) => t.id === i.id)),
+            ];
+            setIngredients(merged);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[SeasonTwoLab] temp-ingredients fetch failed (non-fatal):', e?.message || e);
     }
     // ── Step 2: load heat event (non-critical — never blocks ingredients) ──
     try {
@@ -415,7 +451,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
       // Heat event fetch failed — silently keep idle_calm, ingredients still show
       console.warn('[SeasonTwoLab] heat event fetch failed (non-fatal):', e?.message || e);
     }
-  }, []);
+  }, [playerAddress]);
 
   const loadMarketFeed = useCallback(async () => {
     try {
@@ -670,7 +706,6 @@ const SeasonTwoLab = ({ playerAddress }) => {
         onBack={() => navigate('/')}
         character={selectedCharacter}
       />
-
        {/* ── Crate Banner — same width as the player information card (TopBar) ── */}
       <div className="relative z-30 px-3 sm:px-4 pt-3" data-testid="crate-banner-lab">
         <div className="rounded-2xl overflow-hidden border border-cyan-400/30">
@@ -681,7 +716,6 @@ const SeasonTwoLab = ({ playerAddress }) => {
           />
         </div>
       </div>
-
 
       <div className="relative z-10 max-w-6xl mx-auto px-3 sm:px-4 pt-3 pb-32 sm:pb-36 grid gap-4 lg:grid-cols-[1fr_320px]">
         <main className="space-y-4">
@@ -1224,6 +1258,52 @@ const CategoryFilters = ({ categories, active, onChange }) => (
   </div>
 );
 
+// Live countdown badge for Lab-Crate-won temporary ingredients. Ticks
+// down client-side every second from the seconds_remaining the backend
+// provided at fetch time, so it stays accurate-looking without needing
+// to re-poll the server every second. Escalates to a pulsing red "use it
+// soon" treatment once under 2 hours remain.
+const TempIngredientTimer = ({ secondsRemaining }) => {
+  const [remaining, setRemaining] = useState(Math.max(0, secondsRemaining || 0));
+
+  useEffect(() => {
+    setRemaining(Math.max(0, secondsRemaining || 0));
+  }, [secondsRemaining]);
+
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const iv = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
+    return () => clearInterval(iv);
+  }, [remaining > 0]);
+
+  if (remaining <= 0) {
+    return (
+      <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded-full bg-red-500/30 text-red-300 border border-red-500/60 whitespace-nowrap">
+        Expired
+      </span>
+    );
+  }
+
+  const hours = Math.floor(remaining / 3600);
+  const minutes = Math.floor((remaining % 3600) / 60);
+  const isUrgent = remaining < 2 * 3600; // under 2 hours left
+  const label = hours > 0 ? `${hours}h ${minutes}m left` : `${minutes}m left`;
+
+  return (
+    <span
+      className={classNames(
+        'absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded-full whitespace-nowrap border',
+        isUrgent
+          ? 'bg-red-500/25 text-red-300 border-red-500/60 animate-pulse'
+          : 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+      )}
+      title="Won from a Lab Crate — use it before it expires!"
+    >
+      ⏳ {label}
+    </span>
+  );
+};
+
 const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading, heatEventId = 'idle_calm' }) => {
   // Which categories get a surge glow based on the active heat event
   const surgeCategories = heatEventId === 'lab_surge'
@@ -1301,13 +1381,16 @@ const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading, hea
             <span className="absolute top-1.5 left-1.5 text-[8px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full" style={{ color: rar.hex, background: rar.hex + '22', border: `1px solid ${rar.hex}66` }}>
               {rar.label}
             </span>
-            {isSurgeActive && surgeCategories.includes(ing.category) && (
+            {isSurgeActive && surgeCategories.includes(ing.category) && !ing.is_temp && (
               <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 animate-pulse whitespace-nowrap">
                 ⚡ SURGE
               </span>
             )}
             {typeof ing.count === 'number' && (
               <span className="absolute top-1.5 right-1.5 text-[10px] font-mono font-bold text-white/80 bg-black/60 rounded-full px-1.5 py-0.5">×{ing.count}</span>
+            )}
+            {ing.is_temp && (
+              <TempIngredientTimer secondsRemaining={ing.seconds_remaining} />
             )}
           </button>
         );
