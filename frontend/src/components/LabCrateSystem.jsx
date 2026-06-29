@@ -99,26 +99,41 @@ const LabCrateModal = ({ crate, onClose, onCrateOpened, playerAddress }) => {
   const cfg = CRATE_TYPES[crate.crate_type] || CRATE_TYPES.basic;
 
   const openCrate = useCallback(async () => {
+    console.log('[LabCrate] opening crate:', crate.id, 'player:', playerAddress);
     setPhase('shaking');
     await new Promise(r => setTimeout(r, 700));
     setPhase('opening');
-    await new Promise(r => setTimeout(r, 900));
-    setPhase('revealing');
-    // Fetch rewards from backend
+    // Fetch rewards DURING the opening animation so they're ready when it finishes
+    let fetchedRewards = [];
     try {
       const res = await fetch(`${API_URL}/api/shiba/crate/${crate.id}/open`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player_address: playerAddress }),
       });
+      console.log('[LabCrate] open response:', res.status);
       if (res.ok) {
         const data = await res.json();
-        setRewards(data.rewards || []);
-        setRevealed(new Array(data.rewards?.length || 0).fill(false));
+        console.log('[LabCrate] rewards:', data.rewards);
+        fetchedRewards = data.rewards || [];
         if (onCrateOpened) onCrateOpened(data);
+      } else {
+        const err = await res.text();
+        console.error('[LabCrate] open error:', res.status, err);
       }
     } catch (e) {
       console.error('[LabCrate] open failed:', e);
+    }
+    // Wait for animation to finish THEN reveal
+    await new Promise(r => setTimeout(r, 900));
+    if (fetchedRewards.length > 0) {
+      setRewards(fetchedRewards);
+      setRevealed(new Array(fetchedRewards.length).fill(false));
+      setPhase('revealing');
+    } else {
+      // API error — reset so player can retry
+      console.warn('[LabCrate] no rewards received, resetting to idle');
+      setPhase('idle');
     }
   }, [crate.id, playerAddress, onCrateOpened]);
 
