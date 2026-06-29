@@ -671,6 +671,18 @@ const SeasonTwoLab = ({ playerAddress }) => {
         character={selectedCharacter}
       />
 
+       {/* ── Crate Banner — same width as the player information card (TopBar) ── */}
+      <div className="relative z-30 px-3 sm:px-4 pt-3" data-testid="crate-banner-lab">
+        <div className="rounded-2xl overflow-hidden border border-cyan-400/30">
+          <img
+            src="/Cratebanner.png"
+            alt="Crates"
+            className="w-full h-auto block"
+          />
+        </div>
+      </div>
+
+
       <div className="relative z-10 max-w-6xl mx-auto px-3 sm:px-4 pt-3 pb-32 sm:pb-36 grid gap-4 lg:grid-cols-[1fr_320px]">
         <main className="space-y-4">
           {/* Kernel of Wow — shows when player holds the special ingredient */}
