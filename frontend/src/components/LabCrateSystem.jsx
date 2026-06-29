@@ -3,12 +3,17 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 // ─── Crate config ─────────────────────────────────────────────────────────────
+// All tiers share the same DogeFood Lab crate artwork (Crate.png) — tier
+// identity comes through the glow color, particle color, and badge ring
+// around it instead of swapping the actual chest art, so every crate
+// reads as unmistakably "DogeFood Lab" while still feeling distinct by rarity.
+const CRATE_ART = '/Crate.png';
 const CRATE_TYPES = {
-  basic:     { name: 'Lab Crate',          color: '#38bdf8', glow: '#38bdf866', icon: '📦', tier: 1 },
-  rare:      { name: 'Mutation Crate',     color: '#a78bfa', glow: '#a78bfa66', icon: '🧬', tier: 2 },
-  elite:     { name: 'Elite Crate',        color: '#f59e0b', glow: '#f59e0b66', icon: '⚗️', tier: 3 },
-  legendary: { name: 'Legendary Crate',    color: '#f97316', glow: '#f9731666', icon: '🌟', tier: 4 },
-  event:     { name: 'Event Crate',        color: '#ec4899', glow: '#ec489966', icon: '🎉', tier: 5 },
+  basic:     { name: 'Lab Crate',          color: '#38bdf8', glow: '#38bdf866', tier: 1 },
+  rare:      { name: 'Mutation Crate',     color: '#a78bfa', glow: '#a78bfa66', tier: 2 },
+  elite:     { name: 'Elite Crate',        color: '#f59e0b', glow: '#f59e0b66', tier: 3 },
+  legendary: { name: 'Legendary Crate',    color: '#f97316', glow: '#f9731666', tier: 4 },
+  event:     { name: 'Event Crate',        color: '#ec4899', glow: '#ec489966', tier: 5 },
 };
 
 const RARITY_COLORS = {
@@ -179,6 +184,8 @@ const LabCrateModal = ({ crate, onClose, onCrateOpened, playerAddress }) => {
         @keyframes reward-burst { 0%{opacity:0;transform:scale(0.4)} 70%{transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
         @keyframes float-xp { 0%{opacity:0;transform:translateY(8px)} 100%{opacity:1;transform:translateY(0)} }
         @keyframes glow-pulse { 0%,100%{box-shadow:0 0 30px ${cfg.glow}} 50%{box-shadow:0 0 60px ${cfg.color}88} }
+        @keyframes crate-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes light-burst { 0%{opacity:0;transform:scale(0.3)} 40%{opacity:1;transform:scale(1.6)} 100%{opacity:0;transform:scale(2.4)} }
       `}</style>
 
       {/* Header */}
@@ -187,7 +194,10 @@ const LabCrateModal = ({ crate, onClose, onCrateOpened, playerAddress }) => {
           Lab Reward
         </div>
         <div style={{ fontSize: 22, fontWeight: 900, color: 'white' }}>{cfg.name}</div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{cfg.icon} {crate.milestone_label || 'Milestone Reward'}</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+          <img src={CRATE_ART} alt="" style={{ width: 14, height: 14, display: 'inline-block', verticalAlign: '-2px', marginRight: 4 }} />
+          {crate.milestone_label || 'Milestone Reward'}
+        </div>
       </div>
 
       {/* Crate */}
@@ -196,32 +206,52 @@ const LabCrateModal = ({ crate, onClose, onCrateOpened, playerAddress }) => {
           ref={shakeRef}
           style={{
             position: 'relative',
-            width: 160, height: 160,
+            width: 200, height: 200,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            animation: phase === 'shaking' ? 'crate-shake 0.7s ease-in-out' :
-                       phase === 'opening' ? 'crate-pop 0.9s ease-out forwards' : 'glow-pulse 2s infinite',
+            animation:
+              phase === 'shaking' ? 'crate-shake 0.7s ease-in-out' :
+              phase === 'opening' ? 'crate-pop 0.9s ease-out forwards' :
+              'crate-float 2.6s ease-in-out infinite, glow-pulse 2s infinite',
             marginBottom: 32,
           }}
         >
-          {/* Glow ring */}
+          {/* Glow ring — carries the rarity color since the art itself is one fixed asset */}
           <div style={{
             position: 'absolute', inset: 0, borderRadius: '50%',
             background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 70%)`,
           }} />
-          {/* Crate box */}
+
+          {/* Tier badge ribbon, top-right of the crate */}
           <div style={{
-            width: 120, height: 120, borderRadius: 20,
-            background: `linear-gradient(135deg, ${cfg.color}33, rgba(5,3,13,0.9))`,
-            border: `3px solid ${cfg.color}`,
-            boxShadow: `0 0 30px ${cfg.glow}, inset 0 0 20px ${cfg.color}22`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 52,
-            position: 'relative',
+            position: 'absolute', top: 4, right: 4, zIndex: 2,
+            padding: '3px 9px', borderRadius: 99,
+            background: `linear-gradient(135deg, ${cfg.color}, ${cfg.color}aa)`,
+            color: '#000', fontSize: 10, fontWeight: 900,
+            letterSpacing: '0.06em', textTransform: 'uppercase',
+            boxShadow: `0 2px 12px ${cfg.glow}`,
           }}>
-            {cfg.icon}
-            {/* Lock lines */}
-            <div style={{ position: 'absolute', top: '50%', left: -3, right: -3, height: 3, background: cfg.color, opacity: phase === 'opening' ? 0 : 0.6, transition: 'opacity 0.3s' }} />
+            Tier {cfg.tier}
           </div>
+
+          {/* The actual DogeFood Lab crate artwork */}
+          <img
+            src={CRATE_ART}
+            alt={cfg.name}
+            style={{
+              width: 168, height: 168, objectFit: 'contain',
+              filter: `drop-shadow(0 0 22px ${cfg.glow})`,
+              position: 'relative', zIndex: 1,
+            }}
+          />
+
+          {/* Light burst flash right as the crate pops open */}
+          {phase === 'opening' && (
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: '50%',
+              background: `radial-gradient(circle, white 0%, ${cfg.color} 35%, transparent 75%)`,
+              animation: 'light-burst 0.9s ease-out forwards',
+            }} />
+          )}
 
           {/* Steam particles on opening */}
           {phase === 'opening' && [0,1,2,3,4].map(i => (
@@ -335,7 +365,7 @@ export const CrateAvailableBadge = ({ count, onClick }) => {
           50%{box-shadow:0 4px 30px rgba(245,158,11,0.8)}
         }
       `}</style>
-      <span style={{ fontSize: 16 }}>📦</span>
+      <img src={CRATE_ART} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
       <span>{count} Lab Crate{count > 1 ? 's' : ''} Ready!</span>
     </button>
   );
