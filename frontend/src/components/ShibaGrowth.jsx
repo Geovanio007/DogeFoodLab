@@ -628,7 +628,8 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
               animation: 'glow-pulse 2s infinite',
             }}
           >
-            📦 {pendingCrates.length} Crate{pendingCrates.length > 1 ? 's' : ''}!
+            <img src="/Crate.png" alt="" style={{ width: 14, height: 14, objectFit: 'contain', verticalAlign: '-2px', marginRight: 4 }} />
+            {pendingCrates.length} Crate{pendingCrates.length > 1 ? 's' : ''}!
           </button>
         )}
       </div>
