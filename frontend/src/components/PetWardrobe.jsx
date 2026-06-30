@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import COSMETIC_LAYERS from './ShibaCosmetics';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://dogefood-lab-api.onrender.com';
 
 const RARITY_COLORS = {
   Common:    '#94a3b8',
@@ -149,7 +149,7 @@ const PetWardrobe = ({ playerAddress, petStage = 0, onClose, onEquipChange }) =>
   const loadInventory = useCallback(async () => {
     if (!playerAddress) return;
     try {
-      const res = await fetch(`${API_URL}/api/shiba/wardrobe/${playerAddress}`);
+      const res = await fetch(`${API_URL}/api/lab/wardrobe/${playerAddress}`);
       if (res.ok) setInventory(await res.json());
     } catch (e) {
       console.warn('[Wardrobe] load failed:', e);
@@ -166,7 +166,7 @@ const PetWardrobe = ({ playerAddress, petStage = 0, onClose, onEquipChange }) =>
     setSaving(true);
     if (onEquipChange) onEquipChange(newEquipped);
     try {
-      await fetch(`${API_URL}/api/shiba/wardrobe/${playerAddress}/equip`, {
+      await fetch(`${API_URL}/api/lab/wardrobe/${playerAddress}/equip`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item_id: item.id, category: item.category }),
@@ -182,7 +182,7 @@ const PetWardrobe = ({ playerAddress, petStage = 0, onClose, onEquipChange }) =>
     setSaving(true);
     if (onEquipChange) onEquipChange(newEquipped);
     try {
-      await fetch(`${API_URL}/api/shiba/wardrobe/${playerAddress}/unequip`, {
+      await fetch(`${API_URL}/api/lab/wardrobe/${playerAddress}/unequip`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category: item.category }),
