@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import INGREDIENT_ICONS from '../config/ingredientIcons';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://dogefood-lab-api.onrender.com';
 
 // ─── Crate config ─────────────────────────────────────────────────────────────
 // All tiers share the same DogeFood Lab crate artwork (Crate.png) — tier
@@ -73,20 +74,47 @@ const RewardCard = ({ reward, index, revealed, onReveal }) => {
         </>
       ) : (
         <>
-          <div style={{ fontSize: reward.type === 'points' ? 22 : 28 }}>{reward.icon}</div>
-          <div style={{ fontSize: 11, fontWeight: 800, color: col, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            {reward.rarity}
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'white', textAlign: 'center', lineHeight: 1.3 }}>
-            {reward.label}
-          </div>
-          {reward.type === 'points' && (
-            <div style={{
-              fontSize: 11, color: col, fontWeight: 900,
-              animation: 'float-xp 0.6s ease-out',
-            }}>
-              +{reward.value} pts
-            </div>
+          {/* Ingredient: show real image from INGREDIENT_ICONS */}
+          {reward.type === 'ingredient' ? (() => {
+            const meta = INGREDIENT_ICONS[reward.value] || {};
+            return (
+              <>
+                {meta.icon ? (
+                  <img
+                    src={meta.icon}
+                    alt={meta.name || reward.value}
+                    style={{ width: 44, height: 44, objectFit: 'contain',
+                      filter: `drop-shadow(0 0 8px ${col})` }}
+                  />
+                ) : (
+                  <div style={{ fontSize: 32 }}>{meta.emoji || reward.icon || '🧪'}</div>
+                )}
+                <div style={{ fontSize: 11, fontWeight: 800, color: col, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {reward.rarity}
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'white', textAlign: 'center', lineHeight: 1.3 }}>
+                  {meta.name || reward.label || reward.value}
+                </div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', textAlign: 'center' }}>
+                  ⏳ Unlocked 48h
+                </div>
+              </>
+            );
+          })() : (
+            <>
+              <div style={{ fontSize: reward.type === 'points' ? 22 : 28 }}>{reward.icon}</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: col, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {reward.rarity}
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'white', textAlign: 'center', lineHeight: 1.3 }}>
+                {reward.label}
+              </div>
+              {reward.type === 'points' && (
+                <div style={{ fontSize: 11, color: col, fontWeight: 900, animation: 'float-xp 0.6s ease-out' }}>
+                  +{reward.value} pts
+                </div>
+              )}
+            </>
           )}
         </>
       )}
@@ -111,7 +139,7 @@ const LabCrateModal = ({ crate, onClose, onCrateOpened, playerAddress }) => {
     // Fetch rewards DURING the opening animation so they're ready when it finishes
     let fetchedRewards = [];
     try {
-      const res = await fetch(`${API_URL}/api/shiba/crate/${crate.id}/open`, {
+      const res = await fetch(`${API_URL}/api/lab/crate/${crate.id}/open`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player_address: playerAddress }),
