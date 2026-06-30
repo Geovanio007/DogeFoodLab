@@ -13,7 +13,7 @@ const RARITY_COLORS = {
 };
 import PetWardrobe from './PetWardrobe';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://dogefood-lab-api.onrender.com';
 
 // ─── Growth stage config ──────────────────────────────────────────────────────
 const STAGES = [
@@ -341,7 +341,7 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
     }
     // Also load pending crates
     try {
-      const cr = await fetch(`${API_URL}/api/shiba/crates/${playerAddress}`);
+      const cr = await fetch(`${API_URL}/api/lab/crates/${playerAddress}`);
       console.log('[Shiba] crates fetch status:', cr.status);
       if (cr.ok) {
         const cd = await cr.json();
@@ -355,7 +355,7 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
     }
     // Load equipped cosmetics
     try {
-      const wr = await fetch(`${API_URL}/api/shiba/wardrobe/${playerAddress}`);
+      const wr = await fetch(`${API_URL}/api/lab/wardrobe/${playerAddress}`);
       console.log('[Shiba] wardrobe fetch status:', wr.status);
       if (wr.ok) {
         const wd = await wr.json();
