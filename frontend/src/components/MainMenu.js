@@ -2264,15 +2264,6 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
           {/* ── Player Points Ticker ── */}
           <PlayerTickerCarousel />
-
-          {/* ── Season 2 Banner ── */}
-          <div className="w-full overflow-hidden rounded-xl">
-            <img
-              src="/Season2banner.jpg"
-              alt="Season 2 is Live"
-              className="w-full h-auto block"
-            />
-          </div>
           
           {/* ── Crate Banner ── */}
           <div className="w-full overflow-hidden rounded-xl" data-testid="crate-banner-menu">
