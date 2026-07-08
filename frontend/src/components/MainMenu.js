@@ -533,194 +533,215 @@ const PackLeaders = () => {
   );
 };
 
-const LiveChat = ({ isLoggedIn, effectiveAddress, username }) => {
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [msgInput, setMsgInput] = useState('');
-  const [sending, setSending] = useState(false);
-  const [showEmoji, setShowEmoji] = useState(false);
-  const [replyTo, setReplyTo] = useState(null);
-  const chatContainerRef = useRef(null);
+// ─── Seasonal $LAB Emissions ─────────────────────────────────
+// 20 seasons × 3 months = the game's full 5-year lifetime. The schedule
+// is a smooth exponential taper (~3.4% less per season) anchored so
+// Season 1 equals the live 20M $LAB pool shown on the Leaderboard, and
+// the full 20-season run sums to exactly the 294M $LAB community
+// allocation minted in LABToken.sol (70% of the 420M total supply) —
+// every reward the game will ever pay out, accounted for. Early seasons
+// pay the most so day-one players are rewarded for taking a chance on
+// the game; the long gentle taper (instead of a hard drop-off) keeps
+// rewards meaningful for players who join in year 3, 4, 5 — preserving
+// long-term value instead of burning it all in the first few seasons.
+const LAB_EMISSIONS = [
+  20.0, 19.3, 18.7, 18.0, 17.4, 16.8, 16.3, 15.7, 15.2, 14.7,
+  14.2, 13.7, 13.2, 12.8, 12.3, 11.9, 11.5, 11.1, 10.8, 10.4,
+];
+const LAB_EMISSIONS_CUMULATIVE = (() => {
+  let running = 0;
+  return LAB_EMISSIONS.map((v) => (running = +(running + v).toFixed(1)));
+})();
+const EMISSIONS_CURRENT_SEASON = 2;
 
-  const fetchMessages = useCallback(async () => {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/chat/messages?limit=50`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data.messages || []);
-      }
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+const LabCoin = ({ size = 18, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" fill="none" className={className}>
+    <defs>
+      <linearGradient id="labCoinGrad" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#fde68a" />
+        <stop offset="100%" stopColor="#d97706" />
+      </linearGradient>
+    </defs>
+    <circle cx="20" cy="20" r="18" fill="url(#labCoinGrad)" stroke="#78350f" strokeWidth="1.5" />
+    <circle cx="20" cy="20" r="14.5" fill="none" stroke="#78350f" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="2.2 2.2" />
+    <text x="20" y="24.5" textAnchor="middle" fontSize="10" fontWeight="900" fill="#78350f" fontFamily="system-ui, sans-serif">LAB</text>
+  </svg>
+);
+
+// Catmull-Rom → cubic Bezier smoothing so the curve reads as a modern,
+// continuous line rather than jagged straight segments between seasons.
+function buildEmissionPaths(points, baseY) {
+  if (points.length < 2) return { line: '', area: '' };
+  let line = `M ${points[0].x},${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? 0 : i - 1];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    line += ` C ${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+  }
+  const last = points[points.length - 1];
+  const first = points[0];
+  const area = `${line} L ${last.x.toFixed(2)},${baseY} L ${first.x.toFixed(2)},${baseY} Z`;
+  return { line, area };
+}
+
+const SeasonEmissionsChart = () => {
+  const [hoverIdx, setHoverIdx] = useState(null);
+  const [view, setView] = useState('season'); // 'season' | 'cumulative'
+  const [drawn, setDrawn] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDrawn(true), 150);
+    return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 10000);
-    return () => clearInterval(interval);
-  }, [fetchMessages]);
+  const data = view === 'season' ? LAB_EMISSIONS : LAB_EMISSIONS_CUMULATIVE;
+  const maxVal = view === 'season' ? 20 : 294;
+  const W = 300, H = 150, PAD_L = 6, PAD_R = 6, PAD_T = 16, PAD_B = 8;
+  const plotW = W - PAD_L - PAD_R;
+  const plotH = H - PAD_T - PAD_B;
 
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      const container = chatContainerRef.current;
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-      if (isNearBottom) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }
-  }, [messages]);
-
-  const timeAgo = (iso) => {
-    if (!iso) return '';
-    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
-  };
-
-  const handleSend = async () => {
-    if (!msgInput.trim() || !effectiveAddress || sending) return;
-    setSending(true);
-    try {
-      const body = {
-        player_id: effectiveAddress,
-        message: msgInput.trim()
-      };
-      if (replyTo) {
-        body.reply_to = replyTo.message_id;
-        body.reply_nickname = replyTo.player_nickname;
-        body.reply_text = replyTo.message;
-      }
-      const res = await fetch(`${BACKEND_URL}/api/chat/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      if (res.ok) {
-        setMsgInput('');
-        setReplyTo(null);
-        setShowEmoji(false);
-        fetchMessages();
-      }
-    } catch (e) { console.error(e); }
-    finally { setSending(false); }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-2 p-3">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-10 bg-white/5 rounded-lg animate-pulse" />
-        ))}
-      </div>
-    );
-  }
+  const points = data.map((v, i) => ({
+    x: PAD_L + (i / (data.length - 1)) * plotW,
+    y: PAD_T + (1 - v / maxVal) * plotH,
+    v,
+    season: i + 1,
+  }));
+  const baseY = PAD_T + plotH;
+  const { line, area } = buildEmissionPaths(points, baseY);
+  const active = hoverIdx !== null ? points[hoverIdx] : points[EMISSIONS_CURRENT_SEASON - 1];
+  const bandW = plotW / data.length;
 
   return (
-    <div className="flex flex-col h-full" data-testid="live-chat">
-      <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
-        {messages.length === 0 && (
-          <div className="text-center py-12">
-            <MessageCircle className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-slate-500 text-xs">No messages yet. Be the first to say hello!</p>
-          </div>
-        )}
-        {messages.map((msg, idx) => (
-          <div key={msg.message_id || idx} className="group px-2 py-1.5 rounded-lg hover:bg-white/[0.02] transition-colors">
-            <div className="flex items-start gap-2">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5 overflow-hidden">
-                {msg.player_image ? (
-                  <img src={msg.player_image} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-3 h-3 text-white" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-semibold text-sky-400 truncate">{msg.player_nickname || 'Anonymous'}</span>
-                  <span className="text-[9px] text-slate-600">{timeAgo(msg.created_at)}</span>
-                  {isLoggedIn && (
-                    <button
-                      onClick={() => setReplyTo(msg)}
-                      className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-white/10 rounded"
-                      title="Reply"
-                    >
-                      <Reply className="w-3 h-3 text-slate-500" />
-                    </button>
-                  )}
-                </div>
-                {msg.reply_nickname && (
-                  <div className="flex items-center gap-1 mt-0.5 mb-0.5 pl-2 border-l-2 border-sky-500/30">
-                    <Reply className="w-2.5 h-2.5 text-slate-500 shrink-0" />
-                    <span className="text-[9px] text-slate-500 truncate">
-                      <span className="font-medium text-sky-400/70">{msg.reply_nickname}</span>: {msg.reply_text}
-                    </span>
-                  </div>
-                )}
-                <p className={`text-[12px] text-slate-300 break-words leading-relaxed ${msg.emoji_only ? 'text-xl' : ''}`}>
-                  {msg.message}
-                </p>
-              </div>
+    <div className="flex flex-col h-full" data-testid="lab-emissions-chart">
+      <div className="flex-1 overflow-y-auto px-3 py-3">
+        <div className="flex items-center justify-between mb-1 gap-2">
+          <div className="min-w-0">
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider truncate">
+              {hoverIdx === null ? `Season ${active.season} · Current` : view === 'season' ? `Season ${active.season}` : `Through Season ${active.season}`}
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <LabCoin size={16} />
+              <span className="text-lg font-black text-white">{active.v.toFixed(1)}M</span>
+              <span className="text-[10px] text-amber-400/70 font-semibold">$LAB</span>
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="border-t border-white/[0.06] p-2">
-        {replyTo && (
-          <div className="flex items-center gap-1.5 mb-1.5 px-2 py-1 bg-sky-500/10 rounded-lg border border-sky-500/20">
-            <Reply className="w-3 h-3 text-sky-400 shrink-0" />
-            <span className="text-[10px] text-sky-400 truncate flex-1">
-              Replying to <span className="font-semibold">{replyTo.player_nickname}</span>
-            </span>
-            <button onClick={() => setReplyTo(null)} className="text-slate-400 hover:text-white">
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        )}
-        {isLoggedIn ? (
-          <div className="relative flex items-center gap-1.5">
-            <div className="relative">
-              <button
-                onClick={() => setShowEmoji(!showEmoji)}
-                className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-yellow-400"
-                data-testid="emoji-btn"
-              >
-                <Smile className="w-4 h-4" />
-              </button>
-              {showEmoji && <EmojiPicker onSelect={(e) => setMsgInput(prev => prev + e)} onClose={() => setShowEmoji(false)} />}
-            </div>
-            <input
-              type="text"
-              value={msgInput}
-              onChange={(e) => setMsgInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Send a message..."
-              maxLength={500}
-              className="flex-1 bg-[#0d1117] border border-white/[0.06] rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-sky-500/30"
-              data-testid="chat-input"
-            />
+          <div className="flex bg-white/5 rounded-lg p-0.5 gap-0.5 shrink-0">
             <button
-              onClick={handleSend}
-              disabled={!msgInput.trim() || sending}
-              className="p-2 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg transition-colors text-white"
-              data-testid="chat-send-btn"
+              onClick={() => setView('season')}
+              className={`text-[9px] font-semibold px-2 py-1 rounded-md transition-colors ${view === 'season' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-300'}`}
             >
-              <Send className="w-3.5 h-3.5" />
+              Per Season
+            </button>
+            <button
+              onClick={() => setView('cumulative')}
+              className={`text-[9px] font-semibold px-2 py-1 rounded-md transition-colors ${view === 'cumulative' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              Total Paid
             </button>
           </div>
-        ) : (
-          <div className="text-center py-2">
-            <p className="text-[10px] text-slate-500">Connect wallet or sign up to chat</p>
+        </div>
+
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto mt-2" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="emissionFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#facc15" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#facc15" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          {[0.25, 0.5, 0.75].map((f) => (
+            <line
+              key={f}
+              x1={PAD_L} x2={W - PAD_R}
+              y1={PAD_T + plotH * f} y2={PAD_T + plotH * f}
+              stroke="#ffffff" strokeOpacity="0.05" strokeWidth="1"
+            />
+          ))}
+
+          <path
+            d={area}
+            fill="url(#emissionFill)"
+            style={{ opacity: drawn ? 1 : 0, transition: 'opacity 900ms ease 200ms' }}
+          />
+          <path
+            d={line}
+            fill="none"
+            stroke="#facc15"
+            strokeWidth="2"
+            strokeLinecap="round"
+            style={{
+              strokeDasharray: 1000,
+              strokeDashoffset: drawn ? 0 : 1000,
+              transition: 'stroke-dashoffset 1200ms ease',
+            }}
+          />
+
+          {points.map((p, i) => {
+            const isCurrent = i === EMISSIONS_CURRENT_SEASON - 1;
+            const isHovered = hoverIdx === i;
+            return (
+              <g key={i}>
+                {isCurrent && (
+                  <circle
+                    cx={p.x} cy={p.y} r="7"
+                    fill="#facc15" fillOpacity="0.25"
+                    className="animate-ping"
+                    style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                  />
+                )}
+                <circle
+                  cx={p.x} cy={p.y}
+                  r={isHovered || isCurrent ? 3.5 : 2}
+                  fill={isCurrent ? '#facc15' : '#151b28'}
+                  stroke="#facc15"
+                  strokeWidth={isHovered || isCurrent ? 2 : 1.25}
+                  style={{ transition: 'r 150ms ease' }}
+                />
+                <rect
+                  x={p.x - bandW / 2} y={PAD_T}
+                  width={bandW} height={plotH}
+                  fill="transparent"
+                  onMouseEnter={() => setHoverIdx(i)}
+                  onMouseLeave={() => setHoverIdx(null)}
+                  onTouchStart={() => setHoverIdx(i)}
+                  style={{ cursor: 'pointer' }}
+                />
+              </g>
+            );
+          })}
+        </svg>
+
+        <div className="flex justify-between mt-1 px-1">
+          <span className="text-[8px] text-slate-600">S1</span>
+          <span className="text-[8px] text-slate-600">S10</span>
+          <span className="text-[8px] text-slate-600">S20</span>
+        </div>
+
+        <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+          <div className="bg-white/[0.03] rounded-lg py-1.5 px-1 border border-white/[0.05]">
+            <div className="text-[11px] font-bold text-white">294M</div>
+            <div className="text-[8px] text-slate-500">Total $LAB</div>
           </div>
-        )}
+          <div className="bg-white/[0.03] rounded-lg py-1.5 px-1 border border-white/[0.05]">
+            <div className="text-[11px] font-bold text-white">20</div>
+            <div className="text-[8px] text-slate-500">Seasons</div>
+          </div>
+          <div className="bg-amber-500/10 rounded-lg py-1.5 px-1 border border-amber-500/20">
+            <div className="text-[11px] font-bold text-amber-300">Top 50</div>
+            <div className="text-[8px] text-slate-500">Get Paid</div>
+          </div>
+        </div>
+
+        <p className="text-[9px] text-slate-500 leading-relaxed mt-2.5 text-center">
+          Rewards taper ~3.4% each season so early Scientists earn the most,
+          while a long gentle tail keeps $LAB flowing for years to come.
+        </p>
       </div>
     </div>
   );
@@ -2568,15 +2589,12 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             <PackLeaders />
           </div>
 
-          {/* ── Mobile Live Chat ── */}
-          <div className="lg:hidden bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="mobile-inline-chat">
+          {/* ── Mobile Season Rewards Chart ── */}
+          <div className="lg:hidden bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden" data-testid="mobile-emissions-chart">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
-              <MessageCircle className="w-4 h-4 text-emerald-400" />
-              <span className="text-sm font-bold text-white flex-1">Live Chat</span>
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
+              <BarChart3 className="w-4 h-4 text-amber-400" />
+              <span className="text-sm font-bold text-white flex-1">Season Rewards</span>
+              <LabCoin size={16} />
             </div>
             <div className="mx-3 mt-3 p-2.5 rounded-xl bg-gradient-to-br from-indigo-900/30 to-purple-900/20 border border-indigo-500/15">
               <div className="flex items-center gap-2.5">
@@ -2590,7 +2608,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
               </div>
             </div>
             <div className="h-[350px] overflow-hidden">
-              <LiveChat isLoggedIn={isLoggedIn} effectiveAddress={effectiveAddress} username={username} />
+              <SeasonEmissionsChart />
             </div>
           </div>
 
@@ -2605,19 +2623,15 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
           </div>
         </main>
 
-        {/* RIGHT SIDEBAR — Live Chat (Desktop only) */}
-        <aside className="hidden lg:flex flex-col w-80 shrink-0 border-l border-white/[0.06]" data-testid="chat-sidebar">
+        {/* RIGHT SIDEBAR — Season Rewards Chart (Desktop only) */}
+        <aside className="hidden lg:flex flex-col w-80 shrink-0 border-l border-white/[0.06]" data-testid="emissions-sidebar">
           <div className="px-3 pt-3">
             <PackLeaders />
           </div>
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
-            <MessageCircle className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm font-bold text-white flex-1">Live Chat</span>
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            {gameStats && <span className="text-[10px] text-slate-500 ml-1">{gameStats.total_players} players</span>}
+            <BarChart3 className="w-4 h-4 text-amber-400" />
+            <span className="text-sm font-bold text-white flex-1">Season Rewards</span>
+            <LabCoin size={16} />
           </div>
           <div className="mx-3 mt-3 p-3 rounded-xl bg-gradient-to-br from-indigo-900/30 to-purple-900/20 border border-indigo-500/15">
             <div className="flex items-center gap-2.5">
@@ -2631,7 +2645,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             </div>
           </div>
           <div className="flex-1 overflow-hidden mt-2">
-            <LiveChat isLoggedIn={isLoggedIn} effectiveAddress={effectiveAddress} username={username} />
+            <SeasonEmissionsChart />
           </div>
         </aside>
       </div>
