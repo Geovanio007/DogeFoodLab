@@ -273,7 +273,10 @@ const LANDING_CSS = `
   }
   .phone-mockup-glow {
     position: absolute;
-    inset: -10%;
+    top: -10%;
+    left: -10%;
+    right: -10%;
+    bottom: -10%;
     border-radius: 2.5rem;
     pointer-events: none;
     z-index: 0;
@@ -307,11 +310,20 @@ const LANDING_CSS = `
     overflow: hidden;
     border-radius: 1.5rem;
     background-color: #060814;
-    aspect-ratio: 9 / 18.5;
+    width: 100%;
+    height: 0;
+    /* Classic padding-box aspect-ratio trick (~9:18.5) instead of the
+       aspect-ratio CSS property — not safe to assume every WebView this
+       app runs in supports it, and an unsupported value here silently
+       collapses the screen to zero height instead of erroring loudly. */
+    padding-top: 205.6%;
   }
   .phone-mockup-screen img {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -899,7 +911,12 @@ const PhoneMockup = ({ src, alt, glow = 'cyan', float = false, className = '' })
     <div className="phone-mockup-frame">
       <span aria-hidden className="phone-mockup-notch" />
       <div className="phone-mockup-screen">
-        <img src={src} alt={alt} loading="lazy" />
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
       </div>
     </div>
   </div>
