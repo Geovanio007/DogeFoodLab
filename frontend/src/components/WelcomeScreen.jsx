@@ -23,6 +23,13 @@ import INGREDIENT_ICONS from '../config/ingredientIcons';
 
 const LAB_TOKEN = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/bihai5rz_1000081758-removebg-preview.png';
 
+/* Real in-game captures used inside the phone mockups below. */
+const SHOT_LAB_OVERVIEW   = '/landing/lab-overview.jpg';
+const SHOT_EPIC_TREAT     = '/landing/epic-treat.jpg';
+const SHOT_MUTATION_CRATE = '/landing/mutation-crate.jpg';
+const SHOT_SPIN_WHEEL     = '/landing/spin-wheel.jpg';
+const SHOT_ACTIVITY_STATS = '/landing/activity-stats.jpg';
+
 const SEASON2_LAUNCH_ISO = '2026-06-18T00:00:00Z';
 const SEASON2_LAUNCH_AT = Date.parse(SEASON2_LAUNCH_ISO);
 
@@ -229,9 +236,118 @@ const LANDING_CSS = `
     border-color: rgba(103,232,249,0.4);
   }
 
+  /* ── Stat pill (proof strip) ── */
+  .stat-pill {
+    background-color: rgba(255,255,255,0.04);
+    border: 1px solid rgba(103,232,249,0.25);
+    border-radius: 1rem;
+  }
+
+  /* ── Feature card ── */
+  .feature-card {
+    background-color: rgba(255,255,255,0.035);
+    border: 1px solid rgba(103,232,249,0.18);
+    border-radius: 1.25rem;
+    -webkit-transition: border-color 0.2s ease, background-color 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+  .feature-card:hover {
+    border-color: rgba(103,232,249,0.45);
+    background-color: rgba(255,255,255,0.06);
+  }
+  .feature-card-icon {
+    background-color: rgba(56,189,248,0.12);
+    border: 1px solid rgba(103,232,249,0.35);
+    border-radius: 0.85rem;
+  }
+
+  /* ── Phone mockup ──
+     Bezel is a solid dark shell; the screen image is clipped with a plain
+     overflow:hidden (safe — the "no overflow:hidden" WebView rule above
+     only applies to elements that ALSO paint a gradient background on the
+     same layer, which this doesn't: the glow lives on a separate sibling). */
+  .phone-mockup {
+    position: relative;
+    width: 100%;
+    max-width: 15.5rem;
+  }
+  .phone-mockup-glow {
+    position: absolute;
+    inset: -10%;
+    border-radius: 2.5rem;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .phone-mockup-frame {
+    position: relative;
+    z-index: 1;
+    border-radius: 2rem;
+    padding: 0.5rem;
+    background-color: #0a0e1f;
+    border: 2px solid rgba(103,232,249,0.4);
+    box-shadow:
+      0 20px 45px -15px rgba(2,8,23,0.7),
+      0 0 0 1px rgba(0,0,0,0.4),
+      inset 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .phone-mockup-notch {
+    position: absolute;
+    top: 0.5rem;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    transform: translateX(-50%);
+    width: 34%;
+    height: 0.9rem;
+    background-color: #0a0e1f;
+    border-radius: 999px;
+    z-index: 2;
+  }
+  .phone-mockup-screen {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    background-color: #060814;
+    aspect-ratio: 9 / 18.5;
+  }
+  .phone-mockup-screen img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  /* Gentle float — reuses the orbit-float keyframe already defined above */
+  .mockup-float {
+    -webkit-animation: orbit-float 9s ease-in-out infinite;
+    animation: orbit-float 9s ease-in-out infinite;
+  }
+
+  /* ── Showcase (alternating image + text) ── */
+  .showcase-card {
+    background-color: rgba(255,255,255,0.03);
+    border: 1px solid rgba(103,232,249,0.15);
+    border-radius: 1.5rem;
+  }
+
+  /* ── Lab logbook (testimonial-style) card ── */
+  .logbook-card {
+    background-color: rgba(255,255,255,0.035);
+    border: 1px solid rgba(250,204,21,0.2);
+    border-radius: 1.1rem;
+    border-left: 3px solid rgba(250,204,21,0.5);
+  }
+
+  /* ── Final CTA panel ── */
+  .final-cta-panel {
+    background: linear-gradient(180deg, rgba(56,189,248,0.08) 0%, rgba(10,8,32,0) 100%);
+    border-top: 1px solid rgba(103,232,249,0.15);
+    border-bottom: 1px solid rgba(103,232,249,0.15);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .welcome-particle, .orbit-tile, .animate-spin-slow, .animate-cd-pulse,
-    .animate-marquee, .animate-coin-bounce {
+    .animate-marquee, .animate-coin-bounce, .mockup-float {
       -webkit-animation: none !important;
       animation: none !important;
     }
@@ -403,8 +519,53 @@ const WelcomeScreen = ({ onPlayNow }) => {
         </div>
       </main>
 
+      {/* Hero showcase — real Lab UI, right under the PLAY button */}
+      <section data-testid="hero-showcase" className="relative z-10 flex justify-center px-3 pb-1 sm:pb-2 -mt-1 sm:mt-1">
+        <PhoneMockup src={SHOT_LAB_OVERVIEW} alt="Inside the DogeFood Lab reactor" glow="cyan" className="w-40 sm:w-56" />
+      </section>
+
       <OrbitingIngredients />
+      <StatsBar />
       <IngredientMarquee />
+
+      <FeaturesGrid />
+
+      <ShowcaseSection
+        testId="showcase-brew"
+        eyebrow="The Payoff"
+        title="Every brew ends in a reveal"
+        desc="Load your ingredients, start the timer, and come back to a rarity roll — from Starter all the way up to Mythic. Heat events can push the odds in your favor while you wait."
+        bullets={[
+          '5 rarity tiers, Starter through Mythic',
+          'XP and points land the moment you collect',
+          'Heat events can bump your odds mid-brew',
+        ]}
+        shot={SHOT_EPIC_TREAT}
+        alt="Level 10 Epic Treat reveal"
+        glow="purple"
+      />
+
+      <ShowcaseSection
+        testId="showcase-crates"
+        reverse
+        eyebrow="Lab Rewards"
+        title="Crack crates. Grow your Shiba."
+        desc="Feed your companion, hit an XP milestone, and a Lab Crate is waiting. Open it for rare ingredients, cosmetics, and extra lives that carry straight into your next brew."
+        bullets={[
+          'Every XP milestone drops a new crate',
+          '4 crate tiers, from Basic to Legendary',
+          'Rare ingredients unlock straight into your tray',
+        ]}
+        shot={SHOT_MUTATION_CRATE}
+        alt="Opening a Tier 2 Mutation Crate"
+        glow="gold"
+      />
+
+      <ArenaShowcase />
+
+      <LabLogbook />
+
+      <FinalCTA onPlayNow={onPlayNow} onGuestClick={() => setShowAuthModal(true)} />
 
       {/* Footer */}
       <footer className="relative z-10 px-3 pb-3 sm:pb-6 mt-3 sm:mt-6">
@@ -722,5 +883,248 @@ const IngredientMarquee = React.memo(() => {
     </section>
   );
 });
+
+/* ─── Phone mockup ───
+   Reusable frame for showing real in-game captures. Solid-colour bezel +
+   a separate glow layer behind it (kept off the overflow:hidden screen
+   layer per the WebView rule at the top of this file).             */
+const PHONE_GLOWS = {
+  cyan:   'radial-gradient(circle, rgba(56,189,248,0.35) 0%, transparent 70%)',
+  gold:   'radial-gradient(circle, rgba(250,204,21,0.32) 0%, transparent 70%)',
+  purple: 'radial-gradient(circle, rgba(168,85,247,0.35) 0%, transparent 70%)',
+};
+const PhoneMockup = ({ src, alt, glow = 'cyan', float = false, className = '' }) => (
+  <div className={`phone-mockup ${float ? 'mockup-float' : ''} ${className}`}>
+    <div aria-hidden className="phone-mockup-glow" style={{ background: PHONE_GLOWS[glow] || PHONE_GLOWS.cyan }} />
+    <div className="phone-mockup-frame">
+      <span aria-hidden className="phone-mockup-notch" />
+      <div className="phone-mockup-screen">
+        <img src={src} alt={alt} loading="lazy" />
+      </div>
+    </div>
+  </div>
+);
+
+/* ─── Section eyebrow ─── */
+const SectionEyebrow = ({ children }) => (
+  <div className="flex items-center justify-center gap-3 sm:gap-4">
+    <span className="w-8 sm:w-12 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(103,232,249,0.7))' }} />
+    <span className="text-[9px] sm:text-xs tracking-[0.35em] sm:tracking-[0.4em] font-mono uppercase" style={{ color: 'rgba(103,232,249,0.8)' }}>
+      {children}
+    </span>
+    <span className="w-8 sm:w-12 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(103,232,249,0.7))' }} />
+  </div>
+);
+
+/* ─── Proof strip ─── real gameplay facts, not placeholder growth metrics */
+const STATS = [
+  { value: '50', label: 'Ingredients' },
+  { value: '5', label: 'Rarity Tiers' },
+  { value: '24/7', label: 'Live Arena' },
+];
+const StatsBar = () => (
+  <section data-testid="stats-bar" className="relative z-10 px-3 sm:px-6 mt-1 sm:mt-3 mb-1">
+    <div className="max-w-2xl mx-auto grid grid-cols-3 gap-2 sm:gap-4">
+      {STATS.map((s) => (
+        <div key={s.label} className="stat-pill px-2 py-3 sm:py-5 text-center">
+          <div
+            className="text-xl sm:text-3xl font-black"
+            style={{ fontFamily: "'Fredoka', system-ui, sans-serif", color: '#fef08a', textShadow: '0 0 16px rgba(250,204,21,0.35)' }}
+          >
+            {s.value}
+          </div>
+          <div className="mt-0.5 text-[8px] sm:text-[10px] tracking-[0.18em] sm:tracking-[0.2em] font-mono uppercase" style={{ color: 'rgba(103,232,249,0.7)' }}>
+            {s.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+);
+
+/* ─── Features grid ─── */
+const FEATURES = [
+  { icon: '🧪', title: 'Mix & Brew', desc: 'Load ingredients into the Reactor and brew treats that mature over real time. Rarer combos pay out bigger.' },
+  { icon: '🔥', title: 'Heat Events', desc: 'Critical Mix and Golden Hour roll through the Lab at random, stacking bonus rarity and points while they last.' },
+  { icon: '🎁', title: 'Lab Crates & Growth', desc: 'Feed your Shiba, level it up, and crack open crates for rare ingredients, cosmetics, and extra lives.' },
+  { icon: '⚔️', title: 'Live Arena', desc: 'Enter with $LAB, brew against the clock, and climb the leaderboard for a share of the prize pool.' },
+];
+const FeaturesGrid = () => (
+  <section data-testid="features-section" className="relative z-10 px-3 sm:px-6 py-8 sm:py-14">
+    <div className="max-w-5xl mx-auto">
+      <SectionEyebrow>What&apos;s In The Lab</SectionEyebrow>
+      <h2
+        className="mt-2 text-center text-2xl sm:text-4xl font-black text-white leading-tight"
+        style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}
+      >
+        Built for players who like <span style={{ color: '#38bdf8' }}>chaos</span> with a plan
+      </h2>
+      <div className="mt-6 sm:mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+        {FEATURES.map((f) => (
+          <div key={f.title} className="feature-card p-4 sm:p-6 flex gap-3 sm:gap-4 items-start">
+            <div className="feature-card-icon shrink-0 w-11 h-11 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl">
+              {f.icon}
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-lg font-bold text-white">{f.title}</h3>
+              <p className="mt-1 text-[12px] sm:text-sm leading-relaxed" style={{ color: 'rgba(224,242,254,0.75)' }}>
+                {f.desc}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+/* ─── Alternating image + text showcase ─── */
+const ShowcaseSection = ({ eyebrow, title, desc, bullets, shot, alt, glow, reverse, testId }) => (
+  <section data-testid={testId} className="relative z-10 px-3 sm:px-6 py-5 sm:py-10">
+    <div className={`max-w-4xl mx-auto flex flex-col ${reverse ? 'sm:flex-row-reverse' : 'sm:flex-row'} items-center gap-6 sm:gap-10`}>
+      <div className="shrink-0">
+        <PhoneMockup src={shot} alt={alt} glow={glow} float className="w-40 sm:w-56" />
+      </div>
+      <div className="showcase-card p-5 sm:p-8 w-full sm:flex-1 min-w-0">
+        <span
+          className="text-[9px] sm:text-[10px] tracking-[0.3em] font-mono uppercase"
+          style={{ color: glow === 'gold' ? '#fde047' : glow === 'purple' ? '#c084fc' : 'rgba(103,232,249,0.8)' }}
+        >
+          {eyebrow}
+        </span>
+        <h3 className="mt-2 text-xl sm:text-3xl font-black text-white" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
+          {title}
+        </h3>
+        <p className="mt-3 text-[13px] sm:text-base leading-relaxed" style={{ color: 'rgba(224,242,254,0.8)' }}>
+          {desc}
+        </p>
+        {bullets && (
+          <ul className="mt-4 space-y-1.5">
+            {bullets.map((b) => (
+              <li key={b} className="flex items-start gap-2 text-[12px] sm:text-sm" style={{ color: 'rgba(224,242,254,0.7)' }}>
+                <span
+                  className="mt-1.5 w-1 h-1 rounded-full shrink-0"
+                  style={{ backgroundColor: glow === 'gold' ? '#fde047' : glow === 'purple' ? '#c084fc' : '#38bdf8' }}
+                />
+                {b}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  </section>
+);
+
+/* ─── Arena + Spin dual-phone showcase ─── */
+const ArenaShowcase = () => (
+  <section data-testid="showcase-arena" className="relative z-10 px-3 sm:px-6 py-5 sm:py-10">
+    <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+      <div className="flex gap-3 sm:gap-5 shrink-0">
+        <PhoneMockup src={SHOT_ACTIVITY_STATS} alt="Weekly arena activity and rank" glow="cyan" className="w-32 sm:w-44" />
+        <PhoneMockup src={SHOT_SPIN_WHEEL} alt="Spin and win wheel" glow="gold" float className="w-32 sm:w-44 mt-6 sm:mt-10" />
+      </div>
+      <div className="showcase-card p-5 sm:p-8 w-full sm:flex-1 min-w-0">
+        <span className="text-[9px] sm:text-[10px] tracking-[0.3em] font-mono uppercase" style={{ color: 'rgba(103,232,249,0.8)' }}>
+          Compete &amp; Spin
+        </span>
+        <h3 className="mt-2 text-xl sm:text-3xl font-black text-white" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
+          Climb the board. Spin for more.
+        </h3>
+        <p className="mt-3 text-[13px] sm:text-base leading-relaxed" style={{ color: 'rgba(224,242,254,0.8)' }}>
+          Every entry, treat, and streak feeds your rank. One free spin lands every 24 hours —
+          points, extra lives, even a Mythic ingredient are all on the wheel.
+        </p>
+        <ul className="mt-4 space-y-1.5">
+          <li className="flex items-start gap-2 text-[12px] sm:text-sm" style={{ color: 'rgba(224,242,254,0.7)' }}>
+            <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: '#38bdf8' }} />
+            Entry fees feed a live prize pool
+          </li>
+          <li className="flex items-start gap-2 text-[12px] sm:text-sm" style={{ color: 'rgba(224,242,254,0.7)' }}>
+            <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: '#fde047' }} />
+            Free daily spin, no purchase required
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+);
+
+/* ─── Lab logbook ─── in-universe "testimonials", styled as anonymized
+   scientist log entries (same handle format the Lab already uses for
+   real players) rather than claimed real-user reviews.               */
+const LOGBOOK_ENTRIES = [
+  { handle: 'Scientist 0x4F2A…', tag: 'Rank #7 this week', quote: "Rolled a Critical Mix during Golden Hour and the points just kept climbing. Didn't touch my phone for twenty minutes." },
+  { handle: 'Scientist 0x91CE…', tag: 'Mythic Chef', quote: "My Shiba hit Alpha stage and the crate that dropped had two Rare ingredients I'd never seen before. Worth the grind." },
+  { handle: 'Scientist 0xB37D…', tag: 'Arena regular', quote: "The entry fee is small enough that losing doesn't sting, but the leaderboard still gets genuinely competitive once the pool builds up." },
+  { handle: 'Scientist 0x1A6F…', tag: 'Day 40 streak', quote: "The daily spin is the first thing I open the app for. Landed 4 Extra Lives once and rode that streak for a week." },
+];
+const LabLogbook = () => (
+  <section data-testid="logbook-section" className="relative z-10 px-3 sm:px-6 py-8 sm:py-14">
+    <div className="max-w-5xl mx-auto">
+      <SectionEyebrow>Scientist Transmissions</SectionEyebrow>
+      <h2 className="mt-2 text-center text-2xl sm:text-4xl font-black text-white" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
+        Straight from the lab logbook
+      </h2>
+      <div className="mt-6 sm:mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+        {LOGBOOK_ENTRIES.map((e) => (
+          <div key={e.handle} className="logbook-card p-4 sm:p-6">
+            <p className="text-[13px] sm:text-[15px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.92)' }}>
+              &ldquo;{e.quote}&rdquo;
+            </p>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-[11px] sm:text-xs font-mono truncate" style={{ color: 'rgba(103,232,249,0.8)' }}>{e.handle}</span>
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wide shrink-0" style={{ color: '#fde047' }}>{e.tag}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+/* ─── Final CTA ─── bookends the hero PLAY button; reuses the exact same
+   tested button markup/classes rather than introducing a new style.   */
+const FinalCTA = ({ onPlayNow, onGuestClick }) => (
+  <section data-testid="final-cta-section" className="final-cta-panel relative z-10 mt-2 sm:mt-6 py-10 sm:py-16 px-3 sm:px-6">
+    <div className="relative max-w-2xl mx-auto flex flex-col items-center text-center">
+      <SectionEyebrow>Ready When You Are</SectionEyebrow>
+      <h2
+        className="mt-3 text-2xl sm:text-5xl font-black text-white leading-tight"
+        style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}
+      >
+        Your first brew is one tap away
+      </h2>
+      <p className="mt-3 max-w-md text-[13px] sm:text-base" style={{ color: 'rgba(224,242,254,0.8)' }}>
+        No app store, no download. Connect a wallet or jump in as a guest and start mixing in seconds.
+      </p>
+
+      <div className="play-cta-wrap" data-testid="final-play-btn-wrap" style={{ marginTop: '1.75rem' }}>
+        <button data-testid="final-play-btn" onClick={onPlayNow} className="play-cta" aria-label="Play Now">
+          <span aria-hidden className="play-cta-shine play-cta-shine-1" />
+          <span aria-hidden className="play-cta-dot play-cta-dot-1" />
+          <span aria-hidden className="play-cta-dot play-cta-dot-2" />
+          <span aria-hidden className="play-cta-dot play-cta-dot-3" />
+          <span
+            className="play-cta-text"
+            style={{ fontFamily: "'Bowlby One', 'Luckiest Guy', 'Fredoka', system-ui, sans-serif", letterSpacing: '0.02em', fontWeight: 400 }}
+          >
+            PLAY
+          </span>
+          <img src={LAB_TOKEN} alt="" className="play-cta-coin animate-coin-bounce" />
+        </button>
+      </div>
+
+      <button
+        data-testid="final-guest-cta-btn"
+        onClick={onGuestClick}
+        className="mt-4 text-[11px] sm:text-sm underline-offset-4 hover:underline transition-colors"
+        style={{ color: 'rgba(103,232,249,0.7)' }}
+      >
+        New here? Sign up as guest, with email or Google
+      </button>
+    </div>
+  </section>
+);
 
 export default WelcomeScreen;
