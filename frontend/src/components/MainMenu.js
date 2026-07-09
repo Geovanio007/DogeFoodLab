@@ -554,18 +554,19 @@ const LAB_EMISSIONS_CUMULATIVE = (() => {
 })();
 const EMISSIONS_CURRENT_SEASON = 2;
 
+// Same $LAB artwork PointsSwapWidget.jsx renders — keeping one source of truth
+// for the token image instead of a hand-drawn stand-in.
+const LAB_TOKEN_IMG = 'https://customer-assets.emergentagent.com/job_doge-treats/artifacts/bihai5rz_1000081758-removebg-preview.png';
+
 const LabCoin = ({ size = 18, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" fill="none" className={className}>
-    <defs>
-      <linearGradient id="labCoinGrad" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="#fde68a" />
-        <stop offset="100%" stopColor="#d97706" />
-      </linearGradient>
-    </defs>
-    <circle cx="20" cy="20" r="18" fill="url(#labCoinGrad)" stroke="#78350f" strokeWidth="1.5" />
-    <circle cx="20" cy="20" r="14.5" fill="none" stroke="#78350f" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="2.2 2.2" />
-    <text x="20" y="24.5" textAnchor="middle" fontSize="10" fontWeight="900" fill="#78350f" fontFamily="system-ui, sans-serif">LAB</text>
-  </svg>
+  <img
+    src={LAB_TOKEN_IMG}
+    alt="$LAB"
+    width={size}
+    height={size}
+    className={`inline-block object-contain ${className}`}
+    style={{ width: size, height: size }}
+  />
 );
 
 // Catmull-Rom → cubic Bezier smoothing so the curve reads as a modern,
@@ -653,6 +654,9 @@ const SeasonEmissionsChart = () => {
               <stop offset="0%" stopColor="#facc15" stopOpacity="0.35" />
               <stop offset="100%" stopColor="#facc15" stopOpacity="0" />
             </linearGradient>
+            <clipPath id="currentSeasonCoinClip">
+              <circle cx={points[EMISSIONS_CURRENT_SEASON - 1].x} cy={points[EMISSIONS_CURRENT_SEASON - 1].y} r="6.5" />
+            </clipPath>
           </defs>
 
           {[0.25, 0.5, 0.75].map((f) => (
@@ -689,20 +693,34 @@ const SeasonEmissionsChart = () => {
               <g key={i}>
                 {isCurrent && (
                   <circle
-                    cx={p.x} cy={p.y} r="7"
+                    cx={p.x} cy={p.y} r="8"
                     fill="#facc15" fillOpacity="0.25"
                     className="animate-ping"
                     style={{ transformOrigin: `${p.x}px ${p.y}px` }}
                   />
                 )}
-                <circle
-                  cx={p.x} cy={p.y}
-                  r={isHovered || isCurrent ? 3.5 : 2}
-                  fill={isCurrent ? '#facc15' : '#151b28'}
-                  stroke="#facc15"
-                  strokeWidth={isHovered || isCurrent ? 2 : 1.25}
-                  style={{ transition: 'r 150ms ease' }}
-                />
+                {isCurrent ? (
+                  <>
+                    <circle cx={p.x} cy={p.y} r="7.5" fill="#151b28" stroke="#facc15" strokeWidth="1.5" />
+                    <image
+                      href={LAB_TOKEN_IMG}
+                      xlinkHref={LAB_TOKEN_IMG}
+                      x={p.x - 6.5} y={p.y - 6.5}
+                      width="13" height="13"
+                      clipPath="url(#currentSeasonCoinClip)"
+                      preserveAspectRatio="xMidYMid slice"
+                    />
+                  </>
+                ) : (
+                  <circle
+                    cx={p.x} cy={p.y}
+                    r={isHovered ? 3.5 : 2}
+                    fill="#151b28"
+                    stroke="#facc15"
+                    strokeWidth={isHovered ? 2 : 1.25}
+                    style={{ transition: 'r 150ms ease' }}
+                  />
+                )}
                 <rect
                   x={p.x - bandW / 2} y={PAD_T}
                   width={bandW} height={plotH}
