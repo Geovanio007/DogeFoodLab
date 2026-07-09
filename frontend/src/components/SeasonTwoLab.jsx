@@ -717,8 +717,8 @@ const SeasonTwoLab = ({ playerAddress }) => {
         </div>
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-3 sm:px-4 pt-3 pb-32 sm:pb-36 grid gap-4 lg:grid-cols-[1fr_320px]">
-        <main className="space-y-4">
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-3 sm:px-4 pt-3 pb-32 sm:pb-36 grid gap-4 lg:grid-cols-[1fr_320px] overflow-x-hidden box-border">
+        <main className="space-y-4 min-w-0">
           {/* Kernel of Wow — shows when player holds the special ingredient */}
           <KernelOfWowStatus
             playerAddress={playerAddress}
@@ -1278,7 +1278,7 @@ const TempIngredientTimer = ({ secondsRemaining }) => {
 
   if (remaining <= 0) {
     return (
-      <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded-full bg-red-500/30 text-red-300 border border-red-500/60 whitespace-nowrap">
+      <span className="mt-1 max-w-full text-[7px] text-center leading-tight uppercase tracking-wider font-black px-1.5 py-0.5 rounded-full bg-red-500/30 text-red-300 border border-red-500/60">
         Expired
       </span>
     );
@@ -1292,7 +1292,11 @@ const TempIngredientTimer = ({ secondsRemaining }) => {
   return (
     <span
       className={classNames(
-        'absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded-full whitespace-nowrap border',
+        // In normal flow (not absolute) so it sits centered below the name
+        // instead of floating over the card edge, and wraps instead of
+        // forcing nowrap — both of which used to push it past the left
+        // edge of the screen on first-column cards.
+        'mt-1 max-w-full text-[7px] text-center leading-tight uppercase tracking-wider font-black px-1.5 py-0.5 rounded-full border',
         isUrgent
           ? 'bg-red-500/25 text-red-300 border-red-500/60 animate-pulse'
           : 'bg-amber-500/20 text-amber-300 border-amber-500/50'
@@ -1314,7 +1318,7 @@ const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading, hea
   const isSurgeActive = surgeCategories.length > 0;
   if (loading) {
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2" data-testid="ingredient-tray-loading">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(92px,1fr))] gap-2" data-testid="ingredient-tray-loading">
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i} className="aspect-square rounded-2xl bg-white/5 border border-white/5 animate-pulse" />
         ))}
@@ -1329,7 +1333,7 @@ const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading, hea
     );
   }
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2" data-testid="ingredient-tray">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(92px,1fr))] gap-2" data-testid="ingredient-tray">
       {ingredients.map((ing) => {
         const meta = ingredientMeta(ing.id, ing.name);
         const tint = tintFor(ing.category);
