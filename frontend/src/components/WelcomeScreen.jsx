@@ -267,8 +267,12 @@ const LANDING_CSS = `
      only applies to elements that ALSO paint a gradient background on the
      same layer, which this doesn't: the glow lives on a separate sibling). */
   .phone-mockup {
+    /* No width here on purpose — every call site passes its own Tailwind
+       width class (w-40, w-32, etc.). A same-specificity width rule here
+       would win the cascade (this stylesheet is injected after Tailwind's)
+       and silently override every one of those, collapsing the mockup to
+       whatever tiny width its flex parent happens to resolve to. */
     position: relative;
-    width: 100%;
     max-width: 15.5rem;
   }
   .phone-mockup-glow {
