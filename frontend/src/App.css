@@ -1,9 +1,8 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+/* The Vite starter template's default #root sizing (max-width: 1280px,
+   32px padding, centered) used to live here and was constraining every
+   page in the app to a boxed-in column instead of full width. Removed —
+   each screen (WelcomeScreen, SeasonTwoLab, etc.) already manages its own
+   width and padding with Tailwind, so #root itself needs no styling. */
 
 .logo {
   height: 6em;
