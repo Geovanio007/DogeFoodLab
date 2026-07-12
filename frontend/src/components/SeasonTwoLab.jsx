@@ -406,11 +406,13 @@ const SeasonTwoLab = ({ playerAddress }) => {
       console.warn('[SeasonTwoLab] loadIngredients failed:', e?.message || e);
       return; // ingredients failed — stop here
     }
-    // ── Step 1b: merge in any active Lab-Crate-won temporary ingredients ───
-    // (non-critical — a failure here should never hide the player's
+    // ── Step 2: temp-ingredients merge + heat event — these don't depend on
+    // each other, so run them side by side instead of one after another.
+    // (non-critical — a failure in either should never hide the player's
     // normal level-unlocked ingredients above)
-    try {
-      if (playerAddress) {
+    const tempIngredientsPromise = (async () => {
+      try {
+        if (!playerAddress) return;
         const tempRes = await fetch(`${API_URL}/api/player/${playerAddress}/temp-ingredients`);
         if (tempRes.ok) {
           const tempData = await tempRes.json();
@@ -428,7 +430,6 @@ const SeasonTwoLab = ({ playerAddress }) => {
             // De-dupe by id in case a temp ingredient is also already
             // permanently unlocked by level — show the temp (timed) card
             // since that's the more time-sensitive state to surface.
-            const baseIds = new Set(baseList.map((i) => i.id));
             const merged = [
               ...tempList,
               ...baseList.filter((i) => !tempList.some((t) => t.id === i.id)),
@@ -436,21 +437,23 @@ const SeasonTwoLab = ({ playerAddress }) => {
             setIngredients(merged);
           }
         }
+      } catch (e) {
+        console.warn('[SeasonTwoLab] temp-ingredients fetch failed (non-fatal):', e?.message || e);
       }
-    } catch (e) {
-      console.warn('[SeasonTwoLab] temp-ingredients fetch failed (non-fatal):', e?.message || e);
-    }
-    // ── Step 2: load heat event (non-critical — never blocks ingredients) ──
-    try {
-      const heatRes = await fetch(`${API_URL}/api/ingredients?level=${lvl}`);
-      if (heatRes.ok) {
-        const heatData = await heatRes.json();
-        setHeatEventId(heatData.heat_event_id || 'idle_calm');
+    })();
+    const heatEventPromise = (async () => {
+      try {
+        const heatRes = await fetch(`${API_URL}/api/ingredients?level=${lvl}`);
+        if (heatRes.ok) {
+          const heatData = await heatRes.json();
+          setHeatEventId(heatData.heat_event_id || 'idle_calm');
+        }
+      } catch (e) {
+        // Heat event fetch failed — silently keep idle_calm, ingredients still show
+        console.warn('[SeasonTwoLab] heat event fetch failed (non-fatal):', e?.message || e);
       }
-    } catch (e) {
-      // Heat event fetch failed — silently keep idle_calm, ingredients still show
-      console.warn('[SeasonTwoLab] heat event fetch failed (non-fatal):', e?.message || e);
-    }
+    })();
+    await Promise.all([tempIngredientsPromise, heatEventPromise]);
   }, [playerAddress]);
 
   const loadMarketFeed = useCallback(async () => {
@@ -547,10 +550,13 @@ const SeasonTwoLab = ({ playerAddress }) => {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      // loadMarketFeed and loadBrewingTreats don't depend on player level —
+      // start them immediately instead of waiting on the player→ingredients
+      // chain to finish first, so their latency overlaps instead of stacking.
+      const marketPromise = loadMarketFeed();
+      const treatsPromise = loadBrewingTreats();
       const lvl = await loadPlayerData();
-      await loadIngredients(lvl);
-      await loadMarketFeed();
-      await loadBrewingTreats();
+      await Promise.all([loadIngredients(lvl), marketPromise, treatsPromise]);
       setLoading(false);
     })();
   }, [loadPlayerData, loadIngredients, loadMarketFeed, loadBrewingTreats]);
