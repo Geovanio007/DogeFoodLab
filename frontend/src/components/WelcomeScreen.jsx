@@ -581,7 +581,7 @@ const WelcomeScreen = ({ onPlayNow }) => {
 
       <LabLogbook />
 
-      <FinalCTA onPlayNow={onPlayNow} onGuestClick={() => setShowAuthModal(true)} />
+      <FinalCTA onPlayNow={onPlayNow} />
 
       {/* Footer */}
       <footer className="relative z-10 px-3 pb-3 sm:pb-6 mt-3 sm:mt-6">
@@ -1106,7 +1106,7 @@ const LabLogbook = () => (
 
 /* ─── Final CTA ─── bookends the hero PLAY button; reuses the exact same
    tested button markup/classes rather than introducing a new style.   */
-const FinalCTA = ({ onPlayNow, onGuestClick }) => (
+const FinalCTA = ({ onPlayNow }) => (
   <section data-testid="final-cta-section" className="final-cta-panel relative z-10 mt-2 sm:mt-6 py-10 sm:py-16 px-3 sm:px-6">
     <div className="relative max-w-2xl mx-auto flex flex-col items-center text-center">
       <SectionEyebrow>Ready When You Are</SectionEyebrow>
@@ -1136,14 +1136,41 @@ const FinalCTA = ({ onPlayNow, onGuestClick }) => (
         </button>
       </div>
 
-      <button
-        data-testid="final-guest-cta-btn"
-        onClick={onGuestClick}
-        className="mt-4 text-[11px] sm:text-sm underline-offset-4 hover:underline transition-colors"
-        style={{ color: 'rgba(103,232,249,0.7)' }}
-      >
-        New here? Sign up as guest, with email or Google
-      </button>
+      {/* Social links — same handles/style as the in-app menu footer (MainMenu.js) */}
+      <div data-testid="landing-social-footer" className="mt-8 sm:mt-10 flex flex-col items-center gap-2.5">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-mono">
+          Join the Pack
+        </div>
+        <div className="flex items-center gap-3">
+          <a
+            data-testid="social-twitter-link"
+            href="https://x.com/DogeOsFoodNFT"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Follow DogeFood Lab on X (Twitter)"
+            className="group w-11 h-11 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 flex items-center justify-center transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-6px_rgba(255,255,255,0.25)]"
+          >
+            <svg viewBox="0 0 24 24" className="w-5 h-5 text-white/80 group-hover:text-white transition-colors" fill="currentColor" aria-hidden>
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25h6.834l4.713 6.231 5.443-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644Z" />
+            </svg>
+          </a>
+          <a
+            data-testid="social-telegram-link"
+            href="https://t.me/DogeFoodonDogeOS"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Join DogeFood Lab on Telegram"
+            className="group w-11 h-11 rounded-2xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-400/30 hover:border-sky-400/60 flex items-center justify-center transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-6px_rgba(56,189,248,0.45)]"
+          >
+            <svg viewBox="0 0 24 24" className="w-5 h-5 text-sky-300 group-hover:text-sky-200 transition-colors" fill="currentColor" aria-hidden>
+              <path d="M21.94 4.193 18.86 19.18c-.232 1.027-.84 1.282-1.7.799l-4.7-3.46-2.27 2.18c-.252.252-.462.462-.945.462l.336-4.768 8.683-7.847c.378-.336-.084-.523-.588-.187l-10.74 6.76-4.625-1.45c-1.005-.315-1.026-1.005.21-1.488L20.55 2.77c.84-.315 1.575.187 1.39 1.423Z" />
+            </svg>
+          </a>
+        </div>
+        <div className="text-[10px] text-slate-500 mt-0.5">
+          @DogeOsFoodNFT {'\u00B7'} t.me/DogeFoodonDogeOS
+        </div>
+      </div>
     </div>
   </section>
 );
