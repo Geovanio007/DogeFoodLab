@@ -29,3 +29,19 @@
 # they never collide between deploys)
 /static/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Game art (ingredients, tier badges, mascot, banners) — filenames aren't
+# content-hashed, so cache for 30 days rather than marking immutable. Cuts
+# repeat-visit load time drastically without risking a stale image sticking
+# around forever if one ever gets replaced under the same filename.
+/images/*
+  Cache-Control: public, max-age=2592000
+
+*.png
+  Cache-Control: public, max-age=2592000
+
+*.jpg
+  Cache-Control: public, max-age=2592000
+
+*.jpeg
+  Cache-Control: public, max-age=2592000
