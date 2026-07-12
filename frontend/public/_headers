@@ -34,14 +34,13 @@
 # content-hashed, so cache for 30 days rather than marking immutable. Cuts
 # repeat-visit load time drastically without risking a stale image sticking
 # around forever if one ever gets replaced under the same filename.
-/images/*
+# (Cloudflare _headers rules must be full paths starting with "/" — a bare
+# "*.png" isn't valid, which is what broke the last deploy.)
+/*.png
   Cache-Control: public, max-age=2592000
 
-*.png
+/*.jpg
   Cache-Control: public, max-age=2592000
 
-*.jpg
-  Cache-Control: public, max-age=2592000
-
-*.jpeg
+/*.jpeg
   Cache-Control: public, max-age=2592000
