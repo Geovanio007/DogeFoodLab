@@ -2533,6 +2533,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
               <FeatureCard icon={Palette} label="Treats" gradient="from-purple-500/20 to-pink-600/10" iconColor="text-purple-300" borderColor="border-purple-500/15" to="/nfts" testId="feature-treats" />
               <FeatureCard icon={Store} label="Market" gradient="from-sky-500/20 to-cyan-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/marketplace" testId="feature-market" />
               <FeatureCard icon={Crown} label="Tourney" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/tournament" testId="feature-tournament" />
+              <FeatureCard icon={TrendingUp} label="Lab Surge" gradient="from-emerald-500/20 to-amber-500/10" iconColor="text-emerald-300" borderColor="border-emerald-500/20" to="/lab-surge" badge="NEW" testId="feature-lab-surge" />
             </div>
           </div>
 
