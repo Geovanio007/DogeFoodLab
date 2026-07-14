@@ -41,6 +41,7 @@ const DailyLimitTracker = ({ playerAddress, onStatusUpdate }) => {
   const [purchaseResult, setPurchaseResult] = useState(null);
   const [copied, setCopied] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [creatingNowPayments, setCreatingNowPayments] = useState(null); // holds the package id currently being created, or null
 
   // Fetch daily status
   const fetchDailyStatus = useCallback(async () => {
@@ -174,6 +175,39 @@ const DailyLimitTracker = ({ playerAddress, onStatusUpdate }) => {
       setPurchaseResult({ success: false, message: 'Network error. Please try again.' });
     } finally {
       setCreating(false);
+    }
+  };
+
+  // Pays via a NOWPayments hosted invoice instead of the manual DOGE
+  // address + tx-hash flow above. Sends the player to NOWPayments' own
+  // checkout page, where they can pay with DOGE or any other supported
+  // coin; NOWPayments notifies the backend directly once it settles, so
+  // there's nothing to paste or confirm here.
+  const handleSelectPackageNowPayments = async (pkg) => {
+    setCreatingNowPayments(pkg.id);
+    setPurchaseResult(null);
+
+    try {
+      const response = await fetch(`${API_URL}/api/nowpayments/extra-life/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_address: playerAddress,
+          package_id: pkg.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.invoice_url) {
+        window.location.href = data.invoice_url;
+      } else {
+        setPurchaseResult({ success: false, message: data.detail || 'Failed to create NOWPayments invoice' });
+      }
+    } catch (err) {
+      setPurchaseResult({ success: false, message: 'Network error. Please try again.' });
+    } finally {
+      setCreatingNowPayments(null);
     }
   };
 
@@ -539,8 +573,8 @@ const DailyLimitTracker = ({ playerAddress, onStatusUpdate }) => {
                   /* Package Selection */
                   <div className="space-y-3">
                     {packages.map((pkg) => (
+                      <div key={pkg.id}>
                       <button
-                        key={pkg.id}
                         onClick={() => handleSelectPackage(pkg)}
                         disabled={creating}
                         className={`w-full p-3 rounded-lg border-2 transition-all ${
@@ -580,6 +614,21 @@ const DailyLimitTracker = ({ playerAddress, onStatusUpdate }) => {
                           </Badge>
                         )}
                       </button>
+                      <button
+                        onClick={() => handleSelectPackageNowPayments(pkg)}
+                        disabled={creatingNowPayments === pkg.id}
+                        className="w-full mt-1 py-1.5 text-xs text-rose-300 hover:text-rose-100 underline-offset-2 hover:underline disabled:opacity-50"
+                        data-testid={`extra-life-package-${pkg.id}-nowpayments`}
+                      >
+                        {creatingNowPayments === pkg.id ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Creating invoice...
+                          </span>
+                        ) : (
+                          <>or pay with any crypto (BTC, ETH, USDT...) via NOWPayments</>
+                        )}
+                      </button>
+                      </div>
                     ))}
 
                     {/* Auto-payment notice */}
