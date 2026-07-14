@@ -61,40 +61,91 @@ const PointsCoinIcon = ({ size = 20 }) => (
   </svg>
 );
 
-/* ─── Live candle chart — plain divs, no SVG filters, no blend modes.
-   Height scales against the highest value seen so far this run, so
-   the chart keeps "filling the frame" as the multiplier climbs. ─── */
-const CandleChart = ({ candles, phase }) => {
-  const maxVal = Math.max(1.4, ...candles.map((c) => c.value));
+/* ─── Live candle chart — real OHLC wick+body candles on a labeled,
+   auto-scaling axis (plain divs/percentages, no SVG filters, no blend
+   modes, no CSS transforms — WebView-safe). The axis locks to "nice"
+   round steps (0.2x / 0.5x / 1x / 2.5x / 5x / 10x / 25x) the way a real
+   trading chart does, instead of a raw min/max fit, so a modest climb
+   still reads as a dramatic breakout instead of a flat wall of bars. ─── */
+const CANDLE_AXIS_STEPS = [0.1, 0.2, 0.25, 0.5, 1, 2.5, 5, 10, 25];
+const pickAxisStep = (range) => CANDLE_AXIS_STEPS.find((s) => range / s <= 6) || 25;
+
+const CandleChart = ({ candles, phase, liveMultiplier }) => {
+  const highs = candles.map((c) => c.high);
+  const lows = candles.map((c) => c.low);
+  const dataMax = Math.max(1.3, ...highs, liveMultiplier || 1);
+  const dataMin = Math.min(1.0, ...lows);
+  const step = pickAxisStep(Math.max(dataMax - dataMin, 0.3));
+  const yMax = Math.ceil((dataMax + step * 0.25) / step) * step;
+  const yMin = Math.max(0, Math.floor((dataMin - step * 0.1) / step) * step);
+  const range = Math.max(yMax - yMin, 0.0001);
+  const yToPct = (v) => ((yMax - v) / range) * 100;
+  const decimals = step < 1 ? 1 : (step % 1 !== 0 ? 1 : 0);
+
+  const gridLines = [];
+  for (let v = Math.ceil(yMin / step) * step; v <= yMax + step * 0.001; v += step) {
+    gridLines.push(Math.round(v * 1000) / 1000);
+  }
+
   return (
-    <div className="relative h-40 sm:h-48 rounded-xl bg-[#0b0f1a] border border-white/[0.06] overflow-hidden px-2 pb-2 pt-3">
-      <div className="ls-grid absolute inset-0 pointer-events-none" />
-      <div className="relative h-full flex items-end gap-[3px]">
+    <div className="relative h-48 sm:h-56 rounded-xl bg-[#0b0f1a] border border-white/[0.06] overflow-hidden">
+      {gridLines.map((v) => (
+        <div key={v} className="absolute left-0 right-0" style={{ top: `${yToPct(v)}%` }}>
+          <div className="absolute left-8 right-0 h-px bg-white/[0.06]" />
+          <span className="absolute left-1 text-[9px] text-slate-500 leading-none" style={{ top: '-5px' }}>
+            {v.toFixed(decimals)}x
+          </span>
+        </div>
+      ))}
+
+      {phase === 'running' && liveMultiplier != null && (
+        <div
+          className="absolute left-8 right-0 border-t border-dashed border-amber-400/50 z-10"
+          style={{ top: `${yToPct(liveMultiplier)}%` }}
+        />
+      )}
+
+      <div className="absolute inset-0 flex items-stretch gap-[3px] pl-9 pr-2 py-1">
         {candles.map((c, i) => {
-          const heightPct = Math.max(4, (c.value / maxVal) * 100);
           const isLast = i === candles.length - 1;
+          const bodyTop = yToPct(Math.max(c.open, c.close));
+          const bodyBottomPct = yToPct(Math.min(c.open, c.close));
+          const bodyHeight = Math.max(bodyBottomPct - bodyTop, 2);
+          const wickTop = yToPct(c.high);
+          const wickBottom = yToPct(c.low);
+          const color = c.up ? '#22c55e' : '#ef4444';
           return (
-            <div
-              key={c.id}
-              className="flex-1 min-w-[3px] rounded-sm ls-candle"
-              style={{
-                height: `${heightPct}%`,
-                background: c.up ? '#22c55e' : '#ef4444',
-                opacity: isLast ? 1 : 0.85,
-                boxShadow: isLast && phase === 'running' ? `0 0 10px ${c.up ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)'}` : 'none',
-              }}
-            />
+            <div key={c.id} className="relative flex-1 min-w-[5px] ls-candle-in">
+              <div
+                className="absolute"
+                style={{
+                  left: 'calc(50% - 1px)', width: '2px',
+                  top: `${wickTop}%`, height: `${Math.max(wickBottom - wickTop, 0.5)}%`,
+                  background: color, opacity: 0.75,
+                }}
+              />
+              <div
+                className="absolute left-0 right-0 rounded-[1.5px]"
+                style={{
+                  top: `${bodyTop}%`, height: `${bodyHeight}%`,
+                  background: color,
+                  boxShadow: isLast && phase === 'running' ? `0 0 8px ${color}` : 'none',
+                }}
+              />
+            </div>
           );
         })}
       </div>
+
       {phase === 'crashed' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#3f0d0d] ls-crash-flash">
+        <div className="absolute inset-0 flex items-center justify-center bg-[#3f0d0d] ls-crash-flash z-20">
           <span className="text-red-300 font-black text-lg tracking-wide">RUGGED</span>
         </div>
       )}
     </div>
   );
 };
+
 
 /* ─── Stat strip — adapted from a per-round arcade stat bar to a
    once-a-day cadence: personal-best framing instead of "last 100". ─── */
@@ -177,7 +228,7 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
   const beginTicking = useCallback((startedAtIso, existingRunId) => {
     const startMs = new Date(startedAtIso).getTime();
     tickCountRef.current = 0;
-    setCandles([{ id: 0, value: 1.0, up: true }]);
+    setCandles([{ id: 0, open: 1.0, close: 1.0, high: 1.02, low: 0.99, up: true }]);
 
     tickRef.current = setInterval(() => {
       const elapsed = (Date.now() - startMs) / 1000;
@@ -186,11 +237,16 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
       tickCountRef.current += 1;
       if (tickCountRef.current % 4 === 0) {
         setCandles((prev) => {
-          const jitter = m * (1 + (Math.random() - 0.5) * 0.06);
-          const last = prev[prev.length - 1];
-          const next = { id: prev.length, value: Math.max(1.0, jitter), up: jitter >= (last?.value || 1) };
+          const open = prev.length ? prev[prev.length - 1].close : 1.0;
+          const close = Math.max(1.0, m * (1 + (Math.random() - 0.5) * 0.05));
+          const bodyTop = Math.max(open, close);
+          const bodyBottom = Math.min(open, close);
+          const wick = (bodyTop - bodyBottom) * (0.4 + Math.random() * 0.7) + 0.01;
+          const high = bodyTop + wick * Math.random();
+          const low = Math.max(0.85, bodyBottom - wick * Math.random());
+          const next = { id: prev.length, open, close, high, low, up: close >= open };
           const arr = [...prev, next];
-          return arr.length > 32 ? arr.slice(arr.length - 32) : arr;
+          return arr.length > 28 ? arr.slice(arr.length - 28) : arr;
         });
       }
     }, 100);
@@ -294,7 +350,11 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
         {status && <StatStrip history={history} bestMultiplier={bestMultiplier} />}
 
         <div className="mt-3">
-          <CandleChart candles={candles.length ? candles : [{ id: 0, value: 1, up: true }]} phase={phase === 'result-crashed' ? 'crashed' : phase} />
+          <CandleChart
+            candles={candles.length ? candles : [{ id: 0, open: 1, close: 1, high: 1.02, low: 0.99, up: true }]}
+            phase={phase === 'result-crashed' ? 'crashed' : phase}
+            liveMultiplier={phase === 'running' ? liveMultiplier : null}
+          />
         </div>
 
         <div className="mt-4 text-center">
@@ -377,12 +437,6 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
    ✅ No mix-blend-mode, no backdrop-filter, no filter:blur()          */
 const LabSurgeStyles = () => (
   <style>{`
-    .ls-grid {
-      background-image:
-        linear-gradient(rgba(250,204,21,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(250,204,21,0.05) 1px, transparent 1px);
-      background-size: 24px 24px;
-    }
     @keyframes ls-pulse {
       0%,100% { opacity: 0.55; }
       50%     { opacity: 1; }
@@ -391,17 +445,15 @@ const LabSurgeStyles = () => (
       -webkit-animation: ls-pulse 2s ease-in-out infinite;
       animation: ls-pulse 2s ease-in-out infinite;
     }
-    @keyframes ls-candle-in {
+    @keyframes ls-candle-in-kf {
       0%   { -webkit-transform: scaleY(0.6); transform: scaleY(0.6); opacity: 0.4; }
       100% { -webkit-transform: scaleY(1);   transform: scaleY(1);   opacity: 1; }
     }
-    .ls-candle {
+    .ls-candle-in {
       -webkit-transform-origin: bottom;
       transform-origin: bottom;
-      -webkit-animation: ls-candle-in 220ms ease-out;
-      animation: ls-candle-in 220ms ease-out;
-      -webkit-transition: height 180ms ease, box-shadow 180ms ease;
-      transition: height 180ms ease, box-shadow 180ms ease;
+      -webkit-animation: ls-candle-in-kf 220ms ease-out;
+      animation: ls-candle-in-kf 220ms ease-out;
     }
     @keyframes ls-crash-flash {
       0%   { opacity: 0; }
@@ -448,7 +500,7 @@ const LabSurgeStyles = () => (
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     @media (prefers-reduced-motion: reduce) {
-      .ls-pulse, .ls-candle, .ls-crash-flash, .ls-cashout-btn {
+      .ls-pulse, .ls-candle-in, .ls-crash-flash, .ls-cashout-btn {
         -webkit-animation: none !important; animation: none !important;
       }
     }
