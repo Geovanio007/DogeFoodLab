@@ -297,6 +297,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const [playerPoints, setPlayerPoints] = useState(0);
   const [labBalance, setLabBalance] = useState(0);
   const [dailyStatus, setDailyStatus] = useState(null);
+  const [extraLifeModalTrigger, setExtraLifeModalTrigger] = useState(0);
   const [nickname, setNickname] = useState('Scientist');
 
   // --- character ---
@@ -776,6 +777,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
           <DailyLimitTracker
             playerAddress={playerAddress}
             onStatusUpdate={handleDailyStatusUpdate}
+            openModalTrigger={extraLifeModalTrigger}
           />
           {/* Ready Treats — lives directly above Shiba so drag distance is minimal */}
           {brewingTreats.length > 0 && (
@@ -805,7 +807,8 @@ const SeasonTwoLab = ({ playerAddress }) => {
         count={selectedIngredients.length}
         onClear={clearMix}
         onMix={handleMix}
-        canMix={selectedIngredients.length >= 2 && !isBrewing && !isDailyLimitReached}
+        onNeedExtraLife={() => setExtraLifeModalTrigger((t) => t + 1)}
+        hasEnoughIngredients={selectedIngredients.length >= 2}
         isBrewing={isBrewing}
         isDailyLimitReached={isDailyLimitReached}
       />
@@ -1411,7 +1414,9 @@ const IngredientTray = ({ ingredients, selectedIngredients, onPick, loading, hea
 
 /* ----- Bottom mix bar ----- */
 
-const BottomMixBar = ({ count, onClear, onMix, canMix, isBrewing, isDailyLimitReached }) => (
+const BottomMixBar = ({ count, onClear, onMix, onNeedExtraLife, hasEnoughIngredients, isBrewing, isDailyLimitReached }) => {
+  const isMixReady = hasEnoughIngredients && !isBrewing && !isDailyLimitReached;
+  return (
   <div className="fixed inset-x-0 bottom-0 z-30 px-3 sm:px-4 pb-3 sm:pb-4 pt-2 pointer-events-none" data-testid="bottom-mix-bar">
     <div className="mx-auto max-w-3xl">
       <div className="pointer-events-auto rounded-3xl border border-cyan-400/30 bg-gradient-to-r from-[#0a0820]/95 via-[#0d0a2a]/95 to-[#0a0820]/95 backdrop-blur-lg shadow-[0_30px_80px_-10px_rgba(56,189,248,0.4)] p-2 sm:p-3 flex items-center gap-2">
@@ -1431,11 +1436,13 @@ const BottomMixBar = ({ count, onClear, onMix, canMix, isBrewing, isDailyLimitRe
         </button>
         <button
           data-testid="mix-fire-btn"
-          onClick={onMix}
-          disabled={!canMix}
+          onClick={isDailyLimitReached ? onNeedExtraLife : onMix}
+          disabled={isBrewing || (!isDailyLimitReached && !hasEnoughIngredients)}
           className={classNames(
             'shrink-0 px-5 sm:px-7 py-3 rounded-2xl text-sm sm:text-base font-extrabold uppercase tracking-wider transition-all relative overflow-hidden',
-            canMix
+            isDailyLimitReached
+              ? 'text-white bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 shadow-[0_10px_30px_-5px_rgba(244,63,94,0.6)] hover:-translate-y-0.5 active:scale-95'
+              : isMixReady
               ? 'text-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-400 shadow-[0_10px_30px_-5px_rgba(245,158,11,0.7)] hover:-translate-y-0.5 active:scale-95'
               : 'text-white/50 bg-white/5 border border-white/10 cursor-not-allowed'
           )}
@@ -1443,12 +1450,13 @@ const BottomMixBar = ({ count, onClear, onMix, canMix, isBrewing, isDailyLimitRe
           <span className="relative z-10">
             {isBrewing ? 'Mixing…' : isDailyLimitReached ? '♥ Need Extra Life?' : 'Mix Now'}
           </span>
-          {canMix && <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent translate-x-[-150%] animate-mix-shimmer" />}
+          {(isDailyLimitReached || isMixReady) && <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent translate-x-[-150%] animate-mix-shimmer" />}
         </button>
       </div>
     </div>
   </div>
-);
+  );
+};
 
 /* ----- Brewing overlay ----- */
 
