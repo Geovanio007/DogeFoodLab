@@ -611,6 +611,7 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
   const [verifying, setVerifying] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [txHash, setTxHash] = useState('');
+  const [creatingNowPayments, setCreatingNowPayments] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copied, setCopied] = useState(false);
@@ -745,6 +746,42 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
       setError(err.message);
     } finally {
       setCreating(false);
+    }
+  };
+
+  // Pays via a NOWPayments hosted invoice instead of the manual DOGE
+  // address + tx-hash flow above. Sends the player straight to
+  // NOWPayments' own checkout page; NOWPayments notifies the backend
+  // directly once the payment settles, activating the subscription with
+  // no tx hash to paste in.
+  const handleCreateSubscriptionNowPayments = async () => {
+    setCreatingNowPayments(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/nowpayments/auto-mixer/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_address: playerAddress,
+          window_start_hour: windowStart,
+          window_end_hour: windowEnd,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to create NOWPayments invoice');
+      }
+
+      if (data.invoice_url) {
+        window.location.href = data.invoice_url;
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCreatingNowPayments(false);
     }
   };
 
@@ -1252,6 +1289,21 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
                 </>
               )}
             </Button>
+
+            <button
+              onClick={handleCreateSubscriptionNowPayments}
+              disabled={creatingNowPayments || !isWindowValid}
+              className={`w-full mt-2 py-2 text-sm underline-offset-2 hover:underline disabled:opacity-50 ${isDark ? 'text-sky-300 hover:text-sky-100' : 'text-sky-600 hover:text-sky-800'}`}
+              data-testid="create-subscription-nowpayments-btn"
+            >
+              {creatingNowPayments ? (
+                <span className="inline-flex items-center gap-1">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Creating invoice...
+                </span>
+              ) : (
+                <>or pay with any crypto (BTC, ETH, USDT...) via NOWPayments</>
+              )}
+            </button>
           </CardContent>
         </Card>
       )}
