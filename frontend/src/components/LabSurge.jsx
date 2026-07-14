@@ -221,7 +221,6 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
       // displayed number is briefly conservative until the next peek() syncs it.
       beginTicking(new Date().toISOString(), runId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, runId]);
 
   const handleStart = async () => {
