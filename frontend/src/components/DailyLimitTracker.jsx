@@ -27,7 +27,7 @@ const getStreakTier = (streak) => {
   return tier;
 };
 
-const DailyLimitTracker = ({ playerAddress, onStatusUpdate }) => {
+const DailyLimitTracker = ({ playerAddress, onStatusUpdate, openModalTrigger }) => {
   const [dailyStatus, setDailyStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showExtraLifeModal, setShowExtraLifeModal] = useState(false);
@@ -42,6 +42,16 @@ const DailyLimitTracker = ({ playerAddress, onStatusUpdate }) => {
   const [copied, setCopied] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [creatingNowPayments, setCreatingNowPayments] = useState(null); // holds the package id currently being created, or null
+
+  // Lets a parent (e.g. the Lab page's mix button, which turns into a
+  // "Need Extra Life?" prompt once the player is out of lives) force this
+  // modal open from outside. Any change to openModalTrigger's value opens
+  // it -- the parent just needs to bump a counter/timestamp each time.
+  useEffect(() => {
+    if (openModalTrigger) {
+      setShowExtraLifeModal(true);
+    }
+  }, [openModalTrigger]);
 
   // Fetch daily status
   const fetchDailyStatus = useCallback(async () => {
