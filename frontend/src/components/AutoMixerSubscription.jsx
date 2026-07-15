@@ -10,7 +10,6 @@ import {
   Bot, 
   Clock, 
   Calendar as CalendarIcon, 
-  CreditCard, 
   Zap, 
   CheckCircle2, 
   AlertCircle, 
@@ -22,8 +21,6 @@ import {
   Timer,
   Settings,
   ChevronRight,
-  Copy,
-  ExternalLink,
   Loader2,
   Beaker,
   CalendarDays,
@@ -607,14 +604,10 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
   const [playerStats, setPlayerStats] = useState(null);
   const [mixHistory, setMixHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [verifying, setVerifying] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [txHash, setTxHash] = useState('');
   const [creatingNowPayments, setCreatingNowPayments] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [copied, setCopied] = useState(false);
   
   // Window selection state
   const [windowStart, setWindowStart] = useState(9);  // Default 9 AM
@@ -718,39 +711,7 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
     return () => clearInterval(interval);
   }, [playerAddress, subscription?.status]);
 
-  const handleCreateSubscription = async () => {
-    setCreating(true);
-    setError('');
-    
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/auto-mixer/create-subscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player_address: playerAddress,
-          window_start_hour: windowStart,
-          window_end_hour: windowEnd,
-          scheduled_dates: selectedDates.map(d => d.toISOString())
-        })
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.detail || 'Failed to create subscription');
-      }
-
-      setSubscription(data.subscription);
-      setSuccess('Subscription created! Please send payment to activate.');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  // Pays via a NOWPayments hosted invoice instead of the manual DOGE
-  // address + tx-hash flow above. Sends the player straight to
+  // Pays via a NOWPayments hosted invoice. Sends the player straight to
   // NOWPayments' own checkout page; NOWPayments notifies the backend
   // directly once the payment settles, activating the subscription with
   // no tx hash to paste in.
@@ -782,45 +743,6 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
       setError(err.message);
     } finally {
       setCreatingNowPayments(false);
-    }
-  };
-
-  const handleVerifyPayment = async () => {
-    if (!txHash.trim()) {
-      setError('Please enter the transaction hash');
-      return;
-    }
-
-    setVerifying(true);
-    setError('');
-
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/auto-mixer/verify-payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscription_id: subscription.id,
-          tx_hash: txHash.trim()
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Payment verification failed');
-      }
-
-      setSubscription(data.subscription);
-      
-      if (data.is_confirmed) {
-        setSuccess('Payment verified! Your auto-mixer is now active.');
-      } else {
-        setSuccess(`Payment found with ${data.confirmations}/${data.required_confirmations} confirmations. Please wait for more confirmations.`);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setVerifying(false);
     }
   };
 
@@ -856,12 +778,6 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
     }
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const calculateWindowDuration = () => {
     if (windowEnd > windowStart) {
       return windowEnd - windowStart;
@@ -887,7 +803,6 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
 
   const isWindowValid = calculateWindowDuration() >= 1 && calculateWindowDuration() <= 6;
   const hasActiveSubscription = subscription?.status === 'active';
-  const hasPendingSubscription = subscription?.status === 'pending';
   const isConnected = !!playerAddress;
 
   return (
@@ -1107,100 +1022,11 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
         </Card>
       )}
 
-      {/* Pending Payment View */}
-      {hasPendingSubscription && (
-        <Card className={`border-2 ${isDark ? 'bg-sky-900/30 border-sky-700' : 'bg-gradient-to-br from-sky-50 to-blue-50 border-sky-300'}`}>
-          <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${isDark ? 'text-sky-300' : 'text-sky-800'}`}>
-              <CreditCard className="w-5 h-5" />
-              Complete Payment
-            </CardTitle>
-            <p className={isDark ? 'text-sky-400' : 'text-sky-600'}>
-              Send exactly {subscription?.unique_amount || config.monthly_fee_doge} DOGE to activate your subscription
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Payment Address */}
-            <div className={`p-4 rounded-xl border-2 ${isDark ? 'bg-slate-800 border-sky-700' : 'bg-white border-sky-200'}`}>
-              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-sky-300' : 'text-sky-700'}`}>Payment Address</label>
-              <div className="flex items-center gap-2">
-                <code className={`flex-1 p-3 rounded-lg font-mono text-sm break-all ${isDark ? 'bg-slate-900 text-sky-300' : 'bg-sky-50 text-sky-900'}`}>
-                  {config.payment_address}
-                </code>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyToClipboard(config.payment_address)}
-                  className={`flex-shrink-0 ${isDark ? 'border-sky-700 hover:bg-sky-900' : ''}`}
-                  data-testid="copy-address-btn"
-                >
-                  {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                </Button>
-              </div>
-            </div>
-
-            {/* Amount */}
-            <div className={`p-4 rounded-xl text-center ${isDark ? 'bg-sky-900/50' : 'bg-gradient-to-r from-sky-100 to-blue-100'}`}>
-              <div className={`text-3xl font-bold ${isDark ? 'text-sky-300' : 'text-sky-800'}`}>{subscription?.unique_amount || config.monthly_fee_doge} DOGE</div>
-              <div className={`text-sm ${isDark ? 'text-sky-400' : 'text-sky-600'}`}>Send this EXACT amount for auto-detection</div>
-            </div>
-
-            {/* Auto-detection notice */}
-            <div className={`p-4 rounded-xl border-2 ${isDark ? 'bg-green-900/30 border-green-700/50' : 'bg-green-50 border-green-200'}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <RefreshCw className={`w-5 h-5 ${isDark ? 'text-green-400' : 'text-green-600'} animate-spin`} />
-                <span className={`font-bold ${isDark ? 'text-green-300' : 'text-green-700'}`}>Auto-Payment Detection Active</span>
-              </div>
-              <p className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                Just send the exact amount to the address above. Your subscription will activate automatically once the payment is confirmed (1 block). No transaction hash needed!
-              </p>
-            </div>
-
-            <Button
-              onClick={async () => {
-                setVerifying(true);
-                try {
-                  await fetch(`${BACKEND_URL}/api/payments/check-pending`, { method: 'POST' });
-                  await new Promise(resolve => setTimeout(resolve, 2000));
-                  await fetchData();
-                  setSuccess('Payment check triggered. If you sent payment, it should activate shortly.');
-                } catch (err) {
-                  setError('Error checking payment. Please try again.');
-                } finally {
-                  setVerifying(false);
-                }
-              }}
-              disabled={verifying}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-6 text-lg"
-              data-testid="check-payment-btn"
-            >
-              {verifying ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Checking for Payment...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-5 h-5 mr-2" />
-                  Check Payment Status
-                </>
-              )}
-            </Button>
-
-            <div className="text-center">
-              <a
-                href={`https://dogechain.info/address/${config.payment_address}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`text-sm inline-flex items-center gap-1 ${isDark ? 'text-sky-400 hover:text-sky-300' : 'text-sky-600 hover:text-sky-700'}`}
-              >
-                View address on DogeChain
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* NOTE: the manual DOGE-address + pasted-tx-hash "Complete Payment"
+          card that used to render here (hasPendingSubscription) has been
+          removed along with the rest of the manual payment flow.
+          NOWPayments redirects the player to its own hosted checkout
+          instead, so there is nothing to show inline while pending. */}
 
       {/* Connect Wallet Prompt - Show when not connected */}
       {!isConnected && (
@@ -1220,8 +1046,11 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
         </Card>
       )}
 
-      {/* New Subscription View - Only show when connected but not subscribed */}
-      {isConnected && !hasActiveSubscription && !hasPendingSubscription && (
+      {/* New Subscription View - Only show when connected but not already active.
+          (A "pending" subscription -- an invoice created but not yet paid --
+          still shows this form too: clicking Subscribe again just returns
+          the same NOWPayments invoice rather than creating a duplicate.) */}
+      {isConnected && !hasActiveSubscription && (
         <Card className={`border-2 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'border-slate-200'}`}>
           <CardHeader>
             <CardTitle className={`flex items-center gap-2 ${isDark ? 'text-white' : ''}`}>
@@ -1238,7 +1067,7 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
               endHour={windowEnd}
               onStartChange={setWindowStart}
               onEndChange={setWindowEnd}
-              disabled={creating}
+              disabled={creatingNowPayments}
               isDark={isDark}
             />
 
@@ -1271,15 +1100,15 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
             </div>
 
             <Button
-              onClick={handleCreateSubscription}
-              disabled={creating || !isWindowValid}
+              onClick={handleCreateSubscriptionNowPayments}
+              disabled={creatingNowPayments || !isWindowValid}
               className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 py-6 text-lg"
-              data-testid="create-subscription-btn"
+              data-testid="create-subscription-nowpayments-btn"
             >
-              {creating ? (
+              {creatingNowPayments ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Creating...
+                  Creating invoice...
                 </>
               ) : (
                 <>
@@ -1289,21 +1118,9 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
                 </>
               )}
             </Button>
-
-            <button
-              onClick={handleCreateSubscriptionNowPayments}
-              disabled={creatingNowPayments || !isWindowValid}
-              className={`w-full mt-2 py-2 text-sm underline-offset-2 hover:underline disabled:opacity-50 ${isDark ? 'text-sky-300 hover:text-sky-100' : 'text-sky-600 hover:text-sky-800'}`}
-              data-testid="create-subscription-nowpayments-btn"
-            >
-              {creatingNowPayments ? (
-                <span className="inline-flex items-center gap-1">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Creating invoice...
-                </span>
-              ) : (
-                <>or pay with any crypto (BTC, ETH, USDT...) via NOWPayments</>
-              )}
-            </button>
+            <p className={`text-center text-xs mt-2 ${isDark ? 'text-sky-400/70' : 'text-sky-600/70'}`}>
+              Checkout is hosted by NOWPayments — pay with DOGE, BTC, ETH, USDT, and more.
+            </p>
           </CardContent>
         </Card>
       )}
