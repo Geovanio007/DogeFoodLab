@@ -29,7 +29,7 @@ const multiplierAt = (elapsedSeconds) => {
   return Math.round(Math.min(raw, MAX_MULTIPLIER) * 100) / 100;
 };
 
-const fmtX = (v) => `${v.toFixed(2)}x`;
+const fmtX = (v) => (typeof v === 'number' && !Number.isNaN(v) ? `${v.toFixed(2)}x` : '—x');
 
 const formatHM = (totalHours) => {
   const h = Math.floor(totalHours);
@@ -268,7 +268,14 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
           body: JSON.stringify({ run_id: existingRunId }),
         });
         if (!res.ok) return;
+        // If a slower, overlapping poll's response lands after this run
+        // already resolved (a faster poll got there first and called
+        // finishRun, which clears this ref via stopTimers), ignore it --
+        // acting on it would re-trigger finishRun with a second, possibly
+        // incomplete payload and stomp the correct result already shown.
+        if (!peekRef.current) return;
         const data = await res.json();
+        if (!peekRef.current) return;
         if (data.crashed) {
           finishRun('crashed', { won: false, multiplier: data.crash_multiplier, points_awarded: data.points_awarded });
         }
