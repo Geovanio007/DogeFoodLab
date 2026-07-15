@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Flame, TrendingUp, Trophy, Clock, Sparkles } from 'lucide-react';
+import { ChevronLeft, Flame, TrendingUp, Trophy, Clock } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -222,8 +222,17 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
     stopTimers();
     setResult(payload);
     setPhase(status_ === 'cashed_out' ? 'result-won' : 'result-crashed');
+    // Note: status is deliberately NOT refreshed here — doing so used to
+    // overwrite `phase` out from under the result card the instant the
+    // fetch resolved, making it flash and vanish before anyone could read
+    // it. Status now only refreshes when the player explicitly dismisses
+    // the card via handleContinue().
+  }, [stopTimers]);
+
+  const handleContinue = useCallback(() => {
+    setResult(null);
     loadStatus();
-  }, [stopTimers, loadStatus]);
+  }, [loadStatus]);
 
   const beginTicking = useCallback((startedAtIso, existingRunId) => {
     const startMs = new Date(startedAtIso).getTime();
@@ -336,8 +345,8 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
         <button onClick={() => navigate('/')} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/5">
           <ChevronLeft className="w-5 h-5 text-slate-300" />
         </button>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center">
-          <TrendingUp className="w-4.5 h-4.5 text-[#3f1d00]" />
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
+          <TrendingUp className="w-4.5 h-4.5 text-[#0c2440]" />
         </div>
         <div className="flex-1">
           <h1 className="text-base font-black leading-none">Lab Surge</h1>
@@ -400,7 +409,7 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
             <div className={`rounded-2xl border p-4 text-center ${phase === 'result-won' ? 'border-emerald-500/30 bg-emerald-500/[0.06]' : 'border-red-500/25 bg-red-500/[0.05]'}`}>
               {phase === 'result-won' ? (
                 <>
-                  <Sparkles className="w-6 h-6 text-emerald-400 mx-auto mb-1.5" />
+                  <Trophy className="w-6 h-6 text-amber-400 mx-auto mb-1.5" />
                   <p className="text-sm text-slate-300">Cashed out at <span className="font-bold text-white">{fmtX(result.multiplier)}</span></p>
                   <div className="flex items-center justify-center gap-1.5 mt-1.5">
                     <PointsCoinIcon size={20} />
@@ -418,6 +427,12 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
                 </>
               )}
               <p className="text-[11px] text-slate-500 mt-3">Come back in 24h for another free run</p>
+              <button
+                onClick={handleContinue}
+                className="mt-3 w-full rounded-xl py-2.5 text-sm font-bold bg-white/[0.06] hover:bg-white/[0.1] text-white border border-white/[0.08]"
+              >
+                Continue
+              </button>
             </div>
           )}
         </div>
