@@ -27,6 +27,7 @@ import TelegramAuth from './components/TelegramAuth';
 import UpdateNotification from './components/UpdateNotification';
 import NotificationPrompt from './components/NotificationPrompt';
 import { KernelOfWowBanner, useKernelOfWow } from './components/KernelOfWow';
+import TrezorBanner from './components/TrezorBanner';
 import './App.css';
 
 // Lazy-load heavy route components for faster initial page load
@@ -327,6 +328,9 @@ const InnerApp = () => {
         {/* Main Application - After loading screen, show main menu */}
         {!showWelcome && !isLoading && !isCheckingRegistration && !showTelegramAuth && (
           <Router>
+            {/* Trezor Ad Banner - Shows on every page, above the Kernel of Wow banner */}
+            <TrezorBanner />
+
             {/* Kernel of Wow Banner - Shows current holder globally */}
             {kernelHolder?.has_holder && (
               <KernelOfWowBanner currentHolder={kernelHolder} />
