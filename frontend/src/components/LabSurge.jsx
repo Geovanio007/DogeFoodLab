@@ -173,6 +173,88 @@ const StatStrip = ({ history, bestMultiplier }) => {
   );
 };
 
+/* ─── Leaderboard — top players by lifetime Lab Surge points won
+   (cashout wins + crash floor-payouts, since both land in the balance). ─── */
+const LabSurgeLeaderboardSection = ({ playerAddress }) => {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/lab-surge/leaderboard?limit=20`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setRows(data.leaderboard || []);
+        }
+      } catch (e) {
+        console.warn('[LabSurge] leaderboard fetch failed:', e?.message || e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const medal = (rank) => (rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : null);
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-center gap-2 mb-2">
+        <Trophy className="w-4 h-4 text-sky-300" />
+        <h2 className="text-sm font-bold text-white">Top Surgers</h2>
+      </div>
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+        {loading && (
+          <div className="p-3 space-y-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-9 bg-white/5 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        )}
+        {!loading && rows.length === 0 && (
+          <div className="text-center py-6 text-slate-500 text-xs">No cash-outs yet — be the first!</div>
+        )}
+        {!loading && rows.map((row, i) => {
+          const isMe = row.player_address === playerAddress;
+          return (
+            <div
+              key={row.player_address}
+              className={`flex items-center gap-2.5 px-3 py-2.5 ${i !== rows.length - 1 ? 'border-b border-white/[0.04]' : ''} ${isMe ? 'bg-sky-500/[0.06]' : ''}`}
+            >
+              <div className="w-6 text-center shrink-0">
+                {medal(i) ? (
+                  <span className="text-sm">{medal(i)}</span>
+                ) : (
+                  <span className="text-[11px] font-bold text-slate-500">{i + 1}</span>
+                )}
+              </div>
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shrink-0">
+                <span className="text-[9px] font-black text-[#0c2440]">
+                  {(row.player_nickname || '?').slice(0, 1).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`text-xs font-semibold truncate ${isMe ? 'text-sky-300' : 'text-white'}`}>
+                  {row.player_nickname}{isMe ? ' (you)' : ''}
+                </div>
+                <div className="text-[10px] text-slate-500">
+                  {row.runs} run{row.runs === 1 ? '' : 's'} · best {row.best_multiplier ? `${row.best_multiplier.toFixed(2)}x` : '—'}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <PointsCoinIcon size={14} />
+                <span className="text-xs font-black text-emerald-400">{row.total_points}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
   const navigate = useNavigate();
   const [phase, setPhase] = useState('loading'); // loading | ready | cooldown | running | result
@@ -443,6 +525,8 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
             </div>
           )}
         </div>
+
+        <LabSurgeLeaderboardSection playerAddress={playerAddress} />
 
         <p className="text-[10px] text-slate-600 text-center mt-5 leading-relaxed">
           Lab Surge is 100% free to play — nothing is ever deducted from your
