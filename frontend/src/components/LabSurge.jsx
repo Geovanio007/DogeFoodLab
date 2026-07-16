@@ -70,6 +70,24 @@ const PointsCoinIcon = ({ size = 20 }) => (
 const CANDLE_AXIS_STEPS = [0.1, 0.2, 0.25, 0.5, 1, 2.5, 5, 10, 25];
 const pickAxisStep = (range) => CANDLE_AXIS_STEPS.find((s) => range / s <= 6) || 25;
 
+// Fixed (not random-per-render) so the burst never jitters between
+// re-renders — biased toward the right/center where the chart's most
+// recent action is happening.
+const RUG_PARTICLES = [
+  { left: '42%', size: 5, delay: 0 },
+  { left: '55%', size: 7, delay: 60 },
+  { left: '65%', size: 4, delay: 120 },
+  { left: '48%', size: 6, delay: 30 },
+  { left: '72%', size: 8, delay: 90 },
+  { left: '60%', size: 5, delay: 150 },
+  { left: '78%', size: 6, delay: 45 },
+  { left: '52%', size: 4, delay: 100 },
+  { left: '38%', size: 6, delay: 180 },
+  { left: '68%', size: 5, delay: 20 },
+  { left: '58%', size: 7, delay: 140 },
+  { left: '82%', size: 5, delay: 70 },
+];
+
 const CandleChart = ({ candles, phase, liveMultiplier }) => {
   const highs = candles.map((c) => c.high);
   const lows = candles.map((c) => c.low);
@@ -138,8 +156,24 @@ const CandleChart = ({ candles, phase, liveMultiplier }) => {
       </div>
 
       {phase === 'crashed' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#3f0d0d] ls-crash-flash z-20">
-          <span className="text-red-300 font-black text-lg tracking-wide">RUGGED</span>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
+          {RUG_PARTICLES.map((p, i) => (
+            <span
+              key={i}
+              className="absolute rounded-full ls-rug-particle"
+              style={{
+                left: p.left, top: '-8%',
+                width: p.size, height: p.size,
+                background: i % 2 === 0 ? '#ef4444' : '#fca5a5',
+                animationDelay: `${p.delay}ms`,
+              }}
+            />
+          ))}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="px-5 py-2 rounded-xl bg-[#3f0d0d]/85 border border-red-500/30 ls-rug-pop">
+              <span className="text-red-300 font-black text-lg tracking-wide">RUGGED</span>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -302,6 +336,19 @@ const LabSurge = ({ playerAddress = 'GUEST_USER' }) => {
 
   const finishRun = useCallback((status_, payload) => {
     stopTimers();
+    if (status_ !== 'cashed_out') {
+      // Append one dramatic red candle so the crash reads as a real plunge
+      // on the chart — same wick+body rendering as every other candle,
+      // just a hard drop instead of a climb — rather than the chart just
+      // freezing mid-air while a banner covers it.
+      setCandles((prev) => {
+        const open = prev.length ? prev[prev.length - 1].close : 1.0;
+        const close = Math.max(0.15, open * 0.3);
+        const low = Math.max(0.1, close * 0.8);
+        const rugCandle = { id: prev.length, open, close, high: open, low, up: false };
+        return [...prev, rugCandle];
+      });
+    }
     setResult(payload);
     setPhase(status_ === 'cashed_out' ? 'result-won' : 'result-crashed');
     // Note: status is deliberately NOT refreshed here — doing so used to
@@ -561,14 +608,23 @@ const LabSurgeStyles = () => (
       -webkit-animation: ls-candle-in-kf 220ms ease-out;
       animation: ls-candle-in-kf 220ms ease-out;
     }
-    @keyframes ls-crash-flash {
-      0%   { opacity: 0; }
-      15%  { opacity: 1; }
-      100% { opacity: 0.92; }
+    @keyframes ls-rug-fall {
+      0%   { -webkit-transform: translateY(-10px); transform: translateY(-10px); opacity: 1; }
+      70%  { opacity: 1; }
+      100% { -webkit-transform: translateY(170px); transform: translateY(170px); opacity: 0; }
     }
-    .ls-crash-flash {
-      -webkit-animation: ls-crash-flash 380ms ease-out;
-      animation: ls-crash-flash 380ms ease-out;
+    .ls-rug-particle {
+      -webkit-animation: ls-rug-fall 900ms ease-in forwards;
+      animation: ls-rug-fall 900ms ease-in forwards;
+    }
+    @keyframes ls-rug-pop {
+      0%   { -webkit-transform: scale(0.5); transform: scale(0.5); opacity: 0; }
+      60%  { -webkit-transform: scale(1.12); transform: scale(1.12); opacity: 1; }
+      100% { -webkit-transform: scale(1); transform: scale(1); opacity: 1; }
+    }
+    .ls-rug-pop {
+      -webkit-animation: ls-rug-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: ls-rug-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .ls-start-btn {
       background: -webkit-linear-gradient(top, #fde047 0%, #facc15 60%, #ca8a04 100%);
@@ -606,7 +662,7 @@ const LabSurgeStyles = () => (
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     @media (prefers-reduced-motion: reduce) {
-      .ls-pulse, .ls-candle-in, .ls-crash-flash, .ls-cashout-btn {
+      .ls-pulse, .ls-candle-in, .ls-rug-particle, .ls-rug-pop, .ls-cashout-btn {
         -webkit-animation: none !important; animation: none !important;
       }
     }
