@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import html2canvas from 'html2canvas';
 import LabCrateSystem, { CrateAvailableBadge, XP_MILESTONES } from './LabCrateSystem';
 import COSMETIC_LAYERS, { RENDER_ORDER } from './ShibaCosmetics';
 import { COSMETIC_CATALOGUE } from './PetWardrobe';
@@ -445,10 +446,51 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
   // ── Drag and drop handlers ───────────────────────────────────────────────────
   const onDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
   const onDragLeave = () => setIsDragOver(false);
+
+  // ── Save/download the pet exactly as currently dressed ──────────────────────
+  const captureRef = useRef(null);
+  const [capturingImage, setCapturingImage] = useState(false);
+  const downloadPetImage = useCallback(async () => {
+    if (!captureRef.current || capturingImage) return;
+    setCapturingImage(true);
+    try {
+      const canvas = await html2canvas(captureRef.current, {
+        backgroundColor: '#0a0620',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+      if (!blob) return;
+
+      if (navigator.share) {
+        try {
+          const file = new File([blob], 'my-reactor-pup.png', { type: 'image/png' });
+          await navigator.share({ files: [file], text: 'My Reactor Pup on DogeFood Lab! 🐕' });
+          return;
+        } catch (shareErr) {
+          if (shareErr?.name === 'AbortError') return; // player cancelled the share sheet — don't also force a download
+          // navigator.share exists but rejected the file share — fall through to a direct download below
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'my-reactor-pup.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.warn('[ShibaGrowth] pet image capture failed:', e?.message || e);
+    } finally {
+      setCapturingImage(false);
+    }
+  }, [capturingImage]);
+
   // Expose feed() to parent via ref so the 🐕 tap button can trigger animations
   React.useImperativeHandle(ref, () => ({
     feed: (treatId, rarity) => feedTreat(treatId, rarity || 'Common'),
-  }), [feedTreat]);
+    downloadPetImage,
+  }), [feedTreat, downloadPetImage]);
 
   const onDrop = (e) => {
     e.preventDefault();
@@ -537,12 +579,29 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
           </div>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>Reactor Pup</div>
         </div>
-        <div style={{
-          padding: '3px 10px', borderRadius: 99, fontSize: 9, fontWeight: 800,
-          background: `${stageInfo.color}20`, border: `1px solid ${stageInfo.color}55`,
-          color: stageInfo.color, textTransform: 'uppercase', letterSpacing: '0.1em',
-        }}>
-          {stageInfo.emoji} {stageInfo.name}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            onClick={downloadPetImage}
+            disabled={capturingImage}
+            title="Save pet as image"
+            data-testid="shiba-save-image-btn"
+            style={{
+              width: 26, height: 26, borderRadius: 8,
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, lineHeight: 1, cursor: capturingImage ? 'default' : 'pointer',
+              opacity: capturingImage ? 0.5 : 1, padding: 0,
+            }}
+          >
+            {capturingImage ? '⏳' : '📷'}
+          </button>
+          <div style={{
+            padding: '3px 10px', borderRadius: 99, fontSize: 9, fontWeight: 800,
+            background: `${stageInfo.color}20`, border: `1px solid ${stageInfo.color}55`,
+            color: stageInfo.color, textTransform: 'uppercase', letterSpacing: '0.1em',
+          }}>
+            {stageInfo.emoji} {stageInfo.name}
+          </div>
         </div>
       </div>
 
@@ -562,10 +621,13 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
       )}
 
       {/* Shiba + drop zone */}
-      <div style={{
-        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        minHeight: 160, marginBottom: 12,
-      }}>
+      <div
+        ref={captureRef}
+        style={{
+          position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: 160, marginBottom: 12,
+        }}
+      >
         {/* Drop zone ring */}
         {isDragOver && (
           <div style={{
