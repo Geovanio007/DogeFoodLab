@@ -790,13 +790,13 @@ const LiveActivityTable = () => {
   const rarityColor = {
   Common: 'text-slate-400', Uncommon: 'text-green-400', Rare: 'text-blue-400',
   Epic: 'text-purple-400', Legendary: 'text-yellow-400', Mythic: 'text-pink-400',
-  Spin: 'text-yellow-300'
+  Spin: 'text-yellow-300', Surge: 'text-sky-300'
 };
 
 const rarityBg = {
   Common: 'bg-slate-500/10', Uncommon: 'bg-green-500/10', Rare: 'bg-blue-500/10',
   Epic: 'bg-purple-500/10', Legendary: 'bg-yellow-500/10', Mythic: 'bg-pink-500/10',
-  Spin: 'bg-yellow-500/20'
+  Spin: 'bg-yellow-500/20', Surge: 'bg-sky-500/15'
 };
 
   const timeAgo = (iso) => {
