@@ -16,7 +16,7 @@ import {
   Wallet, UserPlus, Crown, Store, Camera, Zap, ChevronRight,
   BookOpen, Activity, TrendingUp, Share2, Home, Star,
   ArrowRight, ChevronLeft, Users, MessageCircle, Send,
-  Rocket, Reply, Smile, Swords, Gift, Target, Award, Gem, Flame, BarChart3
+  Rocket, Reply, Smile, Swords, Gift, Target, Award, Gem, Flame, BarChart3, Newspaper
 } from 'lucide-react';
 import PointsSwapWidget from './PointsSwapWidget';
 
@@ -2534,6 +2534,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
               <FeatureCard icon={Store} label="Market" gradient="from-sky-500/20 to-cyan-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/marketplace" testId="feature-market" />
               <FeatureCard icon={Crown} label="Tourney" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/tournament" testId="feature-tournament" />
               <FeatureCard icon={TrendingUp} label="Lab Surge" gradient="from-emerald-500/20 to-amber-500/10" iconColor="text-emerald-300" borderColor="border-emerald-500/20" to="/lab-surge" badge="NEW" testId="feature-lab-surge" />
+              <FeatureCard icon={Newspaper} label="Lab Feed" gradient="from-cyan-500/20 to-blue-600/10" iconColor="text-cyan-300" borderColor="border-cyan-500/20" to="/lab-feed" testId="feature-lab-feed" />
             </div>
           </div>
 
