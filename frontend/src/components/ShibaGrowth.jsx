@@ -295,6 +295,32 @@ const XPBar = ({ xp, stage }) => {
   );
 };
 
+// ─── Cute 3D-style camera icon for the "save pet as image" button — rounded,
+// glossy, gradient-shaded rather than a flat unicode glyph, with a little
+// sparkle for a playful feel matching the rest of the pet panel. ───────────
+const CuteCameraIcon = ({ size = 15 }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+    <defs>
+      <linearGradient id="shibaCamBody" x1="4" y1="8" x2="28" y2="27" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#ddd6fe" />
+        <stop offset="100%" stopColor="#8b5cf6" />
+      </linearGradient>
+      <radialGradient id="shibaCamLens" cx="0.35" cy="0.32" r="0.8">
+        <stop offset="0%" stopColor="#bff4fc" />
+        <stop offset="45%" stopColor="#22b8d4" />
+        <stop offset="100%" stopColor="#0e5e73" />
+      </radialGradient>
+    </defs>
+    <rect x="3" y="10.5" width="26" height="16.5" rx="6" fill="url(#shibaCamBody)" stroke="#4c1d95" strokeWidth="1.3" />
+    <rect x="19.2" y="6" width="7.8" height="6" rx="2.4" fill="#c4b5fd" stroke="#4c1d95" strokeWidth="1.1" />
+    <rect x="9" y="7.2" width="7" height="4.3" rx="1.8" fill="#a78bfa" stroke="#4c1d95" strokeWidth="1" />
+    <circle cx="16" cy="19.3" r="7.1" fill="#4c1d95" />
+    <circle cx="16" cy="19.3" r="5.9" fill="url(#shibaCamLens)" />
+    <ellipse cx="13.6" cy="17" rx="1.9" ry="1.2" fill="white" opacity="0.7" />
+    <path d="M25.3 3.5l0.7 1.8 1.8 0.7-1.8 0.7-0.7 1.8-0.7-1.8-1.8-0.7 1.8-0.7z" fill="#fde047" />
+  </svg>
+);
+
 // ─── Main ShibaGrowth component ───────────────────────────────────────────────
 const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, ref) => {
   const [pet, setPet] = useState(null);
@@ -448,43 +474,105 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
   const onDragLeave = () => setIsDragOver(false);
 
   // ── Save/download the pet exactly as currently dressed ──────────────────────
+  // The pet + every cosmetic layer renders as inline SVG with gradients,
+  // which html2canvas (a DOM-to-canvas *re-implementation*) is known to
+  // hang or fail silently on. Since it's already real SVG, rasterizing it
+  // directly through the browser's own native image decoder is both far
+  // more reliable and faster — html2canvas is kept only as a fallback for
+  // the rare case no <svg> is found in the capture zone. A hard timeout
+  // means this can never again get stuck spinning forever either way.
   const captureRef = useRef(null);
   const [capturingImage, setCapturingImage] = useState(false);
+  const [captureError, setCaptureError] = useState(false);
+
+  const rasterizeSvg = useCallback(async (svgEl) => {
+    const rect = svgEl.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width));
+    const h = Math.max(1, Math.round(rect.height));
+
+    const clone = svgEl.cloneNode(true);
+    clone.setAttribute('width', w);
+    clone.setAttribute('height', h);
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+    const svgString = new XMLSerializer().serializeToString(clone);
+    const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
+
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('SVG failed to rasterize'));
+      img.src = svgUrl;
+    });
+
+    const scale = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = w * scale;
+    canvas.height = h * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0a0620';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  }, []);
+
+  const capturePetBlob = useCallback(async (container) => {
+    const svgEl = container.querySelector('svg');
+    if (svgEl) {
+      try {
+        const blob = await rasterizeSvg(svgEl);
+        if (blob) return blob;
+      } catch (e) {
+        console.warn('[ShibaGrowth] direct SVG export failed, falling back to html2canvas:', e?.message || e);
+      }
+    }
+    const canvas = await html2canvas(container, {
+      backgroundColor: '#0a0620',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  }, [rasterizeSvg]);
+
+  const sharePetBlob = useCallback(async (blob) => {
+    if (navigator.share) {
+      try {
+        const file = new File([blob], 'my-reactor-pup.png', { type: 'image/png' });
+        await navigator.share({ files: [file], text: 'My Reactor Pup on DogeFood Lab! 🐕' });
+        return;
+      } catch (shareErr) {
+        if (shareErr?.name === 'AbortError') return; // player cancelled the share sheet — don't also force a download
+        // navigator.share exists but rejected the file share — fall through to a direct download below
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'my-reactor-pup.png';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
   const downloadPetImage = useCallback(async () => {
     if (!captureRef.current || capturingImage) return;
     setCapturingImage(true);
+    setCaptureError(false);
     try {
-      const canvas = await html2canvas(captureRef.current, {
-        backgroundColor: '#0a0620',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
-      if (!blob) return;
-
-      if (navigator.share) {
-        try {
-          const file = new File([blob], 'my-reactor-pup.png', { type: 'image/png' });
-          await navigator.share({ files: [file], text: 'My Reactor Pup on DogeFood Lab! 🐕' });
-          return;
-        } catch (shareErr) {
-          if (shareErr?.name === 'AbortError') return; // player cancelled the share sheet — don't also force a download
-          // navigator.share exists but rejected the file share — fall through to a direct download below
-        }
-      }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'my-reactor-pup.png';
-      a.click();
-      URL.revokeObjectURL(url);
+      const blob = await Promise.race([
+        capturePetBlob(captureRef.current),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Image capture timed out')), 9000)),
+      ]);
+      if (!blob) throw new Error('No image data produced');
+      await sharePetBlob(blob);
     } catch (e) {
       console.warn('[ShibaGrowth] pet image capture failed:', e?.message || e);
+      setCaptureError(true);
+      setTimeout(() => setCaptureError(false), 2500);
     } finally {
       setCapturingImage(false);
     }
-  }, [capturingImage]);
+  }, [capturingImage, capturePetBlob, sharePetBlob]);
 
   // Expose feed() to parent via ref so the 🐕 tap button can trigger animations
   React.useImperativeHandle(ref, () => ({
@@ -583,17 +671,37 @@ const ShibaGrowth = React.forwardRef(({ playerAddress, onTreatFed, onCollect }, 
           <button
             onClick={downloadPetImage}
             disabled={capturingImage}
-            title="Save pet as image"
+            title={captureError ? 'Could not save — try again' : 'Save pet as image'}
             data-testid="shiba-save-image-btn"
             style={{
-              width: 26, height: 26, borderRadius: 8,
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+              width: 28, height: 28, borderRadius: 9,
+              background: captureError
+                ? 'rgba(239,68,68,0.18)'
+                : 'linear-gradient(160deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04))',
+              border: `1px solid ${captureError ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.14)'}`,
+              boxShadow: capturingImage ? 'none' : '0 2px 0 rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, lineHeight: 1, cursor: capturingImage ? 'default' : 'pointer',
-              opacity: capturingImage ? 0.5 : 1, padding: 0,
+              lineHeight: 1, cursor: capturingImage ? 'default' : 'pointer',
+              opacity: capturingImage ? 0.6 : 1, padding: 0,
+              transform: capturingImage ? 'translateY(1px)' : 'translateY(0)',
+              transition: 'transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease',
             }}
+            onMouseDown={(e) => { if (!capturingImage) e.currentTarget.style.transform = 'translateY(2px)'; }}
+            onMouseUp={(e) => { if (!capturingImage) e.currentTarget.style.transform = 'translateY(0)'; }}
+            onTouchStart={(e) => { if (!capturingImage) e.currentTarget.style.transform = 'translateY(2px)'; }}
+            onTouchEnd={(e) => { if (!capturingImage) e.currentTarget.style.transform = 'translateY(0)'; }}
           >
-            {capturingImage ? '⏳' : '📷'}
+            {capturingImage ? (
+              <span style={{
+                width: 12, height: 12, borderRadius: '50%',
+                border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#ddd6fe',
+                animation: 'spin 0.7s linear infinite',
+              }} />
+            ) : captureError ? (
+              <span style={{ fontSize: 13 }}>⚠️</span>
+            ) : (
+              <CuteCameraIcon size={15} />
+            )}
           </button>
           <div style={{
             padding: '3px 10px', borderRadius: 99, fontSize: 9, fontWeight: 800,
