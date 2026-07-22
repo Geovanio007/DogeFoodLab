@@ -4,6 +4,7 @@ import DogeFoodLogo from './DogeFoodLogo';
 import AuthModal from './AuthModal';
 import WhatsNewToast from './WhatsNewToast';
 import INGREDIENT_ICONS from '../config/ingredientIcons';
+import { FlaskConical, Flame, Gift, Swords } from 'lucide-react';
 
 /* ============================================================
    DogeFood Lab — SEASON 2 cinematic landing
@@ -965,10 +966,10 @@ const StatsBar = () => (
 
 /* ─── Features grid ─── */
 const FEATURES = [
-  { icon: '🧪', title: 'Mix & Brew', desc: 'Load ingredients into the Reactor and brew treats that mature over real time. Rarer combos pay out bigger.' },
-  { icon: '🔥', title: 'Heat Events', desc: 'Critical Mix and Golden Hour roll through the Lab at random, stacking bonus rarity and points while they last.' },
-  { icon: '🎁', title: 'Lab Crates & Growth', desc: 'Feed your Shiba, level it up, and crack open crates for rare ingredients, cosmetics, and extra lives.' },
-  { icon: '⚔️', title: 'Live Arena', desc: 'Enter with $LAB, brew against the clock, and climb the leaderboard for a share of the prize pool.' },
+  { icon: FlaskConical, title: 'Mix & Brew', desc: 'Load ingredients into the Reactor and brew treats that mature over real time. Rarer combos pay out bigger.' },
+  { icon: Flame, title: 'Heat Events', desc: 'Critical Mix and Golden Hour roll through the Lab at random, stacking bonus rarity and points while they last.' },
+  { icon: Gift, title: 'Lab Crates & Growth', desc: 'Feed your Shiba, level it up, and crack open crates for rare ingredients, cosmetics, and extra lives.' },
+  { icon: Swords, title: 'Live Arena', desc: 'Enter with $LAB, brew against the clock, and climb the leaderboard for a share of the prize pool.' },
 ];
 const FeaturesGrid = () => (
   <section data-testid="features-section" className="relative z-10 px-3 sm:px-6 py-8 sm:py-14">
@@ -983,8 +984,8 @@ const FeaturesGrid = () => (
       <div className="mt-6 sm:mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
         {FEATURES.map((f) => (
           <div key={f.title} className="feature-card p-4 sm:p-6 flex gap-3 sm:gap-4 items-start">
-            <div className="feature-card-icon shrink-0 w-11 h-11 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl">
-              {f.icon}
+            <div className="feature-card-icon shrink-0 w-11 h-11 sm:w-14 sm:h-14 flex items-center justify-center">
+              <f.icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#67e8f9' }} strokeWidth={2} />
             </div>
             <div className="min-w-0">
               <h3 className="text-sm sm:text-lg font-bold text-white">{f.title}</h3>
