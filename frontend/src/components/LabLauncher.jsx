@@ -189,7 +189,7 @@ const TokenCard = ({ token, onOpen }) => {
   );
 };
 
-const LabLauncher = ({ playerAddress }) => {
+const LabLauncher = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('trending');
   const [sort, setSort] = useState('');
@@ -197,7 +197,7 @@ const LabLauncher = ({ playerAddress }) => {
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [tokens, setTokens] = useState([]);
-  const [offset, setOffset] = useState(0);
+  const offsetRef = useRef(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -238,20 +238,18 @@ const LabLauncher = ({ playerAddress }) => {
 
   useEffect(() => {
     setLoading(true);
-    setOffset(0);
+    offsetRef.current = 0;
     loadPage(0, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, sort]);
 
   // Debounced search
   useEffect(() => {
     const t = setTimeout(() => {
       setLoading(true);
-      setOffset(0);
+      offsetRef.current = 0;
       loadPage(0, true);
     }, 350);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   useEffect(() => {
@@ -261,11 +259,8 @@ const LabLauncher = ({ playerAddress }) => {
       (entries) => {
         if (entries[0].isIntersecting && !inFlightRef.current) {
           setLoadingMore(true);
-          setOffset((prev) => {
-            const next = prev + PAGE_SIZE;
-            loadPage(next, false);
-            return next;
-          });
+          offsetRef.current += PAGE_SIZE;
+          loadPage(offsetRef.current, false);
         }
       },
       { rootMargin: '200px' }
@@ -407,7 +402,7 @@ const LabLauncher = ({ playerAddress }) => {
             )}
             {loadFailed && (
               <button
-                onClick={() => { setLoading(true); setOffset(0); loadPage(0, true); }}
+                onClick={() => { setLoading(true); offsetRef.current = 0; loadPage(0, true); }}
                 className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/[0.1] text-slate-300 text-sm font-bold"
               >
                 Retry
