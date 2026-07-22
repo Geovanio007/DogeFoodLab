@@ -2535,6 +2535,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
               <FeatureCard icon={Crown} label="Tourney" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/tournament" testId="feature-tournament" />
               <FeatureCard icon={TrendingUp} label="Lab Surge" gradient="from-emerald-500/20 to-amber-500/10" iconColor="text-emerald-300" borderColor="border-emerald-500/20" to="/lab-surge" badge="NEW" testId="feature-lab-surge" />
               <FeatureCard icon={Newspaper} label="Lab Feed" gradient="from-cyan-500/20 to-blue-600/10" iconColor="text-cyan-300" borderColor="border-cyan-500/20" to="/lab-feed" testId="feature-lab-feed" />
+              <FeatureCard icon={Rocket} label="Launcher" gradient="from-fuchsia-500/20 to-violet-600/10" iconColor="text-fuchsia-300" borderColor="border-fuchsia-500/20" to="/lab-launcher" badge="NEW" testId="feature-lab-launcher" />
             </div>
           </div>
 
