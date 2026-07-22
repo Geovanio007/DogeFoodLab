@@ -1,10 +1,11 @@
-import { createPublicClient, http, formatUnits } from 'viem';
+import { createPublicClient, http, formatUnits, decodeEventLog } from 'viem';
 import { dogeOSDevnet } from '../config/wagmi';
 import { 
   CONTRACT_ADDRESSES, 
   LAB_TOKEN_ABI, 
   DOGEFOOD_NFT_ABI, 
-  REWARD_DISTRIBUTOR_ABI 
+  REWARD_DISTRIBUTOR_ABI,
+  LAUNCHPAD_FACTORY_ABI,
 } from '../config/contracts';
 
 // Create public client for reading blockchain data
@@ -235,6 +236,64 @@ export class BlockchainService {
       return {
         success: false,
         error: error.message || 'Failed to mint NFT'
+      };
+    }
+  }
+
+  // Lab Launcher: create a new token via LaunchpadFactory. Free to call
+  // beyond gas - the full fixed supply mints straight to BondingCurve,
+  // no separate approval/allocation step needed.
+  async createLabLauncherToken(walletClient, userAddress, name, symbol) {
+    try {
+      console.log(`🚀 Creating Lab Launcher token "${name}" (${symbol})...`);
+
+      const txHash = await walletClient.writeContract({
+        address: CONTRACT_ADDRESSES.LAUNCHPAD_FACTORY,
+        abi: LAUNCHPAD_FACTORY_ABI,
+        functionName: 'createToken',
+        args: [name, symbol],
+        account: userAddress,
+      });
+
+      console.log('✅ Create-token transaction sent:', txHash);
+
+      const receipt = await this.client.waitForTransactionReceipt({ hash: txHash });
+
+      // createToken's return value isn't reachable from a transaction
+      // receipt directly - the new token's address comes from decoding
+      // the TokenLaunched event this same transaction emits.
+      let tokenAddress = null;
+      for (const log of receipt.logs) {
+        if (log.address?.toLowerCase() !== CONTRACT_ADDRESSES.LAUNCHPAD_FACTORY.toLowerCase()) continue;
+        try {
+          const decoded = decodeEventLog({ abi: LAUNCHPAD_FACTORY_ABI, data: log.data, topics: log.topics });
+          if (decoded.eventName === 'TokenLaunched') {
+            tokenAddress = decoded.args.token;
+            break;
+          }
+        } catch {
+          // not the log we're looking for
+        }
+      }
+
+      if (!tokenAddress) {
+        throw new Error('Token deployed, but the TokenLaunched event was not found in the receipt.');
+      }
+
+      console.log('✅ Token created at:', tokenAddress);
+
+      return {
+        success: true,
+        txHash,
+        tokenAddress,
+        receipt,
+        explorerUrl: this.getTxUrl(txHash),
+      };
+    } catch (error) {
+      console.error('❌ Error creating Lab Launcher token:', error);
+      return {
+        success: false,
+        error: error.shortMessage || error.message || 'Failed to create token',
       };
     }
   }
