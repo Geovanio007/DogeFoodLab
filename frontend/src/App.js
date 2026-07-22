@@ -36,6 +36,7 @@ const SeasonTwoLab = lazy(() => import('./components/SeasonTwoLab'));
 const LabArena = lazy(() => import('./components/LabArena'));
 const LabSurge = lazy(() => import('./components/LabSurge'));
 const LabFeed = lazy(() => import('./components/LabFeed'));
+const LabLauncher = lazy(() => import('./components/LabLauncher'));
 const MyTreats = lazy(() => import('./components/MyTreats'));
 const Leaderboard = lazy(() => import('./components/Leaderboard'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -354,6 +355,7 @@ const InnerApp = () => {
               <Route path="/arena" element={<LabArena playerAddress={effectiveAddress || 'GUEST_USER'} />} />
               <Route path="/lab-surge" element={<LabSurge playerAddress={effectiveAddress || 'GUEST_USER'} />} />
               <Route path="/lab-feed" element={<LabFeed playerAddress={effectiveAddress || 'GUEST_USER'} />} />
+              <Route path="/lab-launcher" element={<LabLauncher playerAddress={effectiveAddress || 'GUEST_USER'} />} />
             </Routes>
             </Suspense>
             {/* Global Treat Notifications */}
