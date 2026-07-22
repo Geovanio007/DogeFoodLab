@@ -19,6 +19,7 @@ import {
   Rocket, Reply, Smile, Swords, Gift, Target, Award, Gem, Flame, BarChart3, Newspaper
 } from 'lucide-react';
 import PointsSwapWidget from './PointsSwapWidget';
+import MegaCrateSystem from './MegaCrateSystem';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const SEASON_2_END = new Date('2026-09-17T00:00:00Z').getTime(); // Season 2: Jun 17 – Sep 17 2026
@@ -2731,6 +2732,18 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
 
       <SpinWheelCTA />
+
+      {/* Mega Lab Crate — recurring bonus for max-tier (Mythic Lab) Shiba owners */}
+      <MegaCrateSystem
+        playerAddress={effectiveAddress}
+        onOpened={(data) => {
+          // Best-effort optimistic bump so the points shown on this page
+          // don't lag behind until the next full profile refetch.
+          if (data?.points_granted) {
+            setPlayerPoints(p => (p || 0) + data.points_granted);
+          }
+        }}
+      />
 
       {/* Walkthrough "?" re-open button — bottom-left corner */}
       <button
