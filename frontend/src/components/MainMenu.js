@@ -2529,13 +2529,13 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
               <FeatureCard icon={Beaker} label="Lab" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/lab" onClick={handleLabAccess} testId="feature-lab" />
-              <FeatureCard icon={Zap} label="Arena" gradient="from-amber-500/25 to-orange-600/10" iconColor="text-amber-300" borderColor="border-amber-500/30" to="/arena" badge="LIVE" testId="feature-arena" />
+              <FeatureCard icon={Swords} label="Arena" gradient="from-slate-600/40 to-slate-900/25" iconColor="text-slate-200" borderColor="border-slate-500/30" to="/arena" badge="LIVE" testId="feature-arena" />
               <FeatureCard icon={Settings} label="Auto-Mix" gradient="from-sky-500/20 to-indigo-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/settings" state={{ tab: 'auto-mixer' }} badge="AI" testId="feature-auto-mixer" />
               <FeatureCard icon={Palette} label="Treats" gradient="from-purple-500/20 to-pink-600/10" iconColor="text-purple-300" borderColor="border-purple-500/15" to="/nfts" testId="feature-treats" />
               <FeatureCard icon={Store} label="Market" gradient="from-sky-500/20 to-cyan-600/10" iconColor="text-sky-300" borderColor="border-sky-500/15" to="/marketplace" testId="feature-market" />
               <FeatureCard icon={Crown} label="Tourney" gradient="from-yellow-500/20 to-yellow-600/10" iconColor="text-yellow-300" borderColor="border-yellow-500/15" to="/tournament" testId="feature-tournament" />
               <FeatureCard icon={TrendingUp} label="Lab Surge" gradient="from-emerald-500/20 to-amber-500/10" iconColor="text-emerald-300" borderColor="border-emerald-500/20" to="/lab-surge" badge="NEW" testId="feature-lab-surge" />
-              <FeatureCard icon={Newspaper} label="Lab Feed" gradient="from-cyan-500/20 to-blue-600/10" iconColor="text-cyan-300" borderColor="border-cyan-500/20" to="/lab-feed" testId="feature-lab-feed" />
+              <FeatureCard icon={Newspaper} label="Lab Feed" gradient="from-slate-300/30 to-slate-400/15" iconColor="text-slate-100" borderColor="border-slate-300/30" to="/lab-feed" testId="feature-lab-feed" />
               <FeatureCard icon={Rocket} label="Launcher" gradient="from-fuchsia-500/20 to-violet-600/10" iconColor="text-fuchsia-300" borderColor="border-fuchsia-500/20" to="/lab-launcher" badge="NEW" testId="feature-lab-launcher" />
             </div>
           </div>
