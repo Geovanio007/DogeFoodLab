@@ -17,7 +17,7 @@ const getDirectChainId = () => {
   if (typeof window !== 'undefined' && window.ethereum) {
     try {
       return window.ethereum.chainId;
-    } catch (e) {
+    } catch {
       return null;
     }
   }
@@ -86,11 +86,11 @@ export const useWeb3 = () => {
     
     const message = `Welcome to DogeFood Lab Beta!
 
-Sign this message to authenticate with DogeOS Devnet.
+Sign this message to authenticate with DogeOS Chikyū Testnet.
 
 Wallet: ${address}
 Time: ${new Date().toISOString()}
-Network: DogeOS Devnet (Chain ID: ${dogeOSDevnet.id})
+Network: DogeOS Chikyū Testnet (Chain ID: ${dogeOSDevnet.id})
 
 This signature is only used for authentication and costs no gas.`;
 
