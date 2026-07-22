@@ -1,8 +1,14 @@
-// Smart Contract Addresses on DogeOS Devnet
+// Smart Contract Addresses on DogeOS Chikyū Testnet
 export const CONTRACT_ADDRESSES = {
   LAB_TOKEN: process.env.REACT_APP_LAB_TOKEN_ADDRESS || '0xc238Ef1C4d4d9109e4d8D0D6BB1eA55bA58861d1',
   DOGEFOOD_NFT: process.env.REACT_APP_DOGEFOOD_NFT_ADDRESS || '0xA74Dad05f54d32575f82C3e065C4441b8d979a54',
   REWARD_DISTRIBUTOR: process.env.REACT_APP_REWARD_DISTRIBUTOR_ADDRESS || '0x37F20600fd6eF1416ccb1DD20043CCfb4d72ba30',
+  LAUNCHPAD_FACTORY: process.env.REACT_APP_LAUNCHPAD_FACTORY_ADDRESS || '0xFf3cebc023F43d4a4F66F02560872Ed4B0aDA241',
+  BONDING_CURVE: process.env.REACT_APP_BONDING_CURVE_ADDRESS || '0x5C1E7deb7BD89d4AEB7B57B7b6D1Ad266886f848',
+  GRADUATION_MANAGER: process.env.REACT_APP_GRADUATION_MANAGER_ADDRESS || '0x7c19D7533D6FFd6969352ff60Dd55387EcAF8DDE',
+  LAUNCHER_TREASURY: process.env.REACT_APP_LAUNCHER_TREASURY_ADDRESS || '0x17083489ff064340d2971e3538F600FCB3211515',
+  ROYALTY_DISTRIBUTOR: process.env.REACT_APP_ROYALTY_DISTRIBUTOR_ADDRESS || '0x4CfF95f1EDFC46646D4C2d345e1AF8Aa375ac8D6',
+  GAME_PAYMENT_GATEWAY: process.env.REACT_APP_GAME_PAYMENT_GATEWAY_ADDRESS || '0x1277F70716AfadA4e62790210a08F690aA48B1Eb',
 };
 
 // Network Information
@@ -127,6 +133,32 @@ export const REWARD_DISTRIBUTOR_ABI = [
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
     "stateMutability": "view",
     "type": "function"
+  }
+];
+
+export const LAUNCHPAD_FACTORY_ABI = [
+  {
+    "inputs": [
+      {"internalType": "string", "name": "name", "type": "string"},
+      {"internalType": "string", "name": "symbol", "type": "string"}
+    ],
+    "name": "createToken",
+    "outputs": [{"internalType": "address", "name": "token", "type": "address"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "token", "type": "address"},
+      {"indexed": true, "internalType": "address", "name": "creator", "type": "address"},
+      {"indexed": false, "internalType": "string", "name": "name", "type": "string"},
+      {"indexed": false, "internalType": "string", "name": "symbol", "type": "string"},
+      {"indexed": false, "internalType": "uint256", "name": "totalSupply", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256", "name": "index", "type": "uint256"}
+    ],
+    "name": "TokenLaunched",
+    "type": "event"
   }
 ];
 
