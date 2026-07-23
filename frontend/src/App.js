@@ -19,6 +19,7 @@ import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import WelcomeScreen from './components/WelcomeScreen';
 import LoadingScreen from './components/LoadingScreen';
+import LabRouteLoader from './components/LabRouteLoader';
 import MainMenu from './components/MainMenu';
 import ActiveTreatsStatus from './components/ActiveTreatsStatus';
 import TreatNotifications from './components/TreatNotifications';
@@ -39,7 +40,6 @@ const LabFeed = lazy(() => import('./components/LabFeed'));
 const LabLauncher = lazy(() => import('./components/LabLauncher'));
 const LabLauncherCreate = lazy(() => import('./components/LabLauncherCreate'));
 const LabLauncherToken = lazy(() => import('./components/LabLauncherToken'));
-const LabLauncherCreatorDashboard = lazy(() => import('./components/LabLauncherCreatorDashboard'));
 const MyTreats = lazy(() => import('./components/MyTreats'));
 const Leaderboard = lazy(() => import('./components/Leaderboard'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -342,7 +342,7 @@ const InnerApp = () => {
             )}
             
             {/* Always show main routes after loading - authentication is optional */}
-            <Suspense fallback={<LoadingScreen />}>
+            <Suspense fallback={<LabRouteLoader />}>
             <Routes>
               <Route path="/" element={<MenuErrorBoundary><MainMenu playerAddress={effectiveAddress || 'GUEST_USER'} /></MenuErrorBoundary>} />
               <Route path="/lab" element={<SeasonTwoLab playerAddress={effectiveAddress || 'GUEST_USER'} />} />
@@ -361,8 +361,6 @@ const InnerApp = () => {
               <Route path="/lab-launcher" element={<LabLauncher playerAddress={effectiveAddress || 'GUEST_USER'} />} />
               <Route path="/lab-launcher/create" element={<LabLauncherCreate />} />
               <Route path="/lab-launcher/token/:address" element={<LabLauncherToken />} />
-              <Route path="/lab-launcher/creator" element={<LabLauncherCreatorDashboard />} />
-              <Route path="/lab-launcher/creator/:wallet" element={<LabLauncherCreatorDashboard />} />
             </Routes>
             </Suspense>
             {/* Global Treat Notifications */}
