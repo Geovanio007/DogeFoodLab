@@ -39,6 +39,7 @@ const LabFeed = lazy(() => import('./components/LabFeed'));
 const LabLauncher = lazy(() => import('./components/LabLauncher'));
 const LabLauncherCreate = lazy(() => import('./components/LabLauncherCreate'));
 const LabLauncherToken = lazy(() => import('./components/LabLauncherToken'));
+const LabLauncherCreatorDashboard = lazy(() => import('./components/LabLauncherCreatorDashboard'));
 const MyTreats = lazy(() => import('./components/MyTreats'));
 const Leaderboard = lazy(() => import('./components/Leaderboard'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -360,6 +361,8 @@ const InnerApp = () => {
               <Route path="/lab-launcher" element={<LabLauncher playerAddress={effectiveAddress || 'GUEST_USER'} />} />
               <Route path="/lab-launcher/create" element={<LabLauncherCreate />} />
               <Route path="/lab-launcher/token/:address" element={<LabLauncherToken />} />
+              <Route path="/lab-launcher/creator" element={<LabLauncherCreatorDashboard />} />
+              <Route path="/lab-launcher/creator/:wallet" element={<LabLauncherCreatorDashboard />} />
             </Routes>
             </Suspense>
             {/* Global Treat Notifications */}
