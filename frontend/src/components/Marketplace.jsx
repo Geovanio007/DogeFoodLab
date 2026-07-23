@@ -5,6 +5,7 @@ import { useTelegram } from '../contexts/TelegramContext';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
+import LabInlineLoader from './LabInlineLoader';
 import { 
   ArrowLeft, 
   Store, 
@@ -16,8 +17,7 @@ import {
   CircleDot,
   Clock,
   ShoppingCart,
-  AlertCircle,
-  Loader2
+  AlertCircle
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -572,9 +572,7 @@ const Marketplace = () => {
 
         {/* Listings Grid */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-sky-400" />
-          </div>
+          <LabInlineLoader message="Fetching listings…" />
         ) : filteredListings.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {filteredListings.map(listing => (
