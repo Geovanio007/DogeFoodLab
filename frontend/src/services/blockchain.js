@@ -8,6 +8,7 @@ import {
   LAUNCHPAD_FACTORY_ABI,
   BONDING_CURVE_ABI,
   LAUNCH_TOKEN_ABI,
+  ROYALTY_DISTRIBUTOR_ABI,
 } from '../config/contracts';
 
 // Create public client for reading blockchain data
@@ -413,6 +414,38 @@ export class BlockchainService {
     } catch (error) {
       console.error('❌ Error selling token:', error);
       return { success: false, error: error.shortMessage || error.message || 'Sell failed' };
+    }
+  }
+  // -- Lab Launcher creator royalties --------------------------------
+
+  async getPendingRoyalty(token) {
+    try {
+      return await this.client.readContract({
+        address: CONTRACT_ADDRESSES.ROYALTY_DISTRIBUTOR,
+        abi: ROYALTY_DISTRIBUTOR_ABI,
+        functionName: 'pendingRoyalty',
+        args: [token],
+      });
+    } catch (error) {
+      console.error('Error reading pending royalty:', error);
+      return 0n;
+    }
+  }
+
+  async claimRoyalty(walletClient, userAddress, token) {
+    try {
+      const txHash = await walletClient.writeContract({
+        address: CONTRACT_ADDRESSES.ROYALTY_DISTRIBUTOR,
+        abi: ROYALTY_DISTRIBUTOR_ABI,
+        functionName: 'claim',
+        args: [token],
+        account: userAddress,
+      });
+      const receipt = await this.client.waitForTransactionReceipt({ hash: txHash });
+      return { success: true, txHash, receipt };
+    } catch (error) {
+      console.error('❌ Error claiming royalty:', error);
+      return { success: false, error: error.shortMessage || error.message || 'Claim failed' };
     }
   }
 }
