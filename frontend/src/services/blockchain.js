@@ -6,6 +6,8 @@ import {
   DOGEFOOD_NFT_ABI, 
   REWARD_DISTRIBUTOR_ABI,
   LAUNCHPAD_FACTORY_ABI,
+  BONDING_CURVE_ABI,
+  LAUNCH_TOKEN_ABI,
 } from '../config/contracts';
 
 // Create public client for reading blockchain data
@@ -295,6 +297,122 @@ export class BlockchainService {
         success: false,
         error: error.shortMessage || error.message || 'Failed to create token',
       };
+    }
+  }
+
+  // -- Lab Launcher trading --------------------------------------------
+
+  async previewBuy(token, dogeInWei) {
+    try {
+      const [tokensOut, fee] = await this.client.readContract({
+        address: CONTRACT_ADDRESSES.BONDING_CURVE,
+        abi: BONDING_CURVE_ABI,
+        functionName: 'previewBuy',
+        args: [token, dogeInWei],
+      });
+      return { tokensOut, fee };
+    } catch (error) {
+      console.error('Error previewing buy:', error);
+      return null;
+    }
+  }
+
+  async previewSell(token, tokenInWei) {
+    try {
+      const [dogeOut, fee] = await this.client.readContract({
+        address: CONTRACT_ADDRESSES.BONDING_CURVE,
+        abi: BONDING_CURVE_ABI,
+        functionName: 'previewSell',
+        args: [token, tokenInWei],
+      });
+      return { dogeOut, fee };
+    } catch (error) {
+      console.error('Error previewing sell:', error);
+      return null;
+    }
+  }
+
+  async getTokenBalance(token, owner) {
+    try {
+      return await this.client.readContract({
+        address: token,
+        abi: LAUNCH_TOKEN_ABI,
+        functionName: 'balanceOf',
+        args: [owner],
+      });
+    } catch (error) {
+      console.error('Error reading token balance:', error);
+      return 0n;
+    }
+  }
+
+  async getTokenAllowance(token, owner) {
+    try {
+      return await this.client.readContract({
+        address: token,
+        abi: LAUNCH_TOKEN_ABI,
+        functionName: 'allowance',
+        args: [owner, CONTRACT_ADDRESSES.BONDING_CURVE],
+      });
+    } catch (error) {
+      console.error('Error reading token allowance:', error);
+      return 0n;
+    }
+  }
+
+  // Buy: send native DOGE, get the token back. minTokensOut should already
+  // include the caller's slippage tolerance.
+  async buyToken(walletClient, userAddress, token, dogeAmountWei, minTokensOut) {
+    try {
+      const txHash = await walletClient.writeContract({
+        address: CONTRACT_ADDRESSES.BONDING_CURVE,
+        abi: BONDING_CURVE_ABI,
+        functionName: 'buy',
+        args: [token, minTokensOut],
+        value: dogeAmountWei,
+        account: userAddress,
+      });
+      const receipt = await this.client.waitForTransactionReceipt({ hash: txHash });
+      return { success: true, txHash, receipt };
+    } catch (error) {
+      console.error('❌ Error buying token:', error);
+      return { success: false, error: error.shortMessage || error.message || 'Buy failed' };
+    }
+  }
+
+  // Approve is a separate signed tx, required once per token before the
+  // first sell (or again if a later sell exceeds the remaining allowance).
+  async approveToken(walletClient, userAddress, token, amountWei) {
+    try {
+      const txHash = await walletClient.writeContract({
+        address: token,
+        abi: LAUNCH_TOKEN_ABI,
+        functionName: 'approve',
+        args: [CONTRACT_ADDRESSES.BONDING_CURVE, amountWei],
+        account: userAddress,
+      });
+      await this.client.waitForTransactionReceipt({ hash: txHash });
+      return { success: true, txHash };
+    } catch (error) {
+      console.error('❌ Error approving token:', error);
+      return { success: false, error: error.shortMessage || error.message || 'Approval failed' };
+    }
+  }
+
+  async sellToken(walletClient, userAddress, token, tokenAmountWei, minDogeOut) {
+    try {
+      const txHash = await walletClient.writeContract({
+        address: CONTRACT_ADDRESSES.BONDING_CURVE,
+        abi: BONDING_CURVE_ABI,
+        functionName: 'sell',
+        args: [token, tokenAmountWei, minDogeOut],
+        account: userAddress,
+      });
+      const receipt = await this.client.waitForTransactionReceipt({ hash: txHash });
+      return { success: true, txHash, receipt };
+    } catch (error) {
+      console.error('❌ Error selling token:', error);
+      return { success: false, error: error.shortMessage || error.message || 'Sell failed' };
     }
   }
 }
