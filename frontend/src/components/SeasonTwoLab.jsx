@@ -1839,26 +1839,44 @@ const FlaskCard = ({ treat, onCollect, isCollecting, isTelegram, onFeedShiba }) 
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           {/* Feed Shiba button — shown for all users: tap to feed pet + collect */}
           {onFeedShiba && (
-            <button
-              onClick={() => { onFeedShiba(treat.id); }}
-              disabled={isCollecting}
-              title="Feed to Shiba & collect"
-              style={{
-                padding: '6px 10px', borderRadius: 99, fontSize: 11, fontWeight: 900,
-                cursor: isCollecting ? 'wait' : 'pointer',
-                background: isCollecting ? 'rgba(255,255,255,0.05)' : 'rgba(251,191,36,0.15)',
-                color: isCollecting ? 'rgba(255,255,255,0.3)' : '#fbbf24',
-                border: '1px solid rgba(251,191,36,0.4)',
-                boxShadow: isCollecting ? 'none' : '0 0 10px rgba(251,191,36,0.25)',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {isCollecting
-                ? '…'
-                : <img src="/Pup.png" alt="Feed pet" style={{ width: 20, height: 20, objectFit: 'contain' }} />
-              }
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => { onFeedShiba(treat.id); }}
+                disabled={isCollecting}
+                title="Feed to Shiba & collect"
+                style={{
+                  padding: '6px 10px', borderRadius: 99, fontSize: 11, fontWeight: 900,
+                  cursor: isCollecting ? 'wait' : 'pointer',
+                  background: isCollecting ? 'rgba(255,255,255,0.05)' : 'rgba(251,191,36,0.15)',
+                  color: isCollecting ? 'rgba(255,255,255,0.3)' : '#fbbf24',
+                  border: '1px solid rgba(251,191,36,0.4)',
+                  boxShadow: isCollecting ? 'none' : '0 0 10px rgba(251,191,36,0.25)',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {isCollecting
+                  ? '…'
+                  : <img src="/Pup.png" alt="Feed pet" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                }
+              </button>
+              {/* Hint arrow — points new players at the tap-to-feed icon */}
+              {!isCollecting && (
+                <svg
+                  width="18" height="24" viewBox="0 0 20 26"
+                  className="animate-feed-hint"
+                  style={{
+                    position: 'absolute', bottom: -22, left: '50%',
+                    transform: 'translateX(-50%)',
+                    filter: 'drop-shadow(0 0 4px rgba(251,191,36,0.65))',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <path d="M16 22 Q4 20 3 4" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M3 4 L0 9 M3 4 L8 8" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              )}
+            </div>
           )}
           <button
             onClick={() => onCollect(treat.id)}
@@ -2261,6 +2279,12 @@ const LabStyles = () => (
     }
     .animate-rarity-pulse { animation: rarity-pulse 1.6s ease-in-out infinite; }
 
+    @keyframes feed-hint-bounce {
+      0%,100% { transform: translateX(-50%) translateY(0);   opacity: .55; }
+      50%     { transform: translateX(-50%) translateY(-5px); opacity: 1; }
+    }
+    .animate-feed-hint { animation: feed-hint-bounce 1.3s ease-in-out infinite; }
+
     @keyframes result-pop {
       0%   { transform: translateY(24px) scale(.92); opacity: 0; }
       60%  { transform: translateY(-4px) scale(1.02); opacity: 1; }
@@ -2299,6 +2323,7 @@ const LabStyles = () => (
       .animate-screen-shake,
       .animate-rainbow-flash,
       .animate-rarity-pulse,
+      .animate-feed-hint,
       .animate-result-pop { animation: none !important; }
     }
   `}</style>
