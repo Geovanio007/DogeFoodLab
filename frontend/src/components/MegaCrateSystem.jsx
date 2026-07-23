@@ -470,6 +470,14 @@ const MegaCrateSystem = ({ playerAddress, onOpened }) => {
   const [status, setStatus] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [dismissedCrateId, setDismissedCrateId] = useState(null);
+  // Snapshot of the crate being opened, taken once when the modal opens.
+  // Deliberately kept separate from `status`: `status` keeps polling in the
+  // background and used to flip to "unavailable" the instant a crate was
+  // opened, which unmounted this whole tree — including the modal — before
+  // the reveal could ever show. The open modal must stay mounted through its
+  // full shake → open → reveal sequence regardless of what `status` does in
+  // the background; it should only close when the player closes it.
+  const [activeCrate, setActiveCrate] = useState(null);
 
   const checkStatus = useCallback(async () => {
     if (!playerAddress || playerAddress === 'GUEST_USER') return;
@@ -489,33 +497,42 @@ const MegaCrateSystem = ({ playerAddress, onOpened }) => {
     return () => clearInterval(iv);
   }, [checkStatus]);
 
+  const openModal = useCallback(() => {
+    setActiveCrate(status?.pending_crate || null);
+    setShowModal(true);
+  }, [status]);
+
+  const closeModal = useCallback(() => {
+    setShowModal(false);
+    setActiveCrate(null);
+    checkStatus(); // crate's been claimed — refresh so the badge clears/updates
+  }, [checkStatus]);
+
+  // Only bump the caller's points display here — `status`/the modal are
+  // left completely alone so the reveal actually gets to show.
   const handleOpened = useCallback((data) => {
-    setStatus(s => ({ ...s, available: false, pending_crate: null, next_available_at: data.next_available_at }));
     if (onOpened) onOpened(data);
   }, [onOpened]);
 
-  if (!status?.available) return null;
-  const crate = status.pending_crate;
-  if (!crate) return null;
+  if (showModal && activeCrate) {
+    return (
+      <MegaCrateModal
+        crate={activeCrate}
+        playerAddress={playerAddress}
+        onClose={closeModal}
+        onOpened={handleOpened}
+      />
+    );
+  }
+
+  if (!status?.available || !status?.pending_crate) return null;
 
   return (
-    <>
-      {!showModal && (
-        <MegaCrateBadge
-          onClick={() => setShowModal(true)}
-          dismissed={dismissedCrateId === crate.id}
-          onDismiss={() => setDismissedCrateId(crate.id)}
-        />
-      )}
-      {showModal && (
-        <MegaCrateModal
-          crate={crate}
-          playerAddress={playerAddress}
-          onClose={() => setShowModal(false)}
-          onOpened={handleOpened}
-        />
-      )}
-    </>
+    <MegaCrateBadge
+      onClick={openModal}
+      dismissed={dismissedCrateId === status.pending_crate.id}
+      onDismiss={() => setDismissedCrateId(status.pending_crate.id)}
+    />
   );
 };
 
