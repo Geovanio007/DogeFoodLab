@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, Rocket, Search, X, Plus, ArrowUpDown, ShieldCheck,
-  Flame, Sparkles, GraduationCap, Gem, Dog, Heart, Loader2, Users,
+  Flame, Sparkles, GraduationCap, Gem, Dog, Heart, Loader2, Users, Crown,
 } from 'lucide-react';
 
 /* ============================================================
@@ -300,6 +300,11 @@ const LabLauncher = () => {
           {!showSearch && (
             <button onClick={openSearch} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Search" data-testid="lab-launcher-search-open">
               <Search className="w-4.5 h-4.5 text-slate-400" />
+            </button>
+          )}
+          {!showSearch && (
+            <button onClick={() => navigate('/lab-launcher/creator')} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Your creator dashboard" data-testid="lab-launcher-my-dashboard">
+              <Crown className="w-4.5 h-4.5 text-slate-400" />
             </button>
           )}
           <button
