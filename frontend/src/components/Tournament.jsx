@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { useTelegram } from '../contexts/TelegramContext';
 import { useAccount } from 'wagmi';
 import MusicPlayer from './MusicPlayer';
+import LabInlineLoader from './LabInlineLoader';
 import { 
   ArrowLeft, Trophy, Clock, Users, Swords, Crown, 
   ChevronRight, Beaker, CircleDot, Timer, Award, Zap, Shield
@@ -545,10 +546,7 @@ const Tournament = () => {
           </CardHeader>
           <CardContent className="p-2 sm:p-4">
             {loading ? (
-              <div className="text-center py-12">
-                <div className="w-10 h-10 border-2 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-slate-400">Loading bracket...</p>
-              </div>
+              <LabInlineLoader message="Loading bracket…" minHeight={140} />
             ) : (
               <TournamentBracket matches={tournament?.matches || []} />
             )}
@@ -568,10 +566,7 @@ const Tournament = () => {
           </CardHeader>
           <CardContent className="p-4">
             {loading ? (
-              <div className="text-center py-8">
-                <div className="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-slate-400 text-sm">Loading...</p>
-              </div>
+              <LabInlineLoader message="Loading…" size="small" minHeight={100} />
             ) : (
               <div className="grid gap-2 sm:grid-cols-2">
                 {qualifiedPlayers.map((player, index) => (
