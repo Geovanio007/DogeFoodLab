@@ -6,6 +6,7 @@ import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format, addDays, isBefore, isAfter, startOfDay } from 'date-fns';
 import { INGREDIENT_ICONS, getIngredientIcon } from '../config/ingredientIcons';
+import LabInlineLoader from './LabInlineLoader';
 import { 
   Bot, 
   Clock, 
@@ -786,11 +787,7 @@ const AutoMixerSubscription = ({ playerAddress, playerNickname, isDarkMode = fal
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
-      </div>
-    );
+    return <LabInlineLoader message="Loading Auto-Mixer…" minHeight={220} />;
   }
 
   if (!config) {
