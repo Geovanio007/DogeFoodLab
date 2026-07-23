@@ -10,6 +10,7 @@ import { useGame } from '../contexts/GameContext';
 import { useTelegram } from '../contexts/TelegramContext';
 import TreatIcon from './TreatIcon';
 import MusicPlayer from './MusicPlayer';
+import LabInlineLoader from './LabInlineLoader';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -1031,10 +1032,7 @@ const MyTreats = () => {
 
         {/* Content */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-16 h-16 border-4 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-4" />
-            <p className="text-slate-400">Loading your treats...</p>
-          </div>
+          <LabInlineLoader message="Loading your treats…" minHeight={260} />
         ) : error ? (
           <div className="text-center py-20">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
