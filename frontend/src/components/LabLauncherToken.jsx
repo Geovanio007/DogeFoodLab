@@ -323,7 +323,14 @@ const LabLauncherToken = () => {
           <Users className="w-3.5 h-3.5" /> {token.holders ?? 0} holders
           <span className="text-slate-700">•</span>
           <span>by {shortAddress(token.creator_wallet)}</span>
-          {isMyToken && <span className="text-[10px] font-bold text-fuchsia-300 bg-fuchsia-500/15 px-1.5 py-0.5 rounded">YOU</span>}
+          {isMyToken && (
+            <button
+              onClick={() => navigate('/lab-launcher/creator')}
+              className="text-[10px] font-bold text-fuchsia-300 bg-fuchsia-500/15 px-1.5 py-0.5 rounded"
+            >
+              YOU · Dashboard
+            </button>
+          )}
         </div>
 
         <BigCurve progressBps={token.bonding_progress_bps || 0} graduated={graduated} />
