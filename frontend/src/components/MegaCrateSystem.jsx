@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import INGREDIENT_ICONS from '../config/ingredientIcons';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://dogefood-lab-api.onrender.com';
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // ─── Theme ─────────────────────────────────────────────────────────────────
 // Deliberately its own "royal" gold/mythic-pink palette so it never reads
@@ -111,18 +111,21 @@ const RewardCard = ({ reward, index, revealed, onReveal }) => {
 
 // ─── Mega Crate opening modal ────────────────────────────────────────────────
 const MegaCrateModal = ({ crate, playerAddress, onClose, onOpened }) => {
-  const [phase, setPhase] = useState('idle'); // idle → shaking → opening → revealing
+  const [phase, setPhase] = useState('idle'); // idle → shaking → opening → revealing (or → error)
   const [rewards, setRewards] = useState([]);
   const [revealed, setRevealed] = useState([]);
   const [allRevealed, setAllRevealed] = useState(false);
   const [nextAvailableAt, setNextAvailableAt] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const shakeRef = useRef(null);
 
   const openCrate = useCallback(async () => {
     setPhase('shaking');
+    setErrorMessage(null);
     await new Promise(r => setTimeout(r, 700));
     setPhase('opening');
     let fetchedRewards = [];
+    let failReason = null;
     try {
       const res = await fetch(`${API_URL}/api/lab/mega-crate/${crate.id}/open`, {
         method: 'POST',
@@ -135,10 +138,15 @@ const MegaCrateModal = ({ crate, playerAddress, onClose, onOpened }) => {
         setNextAvailableAt(data.next_available_at || null);
         if (onOpened) onOpened(data);
       } else {
-        console.error('[MegaCrate] open error:', res.status, await res.text());
+        const bodyText = await res.text();
+        console.error('[MegaCrate] open error:', res.status, bodyText);
+        failReason = res.status === 404
+          ? "Couldn't find this crate on the server — it may still be deploying, or it's already been opened."
+          : `Server error (${res.status}). Please try again in a moment.`;
       }
     } catch (e) {
       console.error('[MegaCrate] open failed:', e);
+      failReason = "Couldn't reach the server — check your connection and try again.";
     }
     await new Promise(r => setTimeout(r, 900));
     if (fetchedRewards.length > 0) {
@@ -146,7 +154,8 @@ const MegaCrateModal = ({ crate, playerAddress, onClose, onOpened }) => {
       setRevealed(new Array(fetchedRewards.length).fill(false));
       setPhase('revealing');
     } else {
-      setPhase('idle'); // API error — let them retry
+      setErrorMessage(failReason || 'Something went wrong opening this crate.');
+      setPhase('error');
     }
   }, [crate.id, playerAddress, onOpened]);
 
@@ -331,8 +340,20 @@ const MegaCrateModal = ({ crate, playerAddress, onClose, onOpened }) => {
         </div>
       )}
 
-      {/* Open button */}
-      {phase === 'idle' && (
+      {/* Error message */}
+      {phase === 'error' && errorMessage && (
+        <div style={{
+          maxWidth: 320, textAlign: 'center', marginBottom: 18,
+          padding: '10px 16px', borderRadius: 12,
+          background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)',
+          color: '#fca5a5', fontSize: 12.5, lineHeight: 1.5,
+        }}>
+          {errorMessage}
+        </div>
+      )}
+
+      {/* Open / retry button */}
+      {(phase === 'idle' || phase === 'error') && (
         <button
           onClick={openCrate}
           style={{
@@ -344,11 +365,11 @@ const MegaCrateModal = ({ crate, playerAddress, onClose, onOpened }) => {
             letterSpacing: '0.1em', textTransform: 'uppercase',
           }}
         >
-          Open Mega Crate
+          {phase === 'error' ? 'Try Again' : 'Open Mega Crate'}
         </button>
       )}
 
-      {phase === 'idle' && (
+      {(phase === 'idle' || phase === 'error') && (
         <button
           onClick={onClose}
           style={{
