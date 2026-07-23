@@ -162,6 +162,93 @@ export const LAUNCHPAD_FACTORY_ABI = [
   }
 ];
 
+export const BONDING_CURVE_ABI = [
+  {
+    "inputs": [
+      {"internalType": "address", "name": "token", "type": "address"},
+      {"internalType": "uint256", "name": "minTokensOut", "type": "uint256"}
+    ],
+    "name": "buy",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "token", "type": "address"},
+      {"internalType": "uint256", "name": "tokenAmount", "type": "uint256"},
+      {"internalType": "uint256", "name": "minDogeOut", "type": "uint256"}
+    ],
+    "name": "sell",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "token", "type": "address"},
+      {"internalType": "uint256", "name": "dogeIn", "type": "uint256"}
+    ],
+    "name": "previewBuy",
+    "outputs": [
+      {"internalType": "uint256", "name": "tokensOut", "type": "uint256"},
+      {"internalType": "uint256", "name": "fee", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "token", "type": "address"},
+      {"internalType": "uint256", "name": "tokenIn", "type": "uint256"}
+    ],
+    "name": "previewSell",
+    "outputs": [
+      {"internalType": "uint256", "name": "dogeOut", "type": "uint256"},
+      {"internalType": "uint256", "name": "fee", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "token", "type": "address"}],
+    "name": "isGraduated",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+export const LAUNCH_TOKEN_ABI = [
+  {
+    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
+    "name": "balanceOf",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "owner", "type": "address"},
+      {"internalType": "address", "name": "spender", "type": "address"}
+    ],
+    "name": "allowance",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "spender", "type": "address"},
+      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "approve",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
+
 // Token Information
 export const LAB_TOKEN_INFO = {
   name: 'LAB Token',
