@@ -249,6 +249,23 @@ export const LAUNCH_TOKEN_ABI = [
   }
 ];
 
+export const ROYALTY_DISTRIBUTOR_ABI = [
+  {
+    "inputs": [{"internalType": "address", "name": "token", "type": "address"}],
+    "name": "pendingRoyalty",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "token", "type": "address"}],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
+
 // Token Information
 export const LAB_TOKEN_INFO = {
   name: 'LAB Token',
