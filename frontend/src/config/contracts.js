@@ -16,7 +16,7 @@ export const DOGEOS_DEVNET = {
   chainId: parseInt(process.env.REACT_APP_DOGEOS_CHAIN_ID) || 6281971,
   name: 'DogeOS Chikyū Testnet',
   rpcUrl: process.env.REACT_APP_DOGEOS_RPC_URL || 'https://rpc.testnet.dogeos.com',
-  blockExplorer: process.env.REACT_APP_DOGEOS_EXPLORER || 'https://explorer.testnet.dogeos.com',
+  blockExplorer: process.env.REACT_APP_DOGEOS_EXPLORER || 'https://blockscout.testnet.dogeos.com/',
   symbol: 'DOGE',
 };
 
