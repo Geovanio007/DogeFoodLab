@@ -11,6 +11,7 @@ import SpinWheel from './SpinWheel';
 import DailyLimitTracker from './DailyLimitTracker';
 import { KernelOfWowStatus, KernelBonusResult } from './KernelOfWow';
 import ShibaGrowth from './ShibaGrowth';
+import LabRouteLoader from './LabRouteLoader';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -680,6 +681,16 @@ const SeasonTwoLab = ({ playerAddress }) => {
   const isDailyLimitReached = dailyStatus ? (dailyStatus.remaining_treats || 0) === 0 : false;
 
   // ============= RENDER =============
+  // Full-page gate — the route itself may already be mounted (Suspense has
+  // resolved), but nothing meaningful can render correctly until the
+  // player/ingredients/market/treats load kicked off above finishes; until
+  // then this page was flashing default values (Level 1, "Scientist", 0
+  // points) instead of the player's real data. Same loader as the route
+  // transition, so the two hand off seamlessly with no visible seam.
+  if (loading) {
+    return <LabRouteLoader />;
+  }
+
   // Character selection gate — same flow as legacy
   if (showCharacterSelection) {
     return (
