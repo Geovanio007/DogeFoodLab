@@ -17,28 +17,10 @@ const PLAYLIST = [
     url: "https://customer-assets.emergentagent.com/job_e7bcdee9-252d-418c-ba9f-7ff6fd76e17b/artifacts/drtewuwr_the-last-point-beat-electronic-digital-394291.mp3"
   },
   {
-    id: 3,
-    title: "Deep Abstract",
-    artist: "Snowcap Ambient",
-    url: "https://customer-assets.emergentagent.com/job_e7bcdee9-252d-418c-ba9f-7ff6fd76e17b/artifacts/3ifm13fl_deep-abstract-ambient_snowcap-401656.mp3"
-  },
-  {
-    id: 4,
-    title: "Vlog Background",
-    artist: "Vibes",
-    url: "https://customer-assets.emergentagent.com/job_audiorank-verify/artifacts/7eywl1jf_vlog-vlogs-music-background-347934.mp3"
-  },
-  {
     id: 5,
     title: "Lose Control",
     artist: "Old School",
     url: "https://customer-assets.emergentagent.com/job_audiorank-verify/artifacts/yme3nq91_lose-control-old-school-music-339344.mp3"
-  },
-  {
-    id: 6,
-    title: "Blues Rock",
-    artist: "Rock",
-    url: "https://customer-assets.emergentagent.com/job_audiorank-verify/artifacts/m9puvpit_blues-rock-music-free-464181.mp3"
   },
   {
     id: 7,
@@ -51,6 +33,30 @@ const PLAYLIST = [
     title: "Slow Blues",
     artist: "Instrumental",
     url: "https://customer-assets.emergentagent.com/job_audiorank-verify/artifacts/0b2szrnx_slow-blues-instrumental-207866.mp3"
+  },
+  {
+    id: 9,
+    title: "Funk & Breakbeat",
+    artist: "Funk",
+    url: "/sounds/alexguz-funk-amp-breakbeat-541097.mp3"
+  },
+  {
+    id: 10,
+    title: "Playful Night",
+    artist: "Dance",
+    url: "/sounds/alexzavesa-dance-playful-night-510786.mp3"
+  },
+  {
+    id: 11,
+    title: "Sol e Alegria (Sun and Joy)",
+    artist: "Latin",
+    url: "/sounds/bannyboy-sol-e-alegria-sun-and-joy-452450.mp3"
+  },
+  {
+    id: 12,
+    title: "Hip Hop Beat",
+    artist: "Hip Hop",
+    url: "/sounds/bombinsound-hip-hop-hip-hop-beat-547254.mp3"
   }
 ];
 
