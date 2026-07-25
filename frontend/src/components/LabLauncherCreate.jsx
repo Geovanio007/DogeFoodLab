@@ -161,7 +161,7 @@ const LabLauncherCreate = () => {
         >
           <ChevronLeft className="w-5 h-5 text-slate-300" />
         </button>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-300 to-lime-400 flex items-center justify-center">
           <Rocket className="w-4.5 h-4.5 text-white" />
         </div>
         <div>
@@ -181,7 +181,7 @@ const LabLauncherCreate = () => {
                   {logo && !logoError ? (
                     <img src={logo} alt="" className="w-full h-full object-cover" onError={() => setLogoError(true)} />
                   ) : (
-                    <span className="text-lg font-black text-fuchsia-300">{(symbol || name || '?')[0]?.toUpperCase()}</span>
+                    <span className="text-lg font-black text-amber-300">{(symbol || name || '?')[0]?.toUpperCase()}</span>
                   )}
                 </div>
                 <div className="min-w-0">
@@ -297,7 +297,7 @@ const LabLauncherCreate = () => {
                 <button
                   onClick={handleSubmit}
                   disabled={!canSubmit}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-sm font-bold text-white active:scale-[0.98] transition-transform disabled:opacity-40 disabled:active:scale-100"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-amber-300 to-lime-400 text-sm font-bold text-white active:scale-[0.98] transition-transform disabled:opacity-40 disabled:active:scale-100"
                   data-testid="create-token-submit"
                 >
                   <Rocket className="w-4 h-4" /> Launch Token
@@ -312,7 +312,7 @@ const LabLauncherCreate = () => {
 
         {(step === STEPS.DEPLOYING || step === STEPS.SAVING) && (
           <div className="flex flex-col items-center justify-center py-20 text-center" data-testid="create-token-busy">
-            <Loader2 className="w-8 h-8 text-fuchsia-400 animate-spin mb-4" />
+            <Loader2 className="w-8 h-8 text-amber-400 animate-spin mb-4" />
             <p className="text-sm font-bold text-white">
               {step === STEPS.DEPLOYING ? 'Confirm in your wallet…' : 'Saving your token details…'}
             </p>
@@ -333,7 +333,7 @@ const LabLauncherCreate = () => {
             </p>
             <p className="text-[11px] font-mono text-slate-600 mt-3 break-all px-4">{result?.tokenAddress}</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={retryMetadata} className="px-4 py-2 rounded-xl bg-fuchsia-500/15 border border-fuchsia-400/30 text-fuchsia-300 text-xs font-bold">
+              <button onClick={retryMetadata} className="px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-bold">
                 Retry
               </button>
               <button onClick={() => navigate(`/lab-launcher/token/${result.tokenAddress}`)} className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/[0.1] text-slate-300 text-xs font-bold">
@@ -345,8 +345,8 @@ const LabLauncherCreate = () => {
 
         {step === STEPS.SUCCESS && (
           <div className="flex flex-col items-center justify-center py-16 text-center" data-testid="create-token-success">
-            <div className="w-14 h-14 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/30 flex items-center justify-center mb-4">
-              <PartyPopper className="w-7 h-7 text-fuchsia-300" />
+            <div className="w-14 h-14 rounded-full bg-amber-500/15 border border-amber-400/30 flex items-center justify-center mb-4">
+              <PartyPopper className="w-7 h-7 text-amber-300" />
             </div>
             <p className="text-base font-black text-white">${symbol.toUpperCase()} is live</p>
             <p className="text-xs text-slate-500 mt-1.5 max-w-[260px]">
@@ -356,7 +356,7 @@ const LabLauncherCreate = () => {
             <div className="flex flex-col gap-2 mt-5 w-full">
               <button
                 onClick={() => navigate(`/lab-launcher/token/${result.tokenAddress}`)}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-sm font-bold text-white flex items-center justify-center gap-1.5"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-300 to-lime-400 text-sm font-bold text-white flex items-center justify-center gap-1.5"
               >
                 <CheckCircle2 className="w-4 h-4" /> View Token
               </button>
@@ -385,7 +385,7 @@ const LabLauncherCreate = () => {
 };
 
 const inputClass = (error) =>
-  `w-full bg-white/[0.04] border ${error ? 'border-rose-500/50' : 'border-white/[0.08]'} rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none focus:border-fuchsia-400/50 transition-colors`;
+  `w-full bg-white/[0.04] border ${error ? 'border-rose-500/50' : 'border-white/[0.08]'} rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400/50 transition-colors`;
 
 const Field = ({ label, required, optional, hint, error, icon: Icon, children }) => (
   <div>
@@ -393,7 +393,7 @@ const Field = ({ label, required, optional, hint, error, icon: Icon, children })
       <label className="flex items-center gap-1 text-xs font-bold text-slate-300">
         {Icon && <Icon className="w-3 h-3 text-slate-500" />}
         {label}
-        {required && <span className="text-fuchsia-400">*</span>}
+        {required && <span className="text-amber-400">*</span>}
         {optional && <span className="text-slate-600 font-normal">(optional)</span>}
       </label>
       {hint && !error && <span className="text-[10px] text-slate-600">{hint}</span>}
