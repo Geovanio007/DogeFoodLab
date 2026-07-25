@@ -222,3 +222,57 @@ export const installTelegramWalletDeepLinkBridge = () => {
   // Intentionally disabled - do not restore
   console.log('â„¹ï¸ Wallet deep-link bridge disabled (prevents ERR_UNKNOWN_URL_SCHEME)');
 };
+
+// ─── Safe wallet deep-link bridge ───────────────────────────────────────────
+// Different from the disabled bridge above in one deliberate way: it NEVER
+// calls webApp.openLink() on a raw non-https:// URL (that's what crashed
+// before). It only acts on a small whitelist of wallets whose official
+// https:// universal-link redirector is confirmed — that redirector is what
+// gets handed to Telegram, and the wallet's own https domain is what
+// re-opens the native app from there. Any URL that isn't on the whitelist —
+// including schemes this doesn't recognize — falls straight through to the
+// original window.open, completely unchanged. So the worst case for an
+// unlisted wallet is today's existing behavior (it opens inside that
+// wallet's own in-app browser), never a crash.
+//
+// Confirmed mappings only:
+//   - OKX Wallet: https://web3.okx.com/build/docs/waas/app-universal-link
+//   - MetaMask:   metamask://<path> -> https://metamask.app.link/<path>
+// Add more here (with a source link in the comment) as specific wallets
+// from the connect modal turn out to need it.
+const WALLET_UNIVERSAL_LINKS = [
+  { scheme: 'okx://', toHttps: (raw) => `https://www.okx.com/download?deeplink=${encodeURIComponent(raw)}` },
+  { scheme: 'metamask://', toHttps: (raw) => `https://metamask.app.link/${raw.slice('metamask://'.length)}` },
+];
+
+let safeWalletBridgeInstalled = false;
+
+export const installSafeWalletDeepLinkBridge = () => {
+  if (safeWalletBridgeInstalled) return;
+  if (typeof window === 'undefined' || !isTelegramWebApp()) return;
+
+  const originalOpen = window.open.bind(window);
+  safeWalletBridgeInstalled = true;
+
+  window.open = (url, ...rest) => {
+    try {
+      if (typeof url === 'string') {
+        const match = WALLET_UNIVERSAL_LINKS.find((w) => url.startsWith(w.scheme));
+        if (match) {
+          const httpsUrl = match.toHttps(url);
+          window.Telegram.WebApp.openLink(httpsUrl, { try_instant_view: false });
+          console.log('Redirected wallet deep link via Telegram openLink:', httpsUrl);
+          // Minimal window-like stub so any caller that inspects the return
+          // value (e.g. checking `.closed` to detect a blocked popup) reads
+          // this as a successful hand-off rather than a failure.
+          return { closed: false, close: () => {}, focus: () => {} };
+        }
+      }
+    } catch (error) {
+      console.error('[wallet-bridge] deep link conversion failed, falling back to default:', error);
+    }
+    return originalOpen(url, ...rest);
+  };
+
+  console.log('Safe wallet deep-link bridge installed (https-only, whitelisted wallets)');
+};
