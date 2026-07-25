@@ -8,6 +8,7 @@ import {
   setTelegramHeaderColor,
   optimizeForTelegramPlatform,
   installTelegramWalletDeepLinkBridge,
+  installSafeWalletDeepLinkBridge,
   isTelegramMobile
 } from '../utils/telegram';
 
@@ -58,6 +59,7 @@ export const TelegramProvider = ({ children }) => {
           setTelegramHeaderColor('#1f2937'); // Dark header for game theme
           optimizeForTelegramPlatform(); // Platform-specific optimizations
           installTelegramWalletDeepLinkBridge();
+          installSafeWalletDeepLinkBridge();
           
           console.log('✅ Telegram WebApp initialized and optimized');
         } else {
