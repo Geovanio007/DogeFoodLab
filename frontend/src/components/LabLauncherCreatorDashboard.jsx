@@ -30,7 +30,7 @@ const fmtDoge = (n) => parseFloat(n || '0').toLocaleString(undefined, { maximumF
 
 const SummaryStat = ({ icon: Icon, label, value }) => (
   <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
-    <Icon className="w-4 h-4 text-fuchsia-400 mb-1.5" />
+    <Icon className="w-4 h-4 text-amber-400 mb-1.5" />
     <p className="text-lg font-black text-white leading-none">{value}</p>
     <p className="text-[10px] text-slate-500 mt-1">{label}</p>
   </div>
@@ -62,7 +62,7 @@ const TokenRow = ({ token, pending, claiming, isOwner, onClaim, onOpen }) => {
       <div className="flex items-center justify-between rounded-xl bg-black/25 border border-white/[0.06] px-3 py-2.5">
         <div>
           <p className="text-[10px] text-slate-500">Unclaimed royalties</p>
-          <p className="text-sm font-black text-fuchsia-300">
+          <p className="text-sm font-black text-amber-300">
             {pending === null ? <Loader2 className="w-3.5 h-3.5 animate-spin inline" /> : `${formatUnits(pending, 18)} ${token.symbol}`}
           </p>
         </div>
@@ -70,7 +70,7 @@ const TokenRow = ({ token, pending, claiming, isOwner, onClaim, onOpen }) => {
           <button
             onClick={() => onClaim(token.token_address)}
             disabled={!hasPending || claiming}
-            className="px-3.5 py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-600 text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+            className="px-3.5 py-2 rounded-lg bg-gradient-to-r from-amber-300 to-lime-400 text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
             data-testid={`claim-royalty-${token.token_address}`}
           >
             {claiming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gift className="w-3.5 h-3.5" />}
@@ -174,7 +174,7 @@ const LabLauncherCreatorDashboard = () => {
         <Wallet className="w-8 h-8 text-slate-600 mb-3" />
         <p className="text-sm font-bold text-white mb-1">Connect your wallet</p>
         <p className="text-xs text-slate-500 mb-4">to see your Lab Launcher creator dashboard.</p>
-        <button onClick={openModal} disabled={isConnecting} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 text-sm font-bold text-white disabled:opacity-60">
+        <button onClick={openModal} disabled={isConnecting} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-300 to-lime-400 text-sm font-bold text-white disabled:opacity-60">
           {isConnecting ? 'Connecting…' : 'Connect Wallet'}
         </button>
       </div>
@@ -187,7 +187,7 @@ const LabLauncherCreatorDashboard = () => {
         <button onClick={() => navigate('/lab-launcher')} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/5" aria-label="Back">
           <ChevronLeft className="w-5 h-5 text-slate-300" />
         </button>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-300 to-lime-400 flex items-center justify-center">
           <Crown className="w-4.5 h-4.5 text-white" />
         </div>
         <div className="min-w-0">
@@ -199,14 +199,14 @@ const LabLauncherCreatorDashboard = () => {
       <div className="px-4 pt-4 max-w-md mx-auto space-y-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 text-fuchsia-400 animate-spin mb-3" />
+            <Loader2 className="w-6 h-6 text-amber-400 animate-spin mb-3" />
             <p className="text-xs text-slate-500">Loading dashboard…</p>
           </div>
         ) : !dashboard || dashboard.total_tokens_created === 0 ? (
           <div className="text-center py-16">
             <p className="text-sm text-slate-400 mb-1">{isOwner ? "You haven't launched a token yet." : "This wallet hasn't launched a token yet."}</p>
             {isOwner && (
-              <button onClick={() => navigate('/lab-launcher/create')} className="mt-3 px-4 py-2 rounded-xl bg-fuchsia-500/15 border border-fuchsia-400/30 text-fuchsia-300 text-sm font-bold">
+              <button onClick={() => navigate('/lab-launcher/create')} className="mt-3 px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-300 text-sm font-bold">
                 Create a token
               </button>
             )}
@@ -259,11 +259,11 @@ const LabLauncherCreatorDashboard = () => {
                   {claims.map((c, i) => (
                     <div key={`${c.tx_hash}-${i}`} className="flex items-center justify-between rounded-xl bg-white/[0.02] px-3 py-2">
                       <div className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <Check className="w-3.5 h-3.5 text-lime-400" />
                         <span className="text-xs text-slate-400 font-mono">{shortAddress(c.token_address)}</span>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs font-bold text-emerald-400">{formatUnits(BigInt(c.amount), 18)}</p>
+                        <p className="text-xs font-bold text-lime-400">{formatUnits(BigInt(c.amount), 18)}</p>
                         <p className="text-[10px] text-slate-600">{timeAgo(c.timestamp)}</p>
                       </div>
                     </div>
