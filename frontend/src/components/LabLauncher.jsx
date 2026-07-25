@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, Rocket, Search, X, Plus, ArrowUpDown, ShieldCheck,
-  Flame, Sparkles, GraduationCap, Gem, Dog, Heart, Loader2, Users, Crown,
+  Flame, Coins, GraduationCap, Gem, Dog, Heart, Loader2, Users, Crown,
 } from 'lucide-react';
 
 /* ============================================================
@@ -23,7 +23,7 @@ const PAGE_SIZE = 20;
 
 const TABS = [
   { key: 'trending', label: 'Trending', icon: Flame },
-  { key: 'new', label: 'New', icon: Sparkles },
+  { key: 'new', label: 'New', icon: Coins },
   { key: 'graduated', label: 'Graduated', icon: GraduationCap },
   { key: 'highest_volume', label: 'Volume', icon: Gem },
   { key: 'most_holders', label: 'Holders', icon: Dog },
