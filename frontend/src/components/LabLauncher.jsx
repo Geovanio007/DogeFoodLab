@@ -97,7 +97,7 @@ const BondingCurveIndicator = ({ progressBps, graduated }) => {
         <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
           {graduated ? 'Graduated' : 'Bonding'}
         </span>
-        <span className={`text-[10px] font-bold ${graduated ? 'text-amber-300' : 'text-fuchsia-300'}`}>
+        <span className={`text-[10px] font-bold ${graduated ? 'text-lime-300' : 'text-amber-300'}`}>
           {graduated ? 'DEX live' : `${pct.toFixed(1)}%`}
         </span>
       </div>
@@ -114,13 +114,13 @@ const BondingCurveIndicator = ({ progressBps, graduated }) => {
               <linearGradient id={`curve-grad-${graduated ? 'g' : 'b'}`} x1="0" y1="0" x2="1" y2="0">
                 {graduated ? (
                   <>
-                    <stop offset="0%" stopColor="#f59e0b" />
-                    <stop offset="100%" stopColor="#fbbf24" />
+                    <stop offset="0%" stopColor="#a3e635" />
+                    <stop offset="100%" stopColor="#4ade80" />
                   </>
                 ) : (
                   <>
-                    <stop offset="0%" stopColor="#a78bfa" />
-                    <stop offset="100%" stopColor="#e879f9" />
+                    <stop offset="0%" stopColor="#fde68a" />
+                    <stop offset="100%" stopColor="#bef264" />
                   </>
                 )}
               </linearGradient>
@@ -153,7 +153,7 @@ const TokenCard = ({ token, onOpen }) => {
             <img src={token.logo} alt="" className="w-full h-full object-cover" loading="lazy"
               onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           ) : (
-            <span className="text-lg font-black text-fuchsia-300">{(token.symbol || '?')[0]}</span>
+            <span className="text-lg font-black text-amber-300">{(token.symbol || '?')[0]}</span>
           )}
         </div>
 
@@ -290,7 +290,7 @@ const LabLauncher = () => {
           <button onClick={() => navigate('/')} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/5" aria-label="Back">
             <ChevronLeft className="w-5 h-5 text-slate-300" />
           </button>
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-300 to-lime-400 flex items-center justify-center">
             <Rocket className="w-4.5 h-4.5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -309,7 +309,7 @@ const LabLauncher = () => {
           )}
           <button
             onClick={() => navigate('/lab-launcher/create')}
-            className="flex items-center gap-1 pl-2 pr-2.5 py-1.5 rounded-lg bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white text-xs font-bold active:scale-95 transition-transform"
+            className="flex items-center gap-1 pl-2 pr-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-300 to-lime-400 text-white text-xs font-bold active:scale-95 transition-transform"
             data-testid="lab-launcher-create-cta"
           >
             <Plus className="w-3.5 h-3.5" /> Create
@@ -344,7 +344,7 @@ const LabLauncher = () => {
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors shrink-0 ${
                     active
-                      ? 'bg-gradient-to-r from-fuchsia-500/25 to-violet-600/25 border border-fuchsia-400/40 text-fuchsia-200'
+                      ? 'bg-gradient-to-r from-amber-400/25 to-lime-500/25 border border-amber-400/40 text-amber-200'
                       : 'bg-white/[0.04] border border-transparent text-slate-400 hover:text-slate-300'
                   }`}
                   data-testid={`lab-launcher-tab-${tab.key}`}
@@ -369,7 +369,7 @@ const LabLauncher = () => {
                     key={s.key || 'default'}
                     onClick={() => { setSort(s.key); setShowSort(false); }}
                     className={`w-full text-left px-3 py-2 text-xs font-semibold ${
-                      sort === s.key ? 'text-fuchsia-300 bg-fuchsia-500/10' : 'text-slate-300 hover:bg-white/5'
+                      sort === s.key ? 'text-amber-300 bg-amber-500/10' : 'text-slate-300 hover:bg-white/5'
                     }`}
                   >
                     {s.label}
@@ -400,7 +400,7 @@ const LabLauncher = () => {
             {!search && !loadFailed && (
               <button
                 onClick={() => navigate('/lab-launcher/create')}
-                className="px-4 py-2 rounded-xl bg-fuchsia-500/15 border border-fuchsia-400/30 text-fuchsia-300 text-sm font-bold hover:bg-fuchsia-500/25 transition-colors"
+                className="px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-300 text-sm font-bold hover:bg-amber-500/25 transition-colors"
               >
                 Create a token
               </button>
