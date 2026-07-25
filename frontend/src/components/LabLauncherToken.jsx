@@ -65,10 +65,10 @@ const TradeStyles = () => {
 
 const AntiRugBadge = ({ icon: Icon, label, ok, alert }) => (
   <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${
-    alert ? 'bg-rose-500/10 border-rose-500/30' : ok ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-white/[0.03] border-white/[0.06]'
+    alert ? 'bg-rose-500/10 border-rose-500/30' : ok ? 'bg-lime-500/10 border-lime-500/20' : 'bg-white/[0.03] border-white/[0.06]'
   }`}>
-    <Icon className={`w-3.5 h-3.5 ${alert ? 'text-rose-400' : ok ? 'text-emerald-400' : 'text-slate-500'}`} />
-    <span className={`text-[10px] font-bold ${alert ? 'text-rose-300' : ok ? 'text-emerald-300' : 'text-slate-500'}`}>{label}</span>
+    <Icon className={`w-3.5 h-3.5 ${alert ? 'text-rose-400' : ok ? 'text-lime-400' : 'text-slate-500'}`} />
+    <span className={`text-[10px] font-bold ${alert ? 'text-rose-300' : ok ? 'text-lime-300' : 'text-slate-500'}`}>{label}</span>
   </div>
 );
 
@@ -78,7 +78,7 @@ const BigCurve = ({ progressBps, graduated }) => {
     <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3.5">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-slate-400">{graduated ? 'Graduated to DEX' : 'Bonding Progress'}</span>
-        <span className={`text-xs font-black ${graduated ? 'text-amber-300' : 'text-fuchsia-300'}`}>
+        <span className={`text-xs font-black ${graduated ? 'text-lime-300' : 'text-amber-300'}`}>
           {graduated ? '100%' : `${pct.toFixed(1)}%`}
         </span>
       </div>
@@ -90,8 +90,8 @@ const BigCurve = ({ progressBps, graduated }) => {
           <svg viewBox="0 0 48 36" className="w-full h-full" preserveAspectRatio="none">
             <defs>
               <linearGradient id="big-curve-grad" x1="0" y1="0" x2="1" y2="0">
-                {graduated ? (<><stop offset="0%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#fbbf24" /></>)
-                  : (<><stop offset="0%" stopColor="#a78bfa" /><stop offset="100%" stopColor="#e879f9" /></>)}
+                {graduated ? (<><stop offset="0%" stopColor="#a3e635" /><stop offset="100%" stopColor="#4ade80" /></>)
+                  : (<><stop offset="0%" stopColor="#fde68a" /><stop offset="100%" stopColor="#bef264" /></>)}
               </linearGradient>
             </defs>
             <path d={CURVE_PATH} fill="none" stroke="url(#big-curve-grad)" strokeWidth="2.5" strokeLinecap="round" />
@@ -264,7 +264,7 @@ const LabLauncherToken = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0e17] flex flex-col items-center justify-center">
-        <Loader2 className="w-6 h-6 text-fuchsia-400 animate-spin mb-3" />
+        <Loader2 className="w-6 h-6 text-amber-400 animate-spin mb-3" />
         <p className="text-xs text-slate-500">Loading token…</p>
       </div>
     );
@@ -297,7 +297,7 @@ const LabLauncherToken = () => {
           {token.logo ? (
             <img src={token.logo} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           ) : (
-            <span className="text-sm font-black text-fuchsia-300">{token.symbol?.[0]}</span>
+            <span className="text-sm font-black text-amber-300">{token.symbol?.[0]}</span>
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -308,7 +308,7 @@ const LabLauncherToken = () => {
           <span className="text-[11px] font-bold text-slate-500">${token.symbol}</span>
         </div>
         <button onClick={handleShare} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Share">
-          {copied ? <Check className="w-4.5 h-4.5 text-emerald-400" /> : <Share2 className="w-4.5 h-4.5 text-slate-400" />}
+          {copied ? <Check className="w-4.5 h-4.5 text-lime-400" /> : <Share2 className="w-4.5 h-4.5 text-slate-400" />}
         </button>
       </div>
 
@@ -326,7 +326,7 @@ const LabLauncherToken = () => {
           {isMyToken && (
             <button
               onClick={() => navigate('/lab-launcher/creator')}
-              className="text-[10px] font-bold text-fuchsia-300 bg-fuchsia-500/15 px-1.5 py-0.5 rounded"
+              className="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded"
             >
               YOU · Dashboard
             </button>
@@ -366,7 +366,7 @@ const LabLauncherToken = () => {
             <div className="flex gap-1.5 mb-3">
               <button
                 onClick={() => { setSide('buy'); setAmount(''); resetTx(); }}
-                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${side === 'buy' ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300' : 'bg-white/[0.03] border border-transparent text-slate-500'}`}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${side === 'buy' ? 'bg-lime-500/20 border border-lime-400/40 text-lime-300' : 'bg-white/[0.03] border border-transparent text-slate-500'}`}
                 data-testid="trade-tab-buy"
               >
                 Buy
@@ -420,9 +420,9 @@ const LabLauncherToken = () => {
               </div>
             )}
             {txState === 'success' && (
-              <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 mb-3">
-                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <p className="text-[11px] text-emerald-300">Trade confirmed{txSig ? ` — ${shortAddress(txSig)}` : ''}</p>
+              <div className="flex items-center gap-2 rounded-lg bg-lime-500/10 border border-lime-500/30 px-3 py-2 mb-3">
+                <Check className="w-3.5 h-3.5 text-lime-400 shrink-0" />
+                <p className="text-[11px] text-lime-300">Trade confirmed{txSig ? ` — ${shortAddress(txSig)}` : ''}</p>
               </div>
             )}
 
@@ -439,7 +439,7 @@ const LabLauncherToken = () => {
                 onClick={handleTrade}
                 disabled={!canTrade || txState === 'pending' || txState === 'approving'}
                 className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-transform active:scale-[0.98] ${
-                  side === 'buy' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' : 'bg-gradient-to-r from-rose-500 to-rose-600'
+                  side === 'buy' ? 'bg-gradient-to-r from-lime-500 to-lime-600' : 'bg-gradient-to-r from-rose-500 to-rose-600'
                 }`}
                 data-testid="trade-submit"
               >
@@ -460,11 +460,11 @@ const LabLauncherToken = () => {
               {trades.slice(0, 12).map((t, i) => (
                 <div key={`${t.tx_hash}-${t.log_index ?? i}`} className="flex items-center justify-between rounded-xl bg-white/[0.02] px-3 py-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    {t.is_buy ? <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <ArrowDownRight className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
+                    {t.is_buy ? <ArrowUpRight className="w-3.5 h-3.5 text-lime-400 shrink-0" /> : <ArrowDownRight className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
                     <span className="text-xs text-slate-400 truncate">{shortAddress(t.trader)}</span>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`text-xs font-bold ${t.is_buy ? 'text-emerald-400' : 'text-rose-400'}`}>{parseFloat(t.doge_amount || '0').toFixed(2)} DOGE</p>
+                    <p className={`text-xs font-bold ${t.is_buy ? 'text-lime-400' : 'text-rose-400'}`}>{parseFloat(t.doge_amount || '0').toFixed(2)} DOGE</p>
                     <p className="text-[10px] text-slate-600">{timeAgo(t.timestamp)}</p>
                   </div>
                 </div>
