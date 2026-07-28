@@ -2055,13 +2055,25 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
       const res = await fetch(`${BACKEND_URL}/api/player/${playerId}/profile`);
       if (res.ok) {
         const p = await res.json();
+        if (!p.nickname) {
+          console.warn('[Guest profile] fetch succeeded but no nickname came back for', playerId, p);
+        }
         setUsername(p.nickname || '');
         setProfileImage(p.profile_image || null);
         setPlayerLevel(p.level || 1);
         setPlayerPoints(p.points || 0);
-        setProfileLoaded(true);
+      } else {
+        console.warn('[Guest profile] fetch failed:', playerId, res.status);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error('[Guest profile] fetch threw:', playerId, e);
+    } finally {
+      // Always mark loaded, success or not — otherwise a failed/erroring
+      // fetch leaves effectivePoints stuck reading the wrong fallback
+      // indefinitely instead of just showing what we already have from
+      // localStorage.
+      setProfileLoaded(true);
+    }
   };
 
   useEffect(() => {
@@ -2148,7 +2160,37 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
   useEffect(() => {
     if (isConnected && address && !nftLoading) {
       dispatch({ type: 'SET_USER', payload: { address, isNFTHolder, nftBalance } });
-      loadPlayerData(address);
+
+      // If they were playing as a Guest before connecting, move that
+      // progress onto the wallet address first, so loadPlayerData below
+      // finds the real pet/points/etc. instead of treating them as new.
+      let activeGuest = null;
+      try { activeGuest = JSON.parse(localStorage.getItem('dogefood_player')); } catch {}
+
+      if (activeGuest?.auth_type === 'guest' && activeGuest?.id) {
+        fetch(`${BACKEND_URL}/api/players/link-guest-to-wallet`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guest_player_id: activeGuest.id, wallet_address: address }),
+        })
+          .then((r) => r.json())
+          .then((result) => {
+            if (result?.merged) {
+              console.log('✅ Guest progress linked to wallet:', result);
+              // Only retire the guest identity on confirmed success — if
+              // the merge didn't happen, keep it so nothing is lost and
+              // it can be retried or investigated later.
+              localStorage.removeItem('dogefood_player');
+              setGuestUser(null);
+            }
+          })
+          .catch(() => {})
+          .finally(() => {
+            loadPlayerData(address);
+          });
+      } else {
+        loadPlayerData(address);
+      }
     } else if (!isConnected) {
       dispatch({ type: 'SET_USER', payload: null });
     }
