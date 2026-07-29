@@ -4,7 +4,7 @@ import { useAccount, useSignMessage, useSendTransaction } from 'wagmi';
 import { parseEther } from 'viem';
 import {
   ChevronLeft, Heart, MessageCircle, Repeat2, Bookmark, X, Send,
-  FlaskConical, Plus, Loader2, Coins, Users, TrendingUp, Sparkles, Clock,
+  FlaskConical, Plus, Loader2, Coins, Users, TrendingUp, Clock,
 } from 'lucide-react';
 import { dogeOSDevnet } from '../config/wagmi';
 
@@ -25,11 +25,11 @@ const GREEN = '#58FF7A';
 const PURPLE = '#A855F7';
 
 const TABS = [
-  { id: 'for_you', label: 'For You', emoji: '🧪' },
-  { id: 'following', label: 'Following', emoji: '🐕' },
-  { id: 'trending', label: 'Trending', emoji: '🔥' },
-  { id: 'new', label: 'New', emoji: '🚀' },
-  { id: 'top_earners', label: 'Top Earners', emoji: '💰' },
+  { id: 'for_you', label: 'For You', Icon: FlaskConical },
+  { id: 'following', label: 'Following', Icon: Users },
+  { id: 'trending', label: 'Trending', Icon: TrendingUp },
+  { id: 'new', label: 'New', Icon: Clock },
+  { id: 'top_earners', label: 'Top Earners', Icon: Coins },
 ];
 
 function timeAgo(isoString) {
@@ -282,7 +282,10 @@ const TipModal = ({ note, onClose, onTipped }) => {
       <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 340, borderRadius: 22, padding: 22, background: '#0b1016', border: `1px solid ${GREEN}33` }}>
         {phase === 'done' ? (
           <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ fontSize: 30, marginBottom: 6 }}>🐕💸</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
+              <img src="/dogecoin-logo.png" alt="DOGE" style={{ width: 28, height: 28 }} />
+              <span style={{ fontSize: 26 }}>💸</span>
+            </div>
             <div style={{ color: GREEN, fontWeight: 900 }}>Tip sent on-chain!</div>
           </div>
         ) : (
@@ -440,7 +443,7 @@ const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
           display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 99, height: 'fit-content',
           background: 'rgba(88,255,122,0.1)', border: `1px solid ${GREEN}33`,
         }}>
-          <span style={{ fontSize: 11 }}>🐕</span>
+          <img src="/dogecoin-logo.png" alt="DOGE" style={{ width: 13, height: 13 }} />
           <span style={{ fontSize: 11, fontWeight: 900, color: GREEN }}>{(note.earnings_doge || 0).toFixed(2)} DOGE</span>
         </div>
       </div>
@@ -454,7 +457,7 @@ const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
         <button onClick={handleLike} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}>
           <Heart className="w-4 h-4" fill={note.liked_by_me ? '#f472b6' : 'none'} style={{ color: note.liked_by_me ? '#f472b6' : 'rgba(255,255,255,0.5)' }} />
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{note.likes_count || 0} · {LIKE_COST}◈</span>
-          {burst && <span className="ln-coin-fly" style={{ position: 'absolute', top: -10, left: 10, fontSize: 12 }}>🐕</span>}
+          {burst && <img src="/dogecoin-logo.png" alt="" className="ln-coin-fly" style={{ position: 'absolute', top: -10, left: 10, width: 14, height: 14 }} />}
         </button>
         <button onClick={() => onOpenComments(note)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer' }}>
           <MessageCircle className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
@@ -578,7 +581,7 @@ const LabFeed = ({ playerAddress }) => {
                 whiteSpace: 'nowrap',
               }}
             >
-              {t.emoji} {t.label}
+              <t.Icon className="w-3.5 h-3.5" style={{ display: 'inline', marginRight: 2, verticalAlign: -2 }} /> {t.label}
             </button>
           ))}
         </div>
@@ -594,7 +597,7 @@ const LabFeed = ({ playerAddress }) => {
 
         {!loading && notes.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <Sparkles className="w-8 h-8" style={{ color: 'rgba(255,255,255,0.2)', margin: '0 auto 10px' }} />
+            <FlaskConical className="w-8 h-8" style={{ color: 'rgba(255,255,255,0.2)', margin: '0 auto 10px' }} />
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
               {tab === 'following' ? "You're not following any scientists yet." : 'No experiments published yet — be the first!'}
             </p>
