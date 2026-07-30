@@ -431,27 +431,29 @@ const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
       background: 'linear-gradient(160deg, rgba(88,255,122,0.05), rgba(168,85,247,0.05)), rgba(255,255,255,0.025)',
       border: '1px solid rgba(255,255,255,0.07)',
     }}>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#04140a' }}>
-          {note.author_avatar ? <img src={note.author_avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : (note.author_nickname || '?')[0].toUpperCase()}
+      <div onClick={() => onOpenComments(note)} style={{ cursor: 'pointer' }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+          <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#04140a' }}>
+            {note.author_avatar ? <img src={note.author_avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : (note.author_nickname || '?')[0].toUpperCase()}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>{note.author_nickname}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{timeAgo(note.created_at)}</div>
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 99, height: 'fit-content',
+            background: 'rgba(88,255,122,0.1)', border: `1px solid ${GREEN}33`,
+          }}>
+            <img src="/dogecoin-logo.png" alt="DOGE" style={{ width: 13, height: 13 }} />
+            <span style={{ fontSize: 11, fontWeight: 900, color: GREEN }}>{(note.earnings_doge || 0).toFixed(2)} DOGE</span>
+          </div>
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>{note.author_nickname}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{timeAgo(note.created_at)}</div>
-        </div>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 99, height: 'fit-content',
-          background: 'rgba(88,255,122,0.1)', border: `1px solid ${GREEN}33`,
-        }}>
-          <img src="/dogecoin-logo.png" alt="DOGE" style={{ width: 13, height: 13 }} />
-          <span style={{ fontSize: 11, fontWeight: 900, color: GREEN }}>{(note.earnings_doge || 0).toFixed(2)} DOGE</span>
-        </div>
-      </div>
 
-      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, marginBottom: 12, whiteSpace: 'pre-wrap' }}>{note.content}</p>
-      {note.image_url && (
-        <img src={note.image_url} alt="" style={{ width: '100%', borderRadius: 14, marginBottom: 12, maxHeight: 260, objectFit: 'cover' }} />
-      )}
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, marginBottom: 12, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+        {note.image_url && (
+          <img src={note.image_url} alt="" style={{ width: '100%', borderRadius: 14, marginBottom: 12, maxHeight: 260, objectFit: 'cover' }} />
+        )}
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative' }}>
         <button onClick={handleLike} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}>
