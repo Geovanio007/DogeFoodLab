@@ -9,6 +9,44 @@
  * gesture — most webviews (and Safari WKWebView) throw or hang if it's
  * called from a non-user-initiated context.
  */
+
+// --- EIP-6963 support ---------------------------------------------------
+// Multi-wallet discovery standard: wallets announce themselves via a DOM
+// event instead of racing to set window.ethereum/window.mydoge directly.
+// None of the checks below originally covered this, so a wallet that has
+// moved to announcement-only injection (plausible for a platform rewrite
+// built on shared infrastructure, where colliding on window.ethereum with
+// other installed wallets becomes a real problem) would fall through as
+// "not present" even though it's actually there.
+//
+// The listener is registered once at module load (this file is imported
+// well before any connect attempt), and we also proactively dispatch
+// eip6963:requestProvider to ask already-injected wallets to (re-)announce,
+// since announcement timing isn't guaranteed relative to listener setup.
+const eip6963Providers = new Map();
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('eip6963:announceProvider', (event) => {
+    const info = event?.detail?.info;
+    const provider = event?.detail?.provider;
+    if (info && provider) {
+      eip6963Providers.set(info.uuid, { info, provider });
+    }
+  });
+  window.dispatchEvent(new Event('eip6963:requestProvider'));
+}
+
+function findMyDogeViaEip6963() {
+  for (const { info, provider } of eip6963Providers.values()) {
+    const name = (info?.name || '').toLowerCase();
+    const rdns = (info?.rdns || '').toLowerCase();
+    if (name.includes('mydoge') || rdns.includes('mydoge')) {
+      return provider;
+    }
+  }
+  return null;
+}
+
 export function detectMyDogeWallet() {
   if (typeof window === 'undefined') {
     return { present: false, source: null, provider: null, inMyDoge: false };
@@ -16,6 +54,11 @@ export function detectMyDogeWallet() {
 
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
   const inMyDoge = /MyDoge|mydoge/i.test(ua);
+
+  const eip6963Provider = findMyDogeViaEip6963();
+  if (eip6963Provider) {
+    return { present: true, source: 'eip6963', provider: eip6963Provider, inMyDoge: true };
+  }
 
   if (window.mydoge?.ethereum) {
     return { present: true, source: 'window.mydoge', provider: window.mydoge.ethereum, inMyDoge: true };
