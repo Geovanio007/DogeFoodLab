@@ -2078,6 +2078,20 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
   useEffect(() => {
     const load = () => {
+      // A wallet connection fully supersedes a guest identity. Without
+      // this guard, this effect — which used to run once on mount with
+      // no awareness of wallet state — would read the leftover guest
+      // record from localStorage and overwrite the correct wallet-linked
+      // username/points with stale guest data. That's what was causing
+      // points to disappear on the main menu, every session, for anyone
+      // who started as a guest and later connected a wallet: this effect
+      // reliably resolves (it's just a localStorage read) before wagmi
+      // finishes confirming the wallet connection, so the guest data
+      // "won" the race by default.
+      if (isConnected && address) {
+        try { localStorage.removeItem('dogefood_player'); } catch {}
+        return;
+      }
       try {
         const p = JSON.parse(localStorage.getItem('dogefood_player'));
         if (p) {
@@ -2094,7 +2108,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
     window.addEventListener('storage', onStorage);
     window.addEventListener('dogefood_player_registered', onReg);
     return () => { window.removeEventListener('storage', onStorage); window.removeEventListener('dogefood_player_registered', onReg); };
-  }, []);
+  }, [isConnected, address]);
 
   useEffect(() => {
     if (isConnected && address) {
@@ -2106,10 +2120,18 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
             setProfileImage(p.profile_image || null);
             setPlayerLevel(p.level || 1);
             setPlayerPoints(p.points || 0);
-            setProfileLoaded(true);
           }
         })
-        .catch(() => {});
+        .catch((e) => {
+          console.warn('[Wallet profile] fetch failed:', address, e?.message || e);
+        })
+        .finally(() => {
+          // Always mark loaded, success or not — mirrors loadGuestProfile's
+          // own fallback, so a transient failure here can't leave stale
+          // guest data (or the pre-fetch GameContext fallback) stuck on
+          // screen indefinitely.
+          setProfileLoaded(true);
+        });
     }
   }, [isConnected, address]);
 
