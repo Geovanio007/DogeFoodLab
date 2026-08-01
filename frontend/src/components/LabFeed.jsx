@@ -5,6 +5,7 @@ import { parseEther } from 'viem';
 import {
   ChevronLeft, Heart, MessageCircle, Repeat2, Bookmark, X, Send,
   FlaskConical, Plus, Loader2, Coins, Users, TrendingUp, Clock,
+  Bell, Trophy, Award, UserPlus, UserCheck,
 } from 'lucide-react';
 import { dogeOSDevnet } from '../config/wagmi';
 
@@ -31,6 +32,24 @@ const TABS = [
   { id: 'new', label: 'New', Icon: Clock },
   { id: 'top_earners', label: 'Top Earners', Icon: Coins },
 ];
+
+// Mirrors LAB_BADGES in server.py — badge_id -> display info for the toast
+// (the like/comment/follow/tip endpoints only return the ids that were
+// newly earned, not full metadata).
+const LAB_BADGE_META = {
+  mad_scientist: { name: 'Mad Scientist', emoji: '🧪' },
+  viral_experiment: { name: 'Viral Experiment', emoji: '🔥' },
+  dogecoin_millionaire: { name: 'Dogecoin Millionaire', emoji: '💰' },
+  community_favorite: { name: 'Community Favorite', emoji: '🚀' },
+  lab_legend: { name: 'Lab Legend', emoji: '🥼' },
+};
+
+const NOTIFICATION_META = {
+  like: { Icon: Heart, color: '#f472b6' },
+  comment: { Icon: MessageCircle, color: '#60a5fa' },
+  follow: { Icon: UserPlus, color: GREEN },
+  tip: { Icon: Coins, color: PURPLE },
+};
 
 function timeAgo(isoString) {
   if (!isoString) return '';
@@ -355,7 +374,7 @@ const CommentsPanel = ({ note, address, canInteract, onClose, onCommented }) => 
       if (!res.ok) throw new Error(data.detail);
       setComments((prev) => [...prev, data.comment]);
       setText('');
-      onCommented(note.id, data.comments_count);
+      onCommented(note.id, data.comments_count, data.new_badges);
     } catch (e) {
       alert(e?.message || 'Failed to comment.');
     } finally {
@@ -410,7 +429,7 @@ const CommentsPanel = ({ note, address, canInteract, onClose, onCommented }) => 
 };
 
 // ─── Feed card ────────────────────────────────────────────────────────────────
-const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTip, onRequireApproval }) => {
+const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTip, onOpenProfile, onRequireApproval }) => {
   const [burst, setBurst] = useState(false);
 
   const guarded = (fn) => () => {
@@ -433,13 +452,18 @@ const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
     }}>
       <div onClick={() => onOpenComments(note)} style={{ cursor: 'pointer' }}>
         <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-          <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#04140a' }}>
-            {note.author_avatar ? <img src={note.author_avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : (note.author_nickname || '?')[0].toUpperCase()}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>{note.author_nickname}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{timeAgo(note.created_at)}</div>
-          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); onOpenProfile(note.author_address); }}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left' }}
+          >
+            <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#04140a' }}>
+              {note.author_avatar ? <img src={note.author_avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : (note.author_nickname || '?')[0].toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>{note.author_nickname}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{timeAgo(note.created_at)}</div>
+            </div>
+          </button>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 99, height: 'fit-content',
             background: 'rgba(88,255,122,0.1)', border: `1px solid ${GREEN}33`,
@@ -478,6 +502,277 @@ const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
   );
 };
 
+// ─── Notifications panel ─────────────────────────────────────────────────────
+const NotificationsPanel = ({ address, onClose }) => {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/lab-notes/notifications/${address}`)
+      .then((r) => r.json())
+      .then((d) => setNotifications(d.notifications || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+    fetch(`${API_URL}/api/lab-notes/notifications/read-all`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_address: address }),
+    }).catch(() => {});
+  }, [address]);
+
+  const messageFor = (n) => {
+    switch (n.type) {
+      case 'like': return `${n.actor_nickname} liked your experiment`;
+      case 'comment': return `${n.actor_nickname} commented on your experiment`;
+      case 'follow': return `${n.actor_nickname} started following you`;
+      case 'tip': return `${n.actor_nickname} tipped you ${n.message}`;
+      default: return n.message || 'New activity';
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9996, background: '#05080a', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <span style={{ fontWeight: 900, fontSize: 15, color: 'white' }}>Lab Notifications</span>
+        <button onClick={onClose}><X className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.5)' }} /></button>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {loading && <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(255,255,255,0.3)', margin: '30px auto' }} />}
+        {!loading && notifications.length === 0 && (
+          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 13, padding: '30px 0' }}>Nothing yet — go make some noise in the lab.</p>
+        )}
+        {notifications.map((n) => {
+          const meta = NOTIFICATION_META[n.type] || { Icon: Bell, color: 'rgba(255,255,255,0.5)' };
+          const NIcon = meta.Icon;
+          return (
+            <div key={n.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14,
+              background: n.read ? 'rgba(255,255,255,0.02)' : 'rgba(88,255,122,0.06)',
+              border: `1px solid ${n.read ? 'rgba(255,255,255,0.05)' : GREEN + '22'}`,
+            }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: `${meta.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <NIcon className="w-4 h-4" style={{ color: meta.color }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{messageFor(n)}</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{timeAgo(n.created_at)}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ─── Leaderboard ──────────────────────────────────────────────────────────────
+const LEADERBOARD_TABS = [
+  { id: 'earners', label: 'Top Earners', unit: 'DOGE' },
+  { id: 'liked', label: 'Most Liked', unit: 'likes' },
+  { id: 'followers', label: 'Most Followers', unit: 'followers' },
+];
+
+const LeaderboardView = ({ onClose, onViewProfile }) => {
+  const [type, setType] = useState('earners');
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`${API_URL}/api/lab-notes/leaderboard?type=${type}&limit=20`)
+      .then((r) => r.json())
+      .then((d) => setEntries(d.entries || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [type]);
+
+  const activeTab = LEADERBOARD_TABS.find((t) => t.id === type);
+  const medal = (rank) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9996, background: '#05080a', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <span style={{ fontWeight: 900, fontSize: 15, color: 'white' }}>Leaderboard</span>
+        <button onClick={onClose}><X className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.5)' }} /></button>
+      </div>
+      <div style={{ display: 'flex', gap: 6, padding: '10px 14px' }}>
+        {LEADERBOARD_TABS.map((t) => (
+          <button key={t.id} onClick={() => setType(t.id)} style={{
+            flex: 1, padding: '8px 0', borderRadius: 12, fontSize: 12, fontWeight: 800, cursor: 'pointer',
+            border: type === t.id ? `1px solid ${GREEN}` : '1px solid rgba(255,255,255,0.08)',
+            background: type === t.id ? `${GREEN}1f` : 'rgba(255,255,255,0.03)',
+            color: type === t.id ? GREEN : 'rgba(255,255,255,0.55)',
+          }}>{t.label}</button>
+        ))}
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 14px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {loading && <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(255,255,255,0.3)', margin: '30px auto' }} />}
+        {!loading && entries.length === 0 && (
+          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 13, padding: '30px 0' }}>No data yet.</p>
+        )}
+        {entries.map((e) => (
+          <button key={e.address} onClick={() => onViewProfile(e.address)} style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14,
+            background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)',
+            textAlign: 'left', cursor: 'pointer',
+          }}>
+            <span style={{ width: 26, textAlign: 'center', fontSize: 14, fontWeight: 900, color: e.rank <= 3 ? GREEN : 'rgba(255,255,255,0.4)' }}>
+              {medal(e.rank) || `#${e.rank}`}
+            </span>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#04140a', fontSize: 13 }}>
+              {(e.nickname || '?')[0].toUpperCase()}
+            </div>
+            <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: 'white' }}>{e.nickname}</span>
+            <span style={{ fontSize: 13, fontWeight: 900, color: GREEN }}>{e.value} {activeTab?.unit}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── Profile ──────────────────────────────────────────────────────────────────
+const ProfileView = ({ address, viewerAddress, onClose, onOpenPost }) => {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [following, setFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (viewerAddress) params.set('viewer_address', viewerAddress);
+    fetch(`${API_URL}/api/lab-notes/profile-full/${address}?${params}`)
+      .then((r) => r.json())
+      .then((d) => { setProfile(d); setFollowing(!!d.is_followed_by_viewer); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [address, viewerAddress]);
+
+  const toggleFollow = async () => {
+    if (!viewerAddress || followBusy) return;
+    setFollowBusy(true);
+    try {
+      if (following) {
+        await fetch(`${API_URL}/api/lab-follows/${address}?player_address=${encodeURIComponent(viewerAddress)}`, { method: 'DELETE' });
+        setFollowing(false);
+      } else {
+        await fetch(`${API_URL}/api/lab-follows/${address}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_address: viewerAddress }),
+        });
+        setFollowing(true);
+      }
+    } catch (e) { console.warn('[LabFeed] follow toggle failed:', e); }
+    setFollowBusy(false);
+  };
+
+  if (loading || !profile) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 9996, background: '#05080a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'rgba(255,255,255,0.3)' }} />
+      </div>
+    );
+  }
+
+  const isOwnProfile = viewerAddress && viewerAddress.toLowerCase() === address.toLowerCase();
+  const stats = [
+    ['Posts', profile.posts_count], ['Followers', profile.followers_count], ['Following', profile.following_count],
+    ['Likes', profile.total_likes_received], ['Comments', profile.total_comments_received], ['DOGE Earned', profile.total_doge_earned],
+  ];
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9996, background: '#05080a', overflowY: 'auto' }}>
+      <div style={{ height: 90, background: `linear-gradient(135deg, ${GREEN}33, ${PURPLE}33)`, position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 14, left: 14, background: 'rgba(0,0,0,0.35)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <ChevronLeft className="w-5 h-5" style={{ color: 'white' }} />
+        </button>
+      </div>
+      <div style={{ padding: '0 18px 30px', marginTop: -36 }}>
+        <div style={{ width: 72, height: 72, borderRadius: 22, border: '3px solid #05080a', background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 28, color: '#04140a', marginBottom: 10 }}>
+          {profile.profile_image ? <img src={profile.profile_image} alt="" style={{ width: '100%', height: '100%', borderRadius: 19, objectFit: 'cover' }} /> : (profile.nickname || '?')[0].toUpperCase()}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <span style={{ fontSize: 19, fontWeight: 900, color: 'white' }}>{profile.nickname}</span>
+          {!isOwnProfile && viewerAddress && (
+            <button onClick={toggleFollow} disabled={followBusy} style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '7px 16px', borderRadius: 99, cursor: 'pointer',
+              border: following ? '1px solid rgba(255,255,255,0.15)' : 'none',
+              background: following ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg, ${GREEN}, ${PURPLE})`,
+              color: following ? 'rgba(255,255,255,0.7)' : '#04140a', fontWeight: 800, fontSize: 12,
+            }}>
+              {following ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+              {following ? 'Following' : 'Follow'}
+            </button>
+          )}
+        </div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 14 }}>
+          Lab Level {profile.level}
+          {profile.favorite_ingredient ? ` · Favorite ingredient: ${profile.favorite_ingredient}` : ''}
+          {profile.leaderboard_rank ? ` · Rank #${profile.leaderboard_rank} earner` : ''}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+          {stats.map(([label, value]) => (
+            <div key={label} style={{ textAlign: 'center', padding: '10px 4px', borderRadius: 12, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ fontSize: 15, fontWeight: 900, color: GREEN }}>{value}</div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>BADGES</div>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 18, paddingBottom: 4 }}>
+          {profile.badges.length === 0 && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>None yet</span>}
+          {profile.badges.map((b) => (
+            <div key={b.badge_id} title={b.description} style={{
+              flexShrink: 0, width: 64, textAlign: 'center', padding: '10px 4px', borderRadius: 14,
+              background: `${GREEN}0f`, border: `1px solid ${GREEN}33`,
+            }}>
+              <div style={{ fontSize: 22 }}>{b.emoji}</div>
+              <div style={{ fontSize: 8, color: GREEN, fontWeight: 800, marginTop: 4 }}>{b.name}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>LAB NOTES</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {profile.posts.length === 0 && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>No Lab Notes yet.</span>}
+          {profile.posts.map((note) => (
+            <div key={note.id} onClick={() => onOpenPost(note)} style={{
+              padding: 12, borderRadius: 14, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer',
+            }}>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 6 }}>{note.content}</p>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{note.likes_count || 0} likes · {note.comments_count || 0} comments · {timeAgo(note.created_at)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Badge unlocked toast ──────────────────────────────────────────────────────
+const BadgeToast = ({ badgeId, onDone }) => {
+  useEffect(() => {
+    const t = setTimeout(onDone, 3200);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  const info = LAB_BADGE_META[badgeId] || { name: badgeId, emoji: '🏅' };
+  return (
+    <div style={{
+      position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 10000,
+      display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', borderRadius: 16,
+      background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, boxShadow: `0 8px 30px ${GREEN}55`,
+    }}>
+      <span style={{ fontSize: 22 }}>{info.emoji}</span>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 800, color: '#04140a', opacity: 0.7 }}>BADGE UNLOCKED</div>
+        <div style={{ fontSize: 13, fontWeight: 900, color: '#04140a' }}>{info.name}</div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main LabFeed ─────────────────────────────────────────────────────────────
 const LabFeed = ({ playerAddress }) => {
   const navigate = useNavigate();
@@ -492,9 +787,31 @@ const LabFeed = ({ playerAddress }) => {
   const [showCreate, setShowCreate] = useState(false);
   const [activeComments, setActiveComments] = useState(null);
   const [activeTip, setActiveTip] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [viewingProfile, setViewingProfile] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [badgeQueue, setBadgeQueue] = useState([]);
   const pendingActionRef = useRef(null);
 
   const canInteract = isConnected && approved;
+
+  const queueBadges = (ids) => {
+    if (ids && ids.length) setBadgeQueue((prev) => [...prev, ...ids]);
+  };
+
+  useEffect(() => {
+    if (!effectiveAddress) return;
+    const poll = () => {
+      fetch(`${API_URL}/api/lab-notes/notifications/unread-count/${effectiveAddress}`)
+        .then((r) => r.json())
+        .then((d) => setUnreadCount(d.unread_count || 0))
+        .catch(() => {});
+    };
+    poll();
+    const iv = setInterval(poll, 30000);
+    return () => clearInterval(iv);
+  }, [effectiveAddress]);
 
   const loadFeed = useCallback(async () => {
     setLoading(true);
@@ -537,15 +854,18 @@ const LabFeed = ({ playerAddress }) => {
       ? { ...n, liked_by_me: action === 'like' ? true : n.liked_by_me, likes_count: action === 'like' && !n.liked_by_me ? (n.likes_count || 0) + 1 : n.likes_count, shares_count: action === 'share' ? (n.shares_count || 0) + 1 : n.shares_count }
       : n));
     try {
-      await fetch(`${API_URL}/api/lab-notes/${noteId}/${action}`, {
+      const res = await fetch(`${API_URL}/api/lab-notes/${noteId}/${action}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player_address: effectiveAddress }),
       });
+      const data = await res.json();
+      queueBadges(data.new_badges);
     } catch (e) { console.warn('[LabFeed] interaction failed:', e); }
   };
 
-  const handleCommented = (noteId, count) => {
+  const handleCommented = (noteId, count, newBadges) => {
     setNotes((prev) => prev.map((n) => n.id === noteId ? { ...n, comments_count: count } : n));
+    queueBadges(newBadges);
   };
 
   const handlePublished = (note) => {
@@ -565,10 +885,27 @@ const LabFeed = ({ playerAddress }) => {
           <div style={{ width: 30, height: 30, borderRadius: 10, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <FlaskConical className="w-4 h-4" style={{ color: '#04140a' }} />
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 900, lineHeight: 1 }}>LabFeed</div>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Powered by DogeOS</div>
           </div>
+          <button onClick={() => setShowLeaderboard(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }} aria-label="Leaderboard">
+            <Trophy className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.6)' }} />
+          </button>
+          <button
+            onClick={() => { if (effectiveAddress) { setShowNotifications(true); setUnreadCount(0); } }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
+            aria-label="Notifications"
+          >
+            <Bell className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.6)' }} />
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -3, right: -3, minWidth: 15, height: 15, borderRadius: 99,
+                background: '#f472b6', color: 'white', fontSize: 9, fontWeight: 900,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px',
+              }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+            )}
+          </button>
         </div>
         <div style={{ display: 'flex', overflowX: 'auto', gap: 4, padding: '0 12px 10px' }}>
           {TABS.map((t) => (
@@ -615,6 +952,7 @@ const LabFeed = ({ playerAddress }) => {
             onLike={handleLike}
             onOpenComments={setActiveComments}
             onOpenTip={setActiveTip}
+            onOpenProfile={setViewingProfile}
             onRequireApproval={() => requireApproval(null)}
           />
         ))}
@@ -648,7 +986,28 @@ const LabFeed = ({ playerAddress }) => {
         <CommentsPanel note={activeComments} address={effectiveAddress} canInteract={canInteract} onClose={() => setActiveComments(null)} onCommented={handleCommented} />
       )}
       {activeTip && (
-        <TipModal note={{ ...activeTip, _viewerAddress: effectiveAddress }} onClose={() => setActiveTip(null)} onTipped={() => setActiveTip(null)} />
+        <TipModal
+          note={{ ...activeTip, _viewerAddress: effectiveAddress }}
+          onClose={() => setActiveTip(null)}
+          onTipped={(data) => { queueBadges(data?.new_badges); setActiveTip(null); }}
+        />
+      )}
+      {showNotifications && effectiveAddress && (
+        <NotificationsPanel address={effectiveAddress} onClose={() => setShowNotifications(false)} />
+      )}
+      {showLeaderboard && (
+        <LeaderboardView onClose={() => setShowLeaderboard(false)} onViewProfile={(addr) => { setShowLeaderboard(false); setViewingProfile(addr); }} />
+      )}
+      {viewingProfile && (
+        <ProfileView
+          address={viewingProfile}
+          viewerAddress={effectiveAddress}
+          onClose={() => setViewingProfile(null)}
+          onOpenPost={(note) => { setViewingProfile(null); setActiveComments(note); }}
+        />
+      )}
+      {badgeQueue.length > 0 && (
+        <BadgeToast badgeId={badgeQueue[0]} onDone={() => setBadgeQueue((prev) => prev.slice(1))} />
       )}
     </div>
   );
