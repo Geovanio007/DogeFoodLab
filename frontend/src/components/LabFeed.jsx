@@ -5,7 +5,7 @@ import { parseEther } from 'viem';
 import {
   ChevronLeft, Heart, MessageCircle, Repeat2, Bookmark, X, Send,
   FlaskConical, Plus, Loader2, Coins, Users, TrendingUp, Clock,
-  Bell, Trophy, Award, UserPlus, UserCheck,
+  Bell, Trophy, Award, UserPlus, UserCheck, Image as ImageIcon,
 } from 'lucide-react';
 import { dogeOSDevnet } from '../config/wagmi';
 
@@ -175,9 +175,25 @@ const ApprovalGate = ({ address, onApproved, onCancel }) => {
 // ─── Create post modal ───────────────────────────────────────────────────────
 const CreateNoteModal = ({ address, onClose, onPublished }) => {
   const [content, setContent] = useState('');
+  const [image, setImage] = useState(null);
+  const [imageError, setImageError] = useState(null);
   const [publishing, setPublishing] = useState(false);
   const [phase, setPhase] = useState('idle'); // idle -> publishing -> done
+  const fileInputRef = useRef(null);
   const remaining = MAX_LENGTH - content.length;
+
+  const handlePickImage = (e) => {
+    const file = e.target.files[0];
+    e.target.value = ''; // allow picking the same file again later
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setImageError('Please choose an image file.'); return; }
+    if (file.size > 2 * 1024 * 1024) { setImageError('Image must be less than 2MB.'); return; }
+    setImageError(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => setImage(ev.target.result);
+    reader.onerror = () => setImageError('Could not read that image — try another.');
+    reader.readAsDataURL(file);
+  };
 
   const handlePublish = async () => {
     if (!content.trim() || remaining < 0) return;
@@ -186,7 +202,7 @@ const CreateNoteModal = ({ address, onClose, onPublished }) => {
       const res = await fetch(`${API_URL}/api/lab-notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ player_address: address, content: content.trim() }),
+        body: JSON.stringify({ player_address: address, content: content.trim(), image_url: image || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Failed to publish');
@@ -236,8 +252,41 @@ const CreateNoteModal = ({ address, onClose, onPublished }) => {
                 background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'white', outline: 'none',
               }}
             />
+
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePickImage} style={{ display: 'none' }} />
+
+            {image && (
+              <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
+                <img src={image} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', display: 'block' }} />
+                <button
+                  onClick={() => setImage(null)}
+                  aria-label="Remove image"
+                  style={{
+                    position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <X className="w-4 h-4" style={{ color: 'white' }} />
+                </button>
+              </div>
+            )}
+            {imageError && <div style={{ fontSize: 11, color: '#fca5a5' }}>{imageError}</div>}
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 11, color: remaining < 0 ? '#f87171' : 'rgba(255,255,255,0.4)' }}>{remaining} characters left</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  aria-label="Add image"
+                  style={{
+                    width: 32, height: 32, borderRadius: 10, border: `1px solid ${GREEN}44`,
+                    background: `${GREEN}0f`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  }}
+                >
+                  <ImageIcon className="w-4 h-4" style={{ color: GREEN }} />
+                </button>
+                <span style={{ fontSize: 11, color: remaining < 0 ? '#f87171' : 'rgba(255,255,255,0.4)' }}>{remaining} characters left</span>
+              </div>
               <button
                 onClick={handlePublish}
                 disabled={publishing || !content.trim() || remaining < 0}
