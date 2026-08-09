@@ -453,10 +453,134 @@ const TipModal = ({ note, onClose, onTipped }) => {
   );
 };
 
-// ─── Comments panel ──────────────────────────────────────────────────────────
-const CommentsPanel = ({ note, address, canInteract, onClose, onCommented }) => {
+// ─── Shared post content: avatar/name row, text, image, action bar ─────────
+// Used by both the feed card (cropped image, tap-to-open-post) and the full
+// post-detail view below (uncropped image, no re-trigger on further tap).
+const PostBody = ({ note, address, canInteract, onLike, onOpenComments, onOpenTip, onOpenProfile, onRequireApproval, imageMode = 'crop' }) => {
+  const [burst, setBurst] = useState(false);
+
+  const guarded = (fn) => () => {
+    if (!address) { alert('Connect a wallet to interact.'); return; }
+    if (!canInteract) { onRequireApproval(); return; }
+    fn();
+  };
+
+  const handleLikeClick = guarded(() => {
+    if (!note.liked_by_me) setBurst(true);
+    onLike(note.id);
+    setTimeout(() => setBurst(false), 650);
+  });
+
+  const openProfile = (e) => { e.stopPropagation(); onOpenProfile(note.author_address); };
+
+  return (
+    <>
+      <div className="flex items-start gap-2.5 sm:gap-3 mb-2.5">
+        <button onClick={openProfile} className="bg-transparent border-none p-0 cursor-pointer shrink-0">
+          <div
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black overflow-hidden"
+            style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
+          >
+            {note.author_avatar
+              ? <img src={note.author_avatar} alt="" className="w-full h-full object-cover" />
+              : (note.author_nickname || '?')[0].toUpperCase()}
+          </div>
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button onClick={openProfile} className="bg-transparent border-none p-0 cursor-pointer text-[13px] sm:text-sm font-black text-white truncate max-w-full hover:underline">
+              {note.author_nickname}
+            </button>
+            <span className="text-xs text-white/35 truncate">{shortAddress(note.author_address)}</span>
+          </div>
+          <div className="text-[11px] text-white/40">{timeAgo(note.created_at)}</div>
+        </div>
+      </div>
+
+      <p className="text-[14px] text-white/[0.92] leading-relaxed mb-3 whitespace-pre-wrap break-words">{note.content}</p>
+
+      {note.image_url && (
+        imageMode === 'full' ? (
+          <div className="rounded-2xl overflow-hidden mb-3">
+            <img src={note.image_url} alt="" className="w-full max-h-[70vh] object-contain block" />
+          </div>
+        ) : (
+          <div className="rounded-2xl overflow-hidden border border-white/[0.06] mb-3">
+            <img src={note.image_url} alt="" loading="lazy" className="w-full max-h-[280px] sm:max-h-[420px] object-cover block" />
+          </div>
+        )
+      )}
+
+      <div className="flex items-center gap-4 sm:gap-5" onClick={(e) => e.stopPropagation()}>
+        <button onClick={handleLikeClick} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative">
+          <Heart
+            className="w-4 h-4 transition-colors group-hover:text-pink-300"
+            fill={note.liked_by_me ? '#f472b6' : 'none'}
+            style={{ color: note.liked_by_me ? '#f472b6' : 'rgba(255,255,255,0.5)' }}
+          />
+          <span className="text-[11px] text-white/45">{note.likes_count || 0} · {LIKE_COST}◈</span>
+          {burst && <img src="/dogecoin-logo.png" alt="" className="ln-coin-fly absolute -top-2.5 left-2.5 w-3.5 h-3.5" />}
+        </button>
+        {onOpenComments ? (
+          <button onClick={() => onOpenComments(note)} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
+            <MessageCircle className="w-4 h-4 text-white/50 transition-colors group-hover:text-sky-300" />
+            <span className="text-[11px] text-white/45">{note.comments_count || 0} · {COMMENT_COST}◈</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <MessageCircle className="w-4 h-4 text-white/50" />
+            <span className="text-[11px] text-white/45">{note.comments_count || 0} · {COMMENT_COST}◈</span>
+          </div>
+        )}
+        <button onClick={guarded(() => onLike(note.id, 'share'))} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
+          <Repeat2 className="w-4 h-4 text-white/50 transition-colors group-hover:text-emerald-300" />
+          <span className="text-[11px] text-white/45">{note.shares_count || 0}</span>
+        </button>
+
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <span className="flex items-center gap-1">
+            <img src="/dogecoin-logo.png" alt="" className="w-3 h-3" />
+            <span className="text-[11px] font-black" style={{ color: GREEN }}>{(note.earnings_doge || 0).toFixed(2)}</span>
+          </span>
+          <button
+            onClick={() => onOpenTip(note)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full cursor-pointer border"
+            style={{ borderColor: `${PURPLE}55`, background: `${PURPLE}18` }}
+          >
+            <Coins className="w-3.5 h-3.5" style={{ color: PURPLE }} />
+            <span className="text-[11px] font-black" style={{ color: PURPLE }}>Tip</span>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ─── Feed card ────────────────────────────────────────────────────────────────
+const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTip, onOpenProfile, onRequireApproval }) => (
+  <article
+    onClick={() => onOpenComments(note)}
+    className="rounded-[20px] p-3.5 sm:p-4 relative overflow-hidden border border-white/[0.07] hover:border-white/[0.12] transition-colors cursor-pointer"
+    style={{ background: 'linear-gradient(160deg, rgba(88,255,122,0.05), rgba(168,85,247,0.05)), rgba(255,255,255,0.025)' }}
+  >
+    <PostBody
+      note={note}
+      address={address}
+      canInteract={canInteract}
+      onLike={onLike}
+      onOpenComments={onOpenComments}
+      onOpenTip={onOpenTip}
+      onOpenProfile={onOpenProfile}
+      onRequireApproval={onRequireApproval}
+      imageMode="crop"
+    />
+  </article>
+);
+
+// ─── Post detail: full post, uncropped image, comments underneath ──────────
+const PostDetailModal = ({ note, address, canInteract, onLike, onOpenTip, onOpenProfile, onRequireApproval, onClose, onCommented }) => {
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingComments, setLoadingComments] = useState(true);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -465,7 +589,7 @@ const CommentsPanel = ({ note, address, canInteract, onClose, onCommented }) => 
       .then((r) => r.json())
       .then((d) => setComments(d.comments || []))
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => setLoadingComments(false));
   }, [note.id]);
 
   const handleSend = async () => {
@@ -490,35 +614,55 @@ const CommentsPanel = ({ note, address, canInteract, onClose, onCommented }) => 
   };
 
   return (
-    <Overlay variant="sheet" maxWidth="sm:max-w-lg" zIndex={9997} onClose={onClose}>
-      <div className="px-4 sm:px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
-        <span className="font-extrabold text-sm text-white">Comments · {COMMENT_COST} DOGE each</span>
+    <Overlay variant="panel" maxWidth="sm:max-w-xl" zIndex={9996} onClose={onClose}>
+      <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-white/[0.06] shrink-0">
+        <span className="font-black text-[15px] text-white">Post</span>
         <button onClick={onClose} className="bg-transparent border-none cursor-pointer" aria-label="Close">
           <X className="w-5 h-5 text-white/50" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-        {loading && <Loader2 className="w-5 h-5 animate-spin text-white/30 mx-auto my-5" />}
-        {!loading && comments.length === 0 && (
-          <p className="text-center text-white/35 text-[13px] py-5">Be the first to comment.</p>
-        )}
-        {comments.map((c) => (
-          <div key={c.id} className="flex gap-2.5">
-            <div
-              className="w-[30px] h-[30px] rounded-full shrink-0 flex items-center justify-center text-[13px] font-black"
-              style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
-            >
-              {(c.author_nickname || '?')[0].toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-extrabold text-white">
-                {c.author_nickname} <span className="text-white/30 font-medium">· {timeAgo(c.created_at)}</span>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 sm:p-5 border-b border-white/[0.06]">
+          <PostBody
+            note={note}
+            address={address}
+            canInteract={canInteract}
+            onLike={onLike}
+            onOpenTip={onOpenTip}
+            onOpenProfile={onOpenProfile}
+            onRequireApproval={onRequireApproval}
+            imageMode="full"
+          />
+        </div>
+
+        <div className="p-4 flex flex-col gap-3">
+          <span className="text-xs font-extrabold text-white/50">
+            {comments.length > 0 ? `${comments.length} ${comments.length === 1 ? 'Comment' : 'Comments'}` : 'Comments'} · {COMMENT_COST} DOGE each
+          </span>
+          {loadingComments && <Loader2 className="w-5 h-5 animate-spin text-white/30 mx-auto my-5" />}
+          {!loadingComments && comments.length === 0 && (
+            <p className="text-center text-white/35 text-[13px] py-5">Be the first to comment.</p>
+          )}
+          {comments.map((c) => (
+            <div key={c.id} className="flex gap-2.5">
+              <div
+                className="w-[30px] h-[30px] rounded-full shrink-0 flex items-center justify-center text-[13px] font-black"
+                style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
+              >
+                {(c.author_nickname || '?')[0].toUpperCase()}
               </div>
-              <div className="text-[13px] text-white/80 mt-0.5 break-words">{c.content}</div>
+              <div className="min-w-0">
+                <div className="text-xs font-extrabold text-white">
+                  {c.author_nickname} <span className="text-white/30 font-medium">· {timeAgo(c.created_at)}</span>
+                </div>
+                <div className="text-[13px] text-white/80 mt-0.5 break-words">{c.content}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
       <div className="p-3.5 border-t border-white/[0.06] flex gap-2 shrink-0">
         <input
           value={text} onChange={(e) => setText(e.target.value)}
@@ -536,97 +680,6 @@ const CommentsPanel = ({ note, address, canInteract, onClose, onCommented }) => 
         </button>
       </div>
     </Overlay>
-  );
-};
-
-// ─── Feed card ────────────────────────────────────────────────────────────────
-const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTip, onOpenProfile, onRequireApproval }) => {
-  const [burst, setBurst] = useState(false);
-
-  const guarded = (fn) => () => {
-    if (!address) { alert('Connect a wallet to interact.'); return; }
-    if (!canInteract) { onRequireApproval(); return; }
-    fn();
-  };
-
-  const handleLikeClick = guarded(() => {
-    if (!note.liked_by_me) setBurst(true);
-    onLike(note.id);
-    setTimeout(() => setBurst(false), 650);
-  });
-
-  const openProfile = (e) => { e.stopPropagation(); onOpenProfile(note.author_address); };
-
-  return (
-    <article
-      onClick={() => onOpenComments(note)}
-      className="rounded-[20px] p-3.5 sm:p-4 relative overflow-hidden border border-white/[0.07] hover:border-white/[0.12] transition-colors cursor-pointer"
-      style={{ background: 'linear-gradient(160deg, rgba(88,255,122,0.05), rgba(168,85,247,0.05)), rgba(255,255,255,0.025)' }}
-    >
-      <div className="flex items-start gap-2.5 sm:gap-3 mb-2.5">
-        <button onClick={openProfile} className="bg-transparent border-none p-0 cursor-pointer shrink-0">
-          <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
-          >
-            {note.author_avatar
-              ? <img src={note.author_avatar} alt="" className="w-full h-full object-cover" />
-              : (note.author_nickname || '?')[0].toUpperCase()}
-          </div>
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button onClick={openProfile} className="bg-transparent border-none p-0 cursor-pointer text-[13px] sm:text-sm font-black text-white truncate max-w-full hover:underline">
-              {note.author_nickname}
-            </button>
-            <span className="text-xs text-white/35 truncate">{shortAddress(note.author_address)}</span>
-          </div>
-          <div className="text-[11px] text-white/40">{timeAgo(note.created_at)}</div>
-        </div>
-      </div>
-
-      <p className="text-[14px] text-white/[0.92] leading-relaxed mb-3 whitespace-pre-wrap break-words">{note.content}</p>
-      {note.image_url && (
-        <div className="rounded-2xl overflow-hidden border border-white/[0.06] mb-3">
-          <img src={note.image_url} alt="" loading="lazy" className="w-full max-h-[280px] sm:max-h-[420px] object-cover block" />
-        </div>
-      )}
-
-      <div className="flex items-center gap-4 sm:gap-5" onClick={(e) => e.stopPropagation()}>
-        <button onClick={handleLikeClick} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative">
-          <Heart
-            className="w-4 h-4 transition-colors group-hover:text-pink-300"
-            fill={note.liked_by_me ? '#f472b6' : 'none'}
-            style={{ color: note.liked_by_me ? '#f472b6' : 'rgba(255,255,255,0.5)' }}
-          />
-          <span className="text-[11px] text-white/45">{note.likes_count || 0} · {LIKE_COST}◈</span>
-          {burst && <img src="/dogecoin-logo.png" alt="" className="ln-coin-fly absolute -top-2.5 left-2.5 w-3.5 h-3.5" />}
-        </button>
-        <button onClick={() => onOpenComments(note)} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
-          <MessageCircle className="w-4 h-4 text-white/50 transition-colors group-hover:text-sky-300" />
-          <span className="text-[11px] text-white/45">{note.comments_count || 0} · {COMMENT_COST}◈</span>
-        </button>
-        <button onClick={guarded(() => onLike(note.id, 'share'))} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
-          <Repeat2 className="w-4 h-4 text-white/50 transition-colors group-hover:text-emerald-300" />
-          <span className="text-[11px] text-white/45">{note.shares_count || 0}</span>
-        </button>
-
-        <div className="ml-auto flex items-center gap-2 shrink-0">
-          <span className="flex items-center gap-1">
-            <img src="/dogecoin-logo.png" alt="" className="w-3 h-3" />
-            <span className="text-[11px] font-black" style={{ color: GREEN }}>{(note.earnings_doge || 0).toFixed(2)}</span>
-          </span>
-          <button
-            onClick={() => onOpenTip(note)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full cursor-pointer border"
-            style={{ borderColor: `${PURPLE}55`, background: `${PURPLE}18` }}
-          >
-            <Coins className="w-3.5 h-3.5" style={{ color: PURPLE }} />
-            <span className="text-[11px] font-black" style={{ color: PURPLE }}>Tip</span>
-          </button>
-        </div>
-      </div>
-    </article>
   );
 };
 
@@ -658,7 +711,7 @@ const NotificationsPanel = ({ address, onClose }) => {
   };
 
   return (
-    <Overlay variant="panel" maxWidth="sm:max-w-md" zIndex={9996} onClose={onClose}>
+    <Overlay variant="panel" maxWidth="sm:max-w-md" zIndex={9995} onClose={onClose}>
       <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-white/[0.06] shrink-0">
         <span className="font-black text-[15px] text-white">Lab Notifications</span>
         <button onClick={onClose} className="bg-transparent border-none cursor-pointer" aria-label="Close">
@@ -719,7 +772,7 @@ const LeaderboardView = ({ onClose, onViewProfile }) => {
   const medal = (rank) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null);
 
   return (
-    <Overlay variant="panel" maxWidth="sm:max-w-md" zIndex={9996} onClose={onClose}>
+    <Overlay variant="panel" maxWidth="sm:max-w-md" zIndex={9995} onClose={onClose}>
       <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-white/[0.06] shrink-0">
         <span className="font-black text-[15px] text-white">Leaderboard</span>
         <button onClick={onClose} className="bg-transparent border-none cursor-pointer" aria-label="Close">
@@ -869,7 +922,7 @@ const ProfileView = ({ address, viewerAddress, onClose, onOpenPost }) => {
 
   if (loading || !profile) {
     return (
-      <Overlay variant="panel" maxWidth="sm:max-w-xl" zIndex={9996} onClose={onClose}>
+      <Overlay variant="panel" maxWidth="sm:max-w-xl" zIndex={9997} onClose={onClose}>
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-6 h-6 animate-spin text-white/30" />
         </div>
@@ -884,7 +937,7 @@ const ProfileView = ({ address, viewerAddress, onClose, onOpenPost }) => {
   ];
 
   return (
-    <Overlay variant="panel" maxWidth="sm:max-w-xl" zIndex={9996} onClose={onClose}>
+    <Overlay variant="panel" maxWidth="sm:max-w-xl" zIndex={9997} onClose={onClose}>
       <div className="flex-1 overflow-y-auto">
         <div className="h-[90px] relative" style={{ background: `linear-gradient(135deg, ${GREEN}33, ${PURPLE}33)` }}>
           <button
@@ -1007,7 +1060,7 @@ const LabFeed = ({ playerAddress }) => {
   const [approved, setApproved] = useState(false);
   const [showApproval, setShowApproval] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [activeComments, setActiveComments] = useState(null);
+  const [activePost, setActivePost] = useState(null);
   const [activeTip, setActiveTip] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -1197,7 +1250,7 @@ const LabFeed = ({ playerAddress }) => {
               address={effectiveAddress}
               canInteract={canInteract}
               onLike={handleLike}
-              onOpenComments={setActiveComments}
+              onOpenComments={setActivePost}
               onOpenTip={setActiveTip}
               onOpenProfile={setViewingProfile}
               onRequireApproval={() => requireApproval(null)}
@@ -1225,8 +1278,18 @@ const LabFeed = ({ playerAddress }) => {
       {showCreate && (
         <CreateNoteModal address={effectiveAddress} onClose={() => setShowCreate(false)} onPublished={handlePublished} />
       )}
-      {activeComments && (
-        <CommentsPanel note={activeComments} address={effectiveAddress} canInteract={canInteract} onClose={() => setActiveComments(null)} onCommented={handleCommented} />
+      {activePost && (
+        <PostDetailModal
+          note={activePost}
+          address={effectiveAddress}
+          canInteract={canInteract}
+          onLike={handleLike}
+          onOpenTip={setActiveTip}
+          onOpenProfile={setViewingProfile}
+          onRequireApproval={() => requireApproval(null)}
+          onClose={() => setActivePost(null)}
+          onCommented={handleCommented}
+        />
       )}
       {activeTip && (
         <TipModal
@@ -1246,7 +1309,7 @@ const LabFeed = ({ playerAddress }) => {
           address={viewingProfile}
           viewerAddress={effectiveAddress}
           onClose={() => setViewingProfile(null)}
-          onOpenPost={(note) => { setViewingProfile(null); setActiveComments(note); }}
+          onOpenPost={(note) => { setViewingProfile(null); setActivePost(note); }}
         />
       )}
       {badgeQueue.length > 0 && (
