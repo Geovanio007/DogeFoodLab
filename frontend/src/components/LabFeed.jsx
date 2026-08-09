@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAccount, useSignMessage, useSendTransaction } from 'wagmi';
 import { parseEther } from 'viem';
 import {
-  ChevronLeft, Heart, MessageCircle, Repeat2, Bookmark, X, Send,
+  ChevronLeft, ChevronRight, Heart, MessageCircle, Repeat2, X, Send,
   FlaskConical, Plus, Loader2, Coins, Users, TrendingUp, Clock,
-  Bell, Trophy, Award, UserPlus, UserCheck, Image as ImageIcon,
+  Bell, Trophy, UserPlus, UserCheck, UserCircle, Image as ImageIcon,
 } from 'lucide-react';
 import { dogeOSDevnet } from '../config/wagmi';
 
@@ -15,6 +15,13 @@ import { dogeOSDevnet } from '../config/wagmi';
    comments, and shares are instant (covered by a one-time signed
    approval); tipping is a real wallet-signed on-chain transfer.
    See server.py's "LAB NOTES" section for the full backend.
+
+   Layout note: restructured as a proper social-feed shell (sticky
+   nav + underline tabs, composer teaser, card-based timeline,
+   right-rail leaderboard on wide screens) that scales from phone
+   widths up through desktop, with all overlays adapting from
+   mobile bottom-sheets to centered dialogs. No API contract or
+   interaction logic changed — presentation only.
    ============================================================ */
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -24,6 +31,11 @@ const COMMENT_COST = 0.5;
 
 const GREEN = '#58FF7A';
 const PURPLE = '#A855F7';
+
+// Shared max-width so the sticky nav, tabs, and feed column always
+// line up edge-to-edge, from phone widths up to the two-column
+// desktop layout.
+const SHELL_WIDTH = 'mx-auto w-full max-w-[640px] lg:max-w-[960px]';
 
 const TABS = [
   { id: 'for_you', label: 'For You', Icon: FlaskConical },
@@ -62,6 +74,14 @@ function timeAgo(isoString) {
   return `${Math.floor(diffSec / 86400)}d`;
 }
 
+// Renders a wallet/Telegram address as a compact @handle, the way a
+// social app would — without needing a separate username field.
+function shortAddress(addr) {
+  if (!addr) return '';
+  if (addr.startsWith('0x') && addr.length > 12) return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+  return `@${addr.replace(/^TG_/, 'tg')}`;
+}
+
 // Styles injected once at module load — same pattern used throughout this app.
 let stylesInjected = false;
 const LabNotesStyles = () => {
@@ -70,12 +90,6 @@ const LabNotesStyles = () => {
     stylesInjected = true;
     const style = document.createElement('style');
     style.textContent = `
-      @keyframes lnBubbleFloat {
-        0%   { transform: translateY(0) scale(1);   opacity: 0.5; }
-        50%  { transform: translateY(-14px) scale(1.15); opacity: 0.9; }
-        100% { transform: translateY(0) scale(1);   opacity: 0.5; }
-      }
-      .ln-bubble { -webkit-animation: lnBubbleFloat 3.4s ease-in-out infinite; animation: lnBubbleFloat 3.4s ease-in-out infinite; }
       @keyframes lnGlow {
         0%, 100% { box-shadow: 0 0 16px rgba(88,255,122,0.35); }
         50%      { box-shadow: 0 0 28px rgba(88,255,122,0.6); }
@@ -91,13 +105,73 @@ const LabNotesStyles = () => {
         100% { transform: translateY(-40px) scale(1.8); opacity: 0; }
       }
       .ln-smoke { -webkit-animation: lnSmoke 1.1s ease-out forwards; animation: lnSmoke 1.1s ease-out forwards; }
+      @keyframes labFeedBreathe {
+        0%, 100% { transform: scale(1); opacity: 0.75; }
+        50%      { transform: scale(1.08); opacity: 1; }
+      }
+      .lab-feed-breathe { -webkit-animation: labFeedBreathe 1.8s ease-in-out infinite; animation: labFeedBreathe 1.8s ease-in-out infinite; }
       @media (prefers-reduced-motion: reduce) {
-        .ln-bubble, .ln-glow, .ln-coin-fly, .ln-smoke { animation: none !important; }
+        .ln-glow, .ln-coin-fly, .ln-smoke, .lab-feed-breathe { animation: none !important; }
       }
     `;
     document.head.appendChild(style);
   }, []);
   return null;
+};
+
+// ─── Responsive overlay shell ────────────────────────────────────────────────
+// 'dialog' — always a centered card (approval gate, tips)
+// 'sheet'  — bottom sheet on phones, centered card from sm: up (composer, comments)
+// 'panel'  — full-screen on phones, large centered card from sm: up (notifications,
+//            leaderboard, profile — content-heavy views)
+const OVERLAY_ALIGN = {
+  dialog: 'items-center justify-center p-4',
+  sheet: 'items-end sm:items-center justify-center sm:p-4',
+  panel: 'items-stretch sm:items-center justify-center sm:p-4',
+};
+const OVERLAY_SHAPE = {
+  dialog: 'rounded-3xl',
+  sheet: 'rounded-t-3xl sm:rounded-3xl',
+  panel: 'rounded-none sm:rounded-3xl',
+};
+const OVERLAY_HEIGHT = {
+  dialog: 'max-h-[85vh]',
+  sheet: 'max-h-[85vh] sm:max-h-[80vh]',
+  panel: 'h-full sm:h-auto sm:max-h-[85vh]',
+};
+
+const Overlay = ({ onClose, children, variant = 'dialog', maxWidth = 'sm:max-w-sm', zIndex = 9990 }) => {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const needsSafeTop = variant === 'panel';
+  const needsSafeBottom = variant === 'sheet' || variant === 'panel';
+
+  return (
+    <div
+      className={`fixed inset-0 flex ${OVERLAY_ALIGN[variant]}`}
+      style={{ zIndex, background: 'rgba(5,8,10,0.88)' }}
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className={`w-full ${maxWidth} ${OVERLAY_SHAPE[variant]} ${OVERLAY_HEIGHT[variant]} flex flex-col overflow-hidden border`}
+        style={{
+          background: '#0b1016',
+          borderColor: `${GREEN}33`,
+          paddingTop: needsSafeTop ? 'env(safe-area-inset-top, 0px)' : undefined,
+          paddingBottom: needsSafeBottom ? 'env(safe-area-inset-bottom, 0px)' : undefined,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 };
 
 // ─── Approval gate: one-time signed message before any interaction ─────────
@@ -131,44 +205,37 @@ const ApprovalGate = ({ address, onApproved, onCancel }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(5,8,10,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{
-        maxWidth: 340, width: '100%', borderRadius: 24, padding: 24,
-        background: 'linear-gradient(160deg, rgba(88,255,122,0.08), rgba(168,85,247,0.08)), #0b1016',
-        border: `1px solid ${GREEN}44`, textAlign: 'center',
-      }}>
-        <div className="ln-glow" style={{
-          width: 64, height: 64, borderRadius: 20, margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`,
-        }}>
+    <Overlay variant="dialog" maxWidth="sm:max-w-sm" zIndex={9999} onClose={onCancel}>
+      <div className="p-6 text-center">
+        <div
+          className="ln-glow w-16 h-16 rounded-[20px] mx-auto mb-4 flex items-center justify-center"
+          style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})` }}
+        >
           <FlaskConical className="w-8 h-8" style={{ color: '#04140a' }} />
         </div>
-        <h2 style={{ fontSize: 18, fontWeight: 900, color: 'white', marginBottom: 8 }}>Join LabFeed</h2>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginBottom: 20 }}>
+        <h2 className="text-lg font-black text-white mb-2">Join LabFeed</h2>
+        <p className="text-[13px] text-white/55 leading-relaxed mb-5">
           One signature approves posting, liking, and commenting — no gas, and no more wallet popups after this.
           Tipping stays its own separate confirmation, since you choose the amount each time.
         </p>
         {error && (
-          <div style={{ fontSize: 12, color: '#fca5a5', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '8px 12px', marginBottom: 14 }}>
+          <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2 mb-3.5">
             {error}
           </div>
         )}
         <button
           onClick={handleApprove}
           disabled={signing}
-          style={{
-            width: '100%', padding: '13px 0', borderRadius: 14, border: 'none', cursor: signing ? 'wait' : 'pointer',
-            background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a', fontWeight: 900, fontSize: 14,
-            letterSpacing: '0.04em', marginBottom: 10,
-          }}
+          className="w-full py-3.5 rounded-2xl border-none font-black text-sm tracking-wide mb-2.5"
+          style={{ cursor: signing ? 'wait' : 'pointer', background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
         >
           {signing ? 'Confirm in wallet…' : 'Sign & Join'}
         </button>
-        <button onClick={onCancel} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer' }}>
+        <button onClick={onCancel} className="bg-transparent border-none text-white/40 text-xs cursor-pointer py-1">
           Not now
         </button>
       </div>
-    </div>
+    </Overlay>
   );
 };
 
@@ -215,95 +282,80 @@ const CreateNoteModal = ({ address, onClose, onPublished }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(5,8,10,0.85)', display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%', maxHeight: '80vh', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-          background: '#0b1016', border: `1px solid ${GREEN}33`, borderBottom: 'none',
-          padding: 20, display: 'flex', flexDirection: 'column', gap: 14,
-        }}
-      >
-        {phase === 'done' ? (
-          <div style={{ padding: '30px 0', textAlign: 'center', position: 'relative' }}>
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="ln-smoke" style={{
-                position: 'absolute', left: `${40 + i * 10}%`, bottom: 40, fontSize: 20,
-                animationDelay: `${i * 0.15}s`,
-              }}>💨</span>
-            ))}
-            <div style={{ fontSize: 32, marginBottom: 8 }}>🧪</div>
-            <div style={{ color: GREEN, fontWeight: 900, fontSize: 15 }}>Experiment Published!</div>
+    <Overlay variant="sheet" maxWidth="sm:max-w-lg" zIndex={9998} onClose={onClose}>
+      {phase === 'done' ? (
+        <div className="py-10 text-center relative">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="ln-smoke absolute bottom-10 text-xl"
+              style={{ left: `${40 + i * 10}%`, animationDelay: `${i * 0.15}s` }}
+            >💨</span>
+          ))}
+          <div className="text-3xl mb-2">🧪</div>
+          <div className="font-black text-[15px]" style={{ color: GREEN }}>Experiment Published!</div>
+        </div>
+      ) : (
+        <div className="p-5 flex flex-col gap-3.5 overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-extrabold text-white">New Lab Note</span>
+            <button onClick={onClose} aria-label="Close" className="bg-transparent border-none cursor-pointer">
+              <X className="w-5 h-5 text-white/50" />
+            </button>
           </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>New Lab Note</span>
-              <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.5)' }} /></button>
-            </div>
-            <textarea
-              autoFocus
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Share your latest experiment…"
-              rows={4}
-              style={{
-                width: '100%', resize: 'none', borderRadius: 14, padding: 12, fontSize: 14,
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'white', outline: 'none',
-              }}
-            />
+          <textarea
+            autoFocus
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Share your latest experiment…"
+            rows={4}
+            className="w-full resize-none rounded-2xl p-3 text-sm outline-none border border-white/[0.08] bg-white/[0.04] text-white placeholder:text-white/30"
+          />
 
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePickImage} style={{ display: 'none' }} />
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePickImage} className="hidden" />
 
-            {image && (
-              <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
-                <img src={image} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', display: 'block' }} />
-                <button
-                  onClick={() => setImage(null)}
-                  aria-label="Remove image"
-                  style={{
-                    position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <X className="w-4 h-4" style={{ color: 'white' }} />
-                </button>
-              </div>
-            )}
-            {imageError && <div style={{ fontSize: 11, color: '#fca5a5' }}>{imageError}</div>}
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="Add image"
-                  style={{
-                    width: 32, height: 32, borderRadius: 10, border: `1px solid ${GREEN}44`,
-                    background: `${GREEN}0f`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                  }}
-                >
-                  <ImageIcon className="w-4 h-4" style={{ color: GREEN }} />
-                </button>
-                <span style={{ fontSize: 11, color: remaining < 0 ? '#f87171' : 'rgba(255,255,255,0.4)' }}>{remaining} characters left</span>
-              </div>
+          {image && (
+            <div className="relative rounded-2xl overflow-hidden">
+              <img src={image} alt="" className="w-full max-h-[220px] sm:max-h-[280px] object-cover block" />
               <button
-                onClick={handlePublish}
-                disabled={publishing || !content.trim() || remaining < 0}
-                style={{
-                  padding: '10px 22px', borderRadius: 99, border: 'none',
-                  background: (!content.trim() || remaining < 0) ? 'rgba(255,255,255,0.08)' : `linear-gradient(135deg, ${GREEN}, ${PURPLE})`,
-                  color: (!content.trim() || remaining < 0) ? 'rgba(255,255,255,0.3)' : '#04140a',
-                  fontWeight: 900, fontSize: 13, cursor: publishing ? 'wait' : 'pointer',
-                }}
+                onClick={() => setImage(null)}
+                aria-label="Remove image"
+                className="absolute top-2 right-2 w-[26px] h-[26px] rounded-full bg-black/60 border-none cursor-pointer flex items-center justify-center"
               >
-                {publishing ? 'Publishing…' : 'Publish'}
+                <X className="w-4 h-4 text-white" />
               </button>
             </div>
-          </>
-        )}
-      </div>
-    </div>
+          )}
+          {imageError && <div className="text-[11px] text-red-300">{imageError}</div>}
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Add image"
+                className="w-8 h-8 rounded-[10px] flex items-center justify-center cursor-pointer border shrink-0"
+                style={{ borderColor: `${GREEN}44`, background: `${GREEN}0f` }}
+              >
+                <ImageIcon className="w-4 h-4" style={{ color: GREEN }} />
+              </button>
+              <span className={`text-[11px] truncate ${remaining < 0 ? 'text-red-400' : 'text-white/40'}`}>{remaining} characters left</span>
+            </div>
+            <button
+              onClick={handlePublish}
+              disabled={publishing || !content.trim() || remaining < 0}
+              className="px-5 py-2.5 rounded-full border-none font-black text-[13px] shrink-0"
+              style={{
+                cursor: publishing ? 'wait' : 'pointer',
+                background: (!content.trim() || remaining < 0) ? 'rgba(255,255,255,0.08)' : `linear-gradient(135deg, ${GREEN}, ${PURPLE})`,
+                color: (!content.trim() || remaining < 0) ? 'rgba(255,255,255,0.3)' : '#04140a',
+              }}
+            >
+              {publishing ? 'Publishing…' : 'Publish'}
+            </button>
+          </div>
+        </div>
+      )}
+    </Overlay>
   );
 };
 
@@ -346,52 +398,58 @@ const TipModal = ({ note, onClose, onTipped }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(5,8,10,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 340, borderRadius: 22, padding: 22, background: '#0b1016', border: `1px solid ${GREEN}33` }}>
+    <Overlay variant="dialog" maxWidth="sm:max-w-sm" zIndex={9998} onClose={onClose}>
+      <div className="p-5 sm:p-6">
         {phase === 'done' ? (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
-              <img src="/dogecoin-logo.png" alt="DOGE" style={{ width: 28, height: 28 }} />
-              <span style={{ fontSize: 26 }}>💸</span>
+          <div className="text-center py-5">
+            <div className="flex items-center justify-center gap-1.5 mb-1.5">
+              <img src="/dogecoin-logo.png" alt="DOGE" className="w-7 h-7" />
+              <span className="text-2xl">💸</span>
             </div>
-            <div style={{ color: GREEN, fontWeight: 900 }}>Tip sent on-chain!</div>
+            <div className="font-black" style={{ color: GREEN }}>Tip sent on-chain!</div>
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-              <span style={{ fontSize: 14, fontWeight: 900, color: 'white' }}>Tip @{note.author_nickname}</span>
-              <button onClick={onClose}><X className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.5)' }} /></button>
+            <div className="flex justify-between mb-4">
+              <span className="text-sm font-black text-white truncate">Tip @{note.author_nickname}</span>
+              <button onClick={onClose} className="bg-transparent border-none cursor-pointer shrink-0 ml-2">
+                <X className="w-5 h-5 text-white/50" />
+              </button>
             </div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            <div className="flex gap-2 mb-3.5">
               {[1, 5, 20].map((v) => (
-                <button key={v} onClick={() => setAmount(String(v))} style={{
-                  flex: 1, padding: '9px 0', borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                  border: amount === String(v) ? `1px solid ${GREEN}` : '1px solid rgba(255,255,255,0.1)',
-                  background: amount === String(v) ? `${GREEN}22` : 'rgba(255,255,255,0.03)',
-                  color: amount === String(v) ? GREEN : 'rgba(255,255,255,0.6)',
-                }}>{v} DOGE</button>
+                <button
+                  key={v}
+                  onClick={() => setAmount(String(v))}
+                  className="flex-1 py-2.5 rounded-xl text-[13px] font-extrabold cursor-pointer border"
+                  style={{
+                    borderColor: amount === String(v) ? GREEN : 'rgba(255,255,255,0.1)',
+                    background: amount === String(v) ? `${GREEN}22` : 'rgba(255,255,255,0.03)',
+                    color: amount === String(v) ? GREEN : 'rgba(255,255,255,0.6)',
+                  }}
+                >
+                  {v} DOGE
+                </button>
               ))}
             </div>
             <input
               type="number" min="0.01" step="0.01" value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              style={{ width: '100%', padding: '11px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'white', fontSize: 15, fontWeight: 700, marginBottom: 14, outline: 'none' }}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-[15px] font-bold mb-3.5 outline-none"
             />
-            {error && <div style={{ fontSize: 12, color: '#fca5a5', marginBottom: 12 }}>{error}</div>}
+            {error && <div className="text-xs text-red-300 mb-3">{error}</div>}
             <button
               onClick={handleTip}
               disabled={phase === 'sending' || phase === 'confirming'}
-              style={{
-                width: '100%', padding: '13px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
-                background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a', fontWeight: 900, fontSize: 14,
-              }}
+              className="w-full py-3.5 rounded-2xl border-none cursor-pointer font-black text-sm"
+              style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
             >
               {phase === 'sending' ? 'Confirm in wallet…' : phase === 'confirming' ? 'Recording tip…' : `Sign & Send ${amount || 0} DOGE`}
             </button>
           </>
         )}
       </div>
-    </div>
+    </Overlay>
   );
 };
 
@@ -432,48 +490,52 @@ const CommentsPanel = ({ note, address, canInteract, onClose, onCommented }) => 
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9997, background: 'rgba(5,8,10,0.85)', display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        width: '100%', maxHeight: '75vh', display: 'flex', flexDirection: 'column',
-        borderTopLeftRadius: 24, borderTopRightRadius: 24, background: '#0b1016', border: `1px solid ${GREEN}33`, borderBottom: 'none',
-      }}>
-        <div style={{ padding: '16px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontWeight: 800, fontSize: 14, color: 'white' }}>Comments · {COMMENT_COST} DOGE each</span>
-          <button onClick={onClose}><X className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.5)' }} /></button>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {loading && <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(255,255,255,0.3)', margin: '20px auto' }} />}
-          {!loading && comments.length === 0 && (
-            <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 13, padding: '20px 0' }}>Be the first to comment.</p>
-          )}
-          {comments.map((c) => (
-            <div key={c.id} style={{ display: 'flex', gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#04140a' }}>
-                {(c.author_nickname || '?')[0].toUpperCase()}
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: 'white' }}>{c.author_nickname} <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>· {timeAgo(c.created_at)}</span></div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>{c.content}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ padding: 14, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
-          <input
-            value={text} onChange={(e) => setText(e.target.value)}
-            placeholder={canInteract ? 'Add a comment…' : 'Sign the LabFeed approval to comment'}
-            disabled={!canInteract}
-            style={{ flex: 1, padding: '10px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'white', fontSize: 13, outline: 'none' }}
-          />
-          <button onClick={handleSend} disabled={sending || !canInteract || !text.trim()} style={{
-            width: 42, height: 42, borderRadius: 12, border: 'none', flexShrink: 0,
-            background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-          }}>
-            <Send className="w-4 h-4" style={{ color: '#04140a' }} />
-          </button>
-        </div>
+    <Overlay variant="sheet" maxWidth="sm:max-w-lg" zIndex={9997} onClose={onClose}>
+      <div className="px-4 sm:px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+        <span className="font-extrabold text-sm text-white">Comments · {COMMENT_COST} DOGE each</span>
+        <button onClick={onClose} className="bg-transparent border-none cursor-pointer" aria-label="Close">
+          <X className="w-5 h-5 text-white/50" />
+        </button>
       </div>
-    </div>
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+        {loading && <Loader2 className="w-5 h-5 animate-spin text-white/30 mx-auto my-5" />}
+        {!loading && comments.length === 0 && (
+          <p className="text-center text-white/35 text-[13px] py-5">Be the first to comment.</p>
+        )}
+        {comments.map((c) => (
+          <div key={c.id} className="flex gap-2.5">
+            <div
+              className="w-[30px] h-[30px] rounded-full shrink-0 flex items-center justify-center text-[13px] font-black"
+              style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
+            >
+              {(c.author_nickname || '?')[0].toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-extrabold text-white">
+                {c.author_nickname} <span className="text-white/30 font-medium">· {timeAgo(c.created_at)}</span>
+              </div>
+              <div className="text-[13px] text-white/80 mt-0.5 break-words">{c.content}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="p-3.5 border-t border-white/[0.06] flex gap-2 shrink-0">
+        <input
+          value={text} onChange={(e) => setText(e.target.value)}
+          placeholder={canInteract ? 'Add a comment…' : 'Sign the LabFeed approval to comment'}
+          disabled={!canInteract}
+          className="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl text-[13px] outline-none border border-white/[0.08] bg-white/[0.04] text-white placeholder:text-white/30"
+        />
+        <button
+          onClick={handleSend}
+          disabled={sending || !canInteract || !text.trim()}
+          className="w-[42px] h-[42px] rounded-xl border-none shrink-0 flex items-center justify-center cursor-pointer"
+          style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})` }}
+        >
+          <Send className="w-4 h-4" style={{ color: '#04140a' }} />
+        </button>
+      </div>
+    </Overlay>
   );
 };
 
@@ -487,67 +549,84 @@ const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
     fn();
   };
 
-  const handleLike = guarded(() => {
+  const handleLikeClick = guarded(() => {
     if (!note.liked_by_me) setBurst(true);
     onLike(note.id);
     setTimeout(() => setBurst(false), 650);
   });
 
+  const openProfile = (e) => { e.stopPropagation(); onOpenProfile(note.author_address); };
+
   return (
-    <div style={{
-      borderRadius: 20, padding: 14, position: 'relative', overflow: 'hidden',
-      background: 'linear-gradient(160deg, rgba(88,255,122,0.05), rgba(168,85,247,0.05)), rgba(255,255,255,0.025)',
-      border: '1px solid rgba(255,255,255,0.07)',
-    }}>
-      <div onClick={() => onOpenComments(note)} style={{ cursor: 'pointer' }}>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-          <button
-            onClick={(e) => { e.stopPropagation(); onOpenProfile(note.author_address); }}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left' }}
+    <article
+      onClick={() => onOpenComments(note)}
+      className="rounded-[20px] p-3.5 sm:p-4 relative overflow-hidden border border-white/[0.07] hover:border-white/[0.12] transition-colors cursor-pointer"
+      style={{ background: 'linear-gradient(160deg, rgba(88,255,122,0.05), rgba(168,85,247,0.05)), rgba(255,255,255,0.025)' }}
+    >
+      <div className="flex items-start gap-2.5 sm:gap-3 mb-2.5">
+        <button onClick={openProfile} className="bg-transparent border-none p-0 cursor-pointer shrink-0">
+          <div
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black overflow-hidden"
+            style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
           >
-            <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#04140a' }}>
-              {note.author_avatar ? <img src={note.author_avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : (note.author_nickname || '?')[0].toUpperCase()}
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>{note.author_nickname}</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{timeAgo(note.created_at)}</div>
-            </div>
-          </button>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 99, height: 'fit-content',
-            background: 'rgba(88,255,122,0.1)', border: `1px solid ${GREEN}33`,
-          }}>
-            <img src="/dogecoin-logo.png" alt="DOGE" style={{ width: 13, height: 13 }} />
-            <span style={{ fontSize: 11, fontWeight: 900, color: GREEN }}>{(note.earnings_doge || 0).toFixed(2)} DOGE</span>
+            {note.author_avatar
+              ? <img src={note.author_avatar} alt="" className="w-full h-full object-cover" />
+              : (note.author_nickname || '?')[0].toUpperCase()}
           </div>
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button onClick={openProfile} className="bg-transparent border-none p-0 cursor-pointer text-[13px] sm:text-sm font-black text-white truncate max-w-full hover:underline">
+              {note.author_nickname}
+            </button>
+            <span className="text-xs text-white/35 truncate">{shortAddress(note.author_address)}</span>
+          </div>
+          <div className="text-[11px] text-white/40">{timeAgo(note.created_at)}</div>
         </div>
-
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, marginBottom: 12, whiteSpace: 'pre-wrap' }}>{note.content}</p>
-        {note.image_url && (
-          <img src={note.image_url} alt="" style={{ width: '100%', borderRadius: 14, marginBottom: 12, maxHeight: 260, objectFit: 'cover' }} />
-        )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative' }}>
-        <button onClick={handleLike} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}>
-          <Heart className="w-4 h-4" fill={note.liked_by_me ? '#f472b6' : 'none'} style={{ color: note.liked_by_me ? '#f472b6' : 'rgba(255,255,255,0.5)' }} />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{note.likes_count || 0} · {LIKE_COST}◈</span>
-          {burst && <img src="/dogecoin-logo.png" alt="" className="ln-coin-fly" style={{ position: 'absolute', top: -10, left: 10, width: 14, height: 14 }} />}
+      <p className="text-[14px] text-white/[0.92] leading-relaxed mb-3 whitespace-pre-wrap break-words">{note.content}</p>
+      {note.image_url && (
+        <div className="rounded-2xl overflow-hidden border border-white/[0.06] mb-3">
+          <img src={note.image_url} alt="" loading="lazy" className="w-full max-h-[280px] sm:max-h-[420px] object-cover block" />
+        </div>
+      )}
+
+      <div className="flex items-center gap-4 sm:gap-5" onClick={(e) => e.stopPropagation()}>
+        <button onClick={handleLikeClick} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative">
+          <Heart
+            className="w-4 h-4 transition-colors group-hover:text-pink-300"
+            fill={note.liked_by_me ? '#f472b6' : 'none'}
+            style={{ color: note.liked_by_me ? '#f472b6' : 'rgba(255,255,255,0.5)' }}
+          />
+          <span className="text-[11px] text-white/45">{note.likes_count || 0} · {LIKE_COST}◈</span>
+          {burst && <img src="/dogecoin-logo.png" alt="" className="ln-coin-fly absolute -top-2.5 left-2.5 w-3.5 h-3.5" />}
         </button>
-        <button onClick={() => onOpenComments(note)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer' }}>
-          <MessageCircle className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{note.comments_count || 0} · {COMMENT_COST}◈</span>
+        <button onClick={() => onOpenComments(note)} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
+          <MessageCircle className="w-4 h-4 text-white/50 transition-colors group-hover:text-sky-300" />
+          <span className="text-[11px] text-white/45">{note.comments_count || 0} · {COMMENT_COST}◈</span>
         </button>
-        <button onClick={guarded(() => onLike(note.id, 'share'))} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer' }}>
-          <Repeat2 className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{note.shares_count || 0}</span>
+        <button onClick={guarded(() => onLike(note.id, 'share'))} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
+          <Repeat2 className="w-4 h-4 text-white/50 transition-colors group-hover:text-emerald-300" />
+          <span className="text-[11px] text-white/45">{note.shares_count || 0}</span>
         </button>
-        <button onClick={() => onOpenTip(note)} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 99, border: `1px solid ${PURPLE}55`, background: `${PURPLE}18`, cursor: 'pointer' }}>
-          <Coins className="w-3.5 h-3.5" style={{ color: PURPLE }} />
-          <span style={{ fontSize: 11, fontWeight: 800, color: PURPLE }}>Tip</span>
-        </button>
+
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <span className="flex items-center gap-1">
+            <img src="/dogecoin-logo.png" alt="" className="w-3 h-3" />
+            <span className="text-[11px] font-black" style={{ color: GREEN }}>{(note.earnings_doge || 0).toFixed(2)}</span>
+          </span>
+          <button
+            onClick={() => onOpenTip(note)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full cursor-pointer border"
+            style={{ borderColor: `${PURPLE}55`, background: `${PURPLE}18` }}
+          >
+            <Coins className="w-3.5 h-3.5" style={{ color: PURPLE }} />
+            <span className="text-[11px] font-black" style={{ color: PURPLE }}>Tip</span>
+          </button>
+        </div>
       </div>
-    </div>
+    </article>
   );
 };
 
@@ -579,37 +658,39 @@ const NotificationsPanel = ({ address, onClose }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9996, background: '#05080a', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <span style={{ fontWeight: 900, fontSize: 15, color: 'white' }}>Lab Notifications</span>
-        <button onClick={onClose}><X className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.5)' }} /></button>
+    <Overlay variant="panel" maxWidth="sm:max-w-md" zIndex={9996} onClose={onClose}>
+      <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-white/[0.06] shrink-0">
+        <span className="font-black text-[15px] text-white">Lab Notifications</span>
+        <button onClick={onClose} className="bg-transparent border-none cursor-pointer" aria-label="Close">
+          <X className="w-5 h-5 text-white/50" />
+        </button>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {loading && <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(255,255,255,0.3)', margin: '30px auto' }} />}
+      <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-2">
+        {loading && <Loader2 className="w-5 h-5 animate-spin text-white/30 mx-auto my-8" />}
         {!loading && notifications.length === 0 && (
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 13, padding: '30px 0' }}>Nothing yet — go make some noise in the lab.</p>
+          <p className="text-center text-white/35 text-[13px] py-8">Nothing yet — go make some noise in the lab.</p>
         )}
         {notifications.map((n) => {
           const meta = NOTIFICATION_META[n.type] || { Icon: Bell, color: 'rgba(255,255,255,0.5)' };
           const NIcon = meta.Icon;
           return (
-            <div key={n.id} style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14,
-              background: n.read ? 'rgba(255,255,255,0.02)' : 'rgba(88,255,122,0.06)',
-              border: `1px solid ${n.read ? 'rgba(255,255,255,0.05)' : GREEN + '22'}`,
-            }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: `${meta.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div
+              key={n.id}
+              className="flex items-center gap-2.5 p-3 rounded-2xl border"
+              style={{ background: n.read ? 'rgba(255,255,255,0.02)' : 'rgba(88,255,122,0.06)', borderColor: n.read ? 'rgba(255,255,255,0.05)' : `${GREEN}22` }}
+            >
+              <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center" style={{ background: `${meta.color}22` }}>
                 <NIcon className="w-4 h-4" style={{ color: meta.color }} />
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{messageFor(n)}</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{timeAgo(n.created_at)}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] text-white/85 break-words">{messageFor(n)}</div>
+                <div className="text-[10px] text-white/35 mt-0.5">{timeAgo(n.created_at)}</div>
               </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </Overlay>
   );
 };
 
@@ -638,43 +719,114 @@ const LeaderboardView = ({ onClose, onViewProfile }) => {
   const medal = (rank) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9996, background: '#05080a', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <span style={{ fontWeight: 900, fontSize: 15, color: 'white' }}>Leaderboard</span>
-        <button onClick={onClose}><X className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.5)' }} /></button>
+    <Overlay variant="panel" maxWidth="sm:max-w-md" zIndex={9996} onClose={onClose}>
+      <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-white/[0.06] shrink-0">
+        <span className="font-black text-[15px] text-white">Leaderboard</span>
+        <button onClick={onClose} className="bg-transparent border-none cursor-pointer" aria-label="Close">
+          <X className="w-5 h-5 text-white/50" />
+        </button>
       </div>
-      <div style={{ display: 'flex', gap: 6, padding: '10px 14px' }}>
+      <div className="flex gap-1.5 p-3 shrink-0">
         {LEADERBOARD_TABS.map((t) => (
-          <button key={t.id} onClick={() => setType(t.id)} style={{
-            flex: 1, padding: '8px 0', borderRadius: 12, fontSize: 12, fontWeight: 800, cursor: 'pointer',
-            border: type === t.id ? `1px solid ${GREEN}` : '1px solid rgba(255,255,255,0.08)',
-            background: type === t.id ? `${GREEN}1f` : 'rgba(255,255,255,0.03)',
-            color: type === t.id ? GREEN : 'rgba(255,255,255,0.55)',
-          }}>{t.label}</button>
-        ))}
-      </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 14px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {loading && <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgba(255,255,255,0.3)', margin: '30px auto' }} />}
-        {!loading && entries.length === 0 && (
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 13, padding: '30px 0' }}>No data yet.</p>
-        )}
-        {entries.map((e) => (
-          <button key={e.address} onClick={() => onViewProfile(e.address)} style={{
-            display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14,
-            background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)',
-            textAlign: 'left', cursor: 'pointer',
-          }}>
-            <span style={{ width: 26, textAlign: 'center', fontSize: 14, fontWeight: 900, color: e.rank <= 3 ? GREEN : 'rgba(255,255,255,0.4)' }}>
-              {medal(e.rank) || `#${e.rank}`}
-            </span>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#04140a', fontSize: 13 }}>
-              {(e.nickname || '?')[0].toUpperCase()}
-            </div>
-            <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: 'white' }}>{e.nickname}</span>
-            <span style={{ fontSize: 13, fontWeight: 900, color: GREEN }}>{e.value} {activeTab?.unit}</span>
+          <button
+            key={t.id}
+            onClick={() => setType(t.id)}
+            className="flex-1 py-2 rounded-xl text-xs font-extrabold cursor-pointer border"
+            style={{
+              borderColor: type === t.id ? GREEN : 'rgba(255,255,255,0.08)',
+              background: type === t.id ? `${GREEN}1f` : 'rgba(255,255,255,0.03)',
+              color: type === t.id ? GREEN : 'rgba(255,255,255,0.55)',
+            }}
+          >
+            {t.label}
           </button>
         ))}
       </div>
+      <div className="flex-1 overflow-y-auto px-3.5 pb-5 flex flex-col gap-2">
+        {loading && <Loader2 className="w-5 h-5 animate-spin text-white/30 mx-auto my-8" />}
+        {!loading && entries.length === 0 && (
+          <p className="text-center text-white/35 text-[13px] py-8">No data yet.</p>
+        )}
+        {entries.map((e) => (
+          <button
+            key={e.address}
+            onClick={() => onViewProfile(e.address)}
+            className="flex items-center gap-3 p-3 rounded-2xl border border-white/[0.06] text-left cursor-pointer hover:bg-white/[0.03]"
+            style={{ background: 'rgba(255,255,255,0.025)' }}
+          >
+            <span className="w-[26px] text-center text-sm font-black shrink-0" style={{ color: e.rank <= 3 ? GREEN : 'rgba(255,255,255,0.4)' }}>
+              {medal(e.rank) || `#${e.rank}`}
+            </span>
+            <div
+              className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center font-black text-[13px]"
+              style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
+            >
+              {(e.nickname || '?')[0].toUpperCase()}
+            </div>
+            <span className="flex-1 min-w-0 truncate text-[13px] font-bold text-white">{e.nickname}</span>
+            <span className="text-[13px] font-black shrink-0" style={{ color: GREEN }}>{e.value} {activeTab?.unit}</span>
+          </button>
+        ))}
+      </div>
+    </Overlay>
+  );
+};
+
+// ─── Top Earners rail (desktop only) ────────────────────────────────────────
+// Reuses the same leaderboard endpoint as LeaderboardView, just trimmed to a
+// 5-row preview that lives beside the feed on wide screens.
+const TopEarnersRail = ({ onOpenLeaderboard, onViewProfile }) => {
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/lab-notes/leaderboard?type=earners&limit=5`)
+      .then((r) => r.json())
+      .then((d) => setEntries(d.entries || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div
+      className="rounded-2xl border border-white/[0.07] p-4"
+      style={{ background: 'linear-gradient(160deg, rgba(88,255,122,0.05), rgba(168,85,247,0.05)), rgba(255,255,255,0.025)' }}
+    >
+      <div className="flex items-center gap-2 mb-3.5">
+        <Trophy className="w-4 h-4" style={{ color: GREEN }} />
+        <span className="text-[13px] font-black text-white">Top Earners</span>
+      </div>
+      {loading && <Loader2 className="w-4 h-4 animate-spin text-white/30 mx-auto my-4" />}
+      {!loading && entries.length === 0 && <p className="text-xs text-white/35 py-2">No data yet.</p>}
+      <div className="flex flex-col gap-1">
+        {entries.map((e) => (
+          <button
+            key={e.address}
+            onClick={() => onViewProfile(e.address)}
+            className="flex items-center gap-2.5 py-1.5 px-1.5 -mx-1.5 rounded-xl text-left bg-transparent border-none cursor-pointer hover:bg-white/[0.04]"
+          >
+            <span className="w-5 text-center text-xs font-black shrink-0" style={{ color: e.rank <= 3 ? GREEN : 'rgba(255,255,255,0.35)' }}>
+              {e.rank === 1 ? '🥇' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : `#${e.rank}`}
+            </span>
+            <div
+              className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black"
+              style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
+            >
+              {(e.nickname || '?')[0].toUpperCase()}
+            </div>
+            <span className="flex-1 min-w-0 truncate text-xs font-bold text-white">{e.nickname}</span>
+            <span className="text-[11px] font-black shrink-0" style={{ color: GREEN }}>{e.value}</span>
+          </button>
+        ))}
+      </div>
+      {entries.length > 0 && (
+        <button
+          onClick={onOpenLeaderboard}
+          className="w-full flex items-center justify-center gap-1 mt-3 pt-3 border-t border-white/[0.06] text-[11px] font-bold text-white/45 hover:text-white/70 bg-transparent border-x-0 border-b-0 cursor-pointer"
+        >
+          See full leaderboard <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   );
 };
@@ -717,9 +869,11 @@ const ProfileView = ({ address, viewerAddress, onClose, onOpenPost }) => {
 
   if (loading || !profile) {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 9996, background: '#05080a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'rgba(255,255,255,0.3)' }} />
-      </div>
+      <Overlay variant="panel" maxWidth="sm:max-w-xl" zIndex={9996} onClose={onClose}>
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-white/30" />
+        </div>
+      </Overlay>
     );
   }
 
@@ -730,73 +884,93 @@ const ProfileView = ({ address, viewerAddress, onClose, onOpenPost }) => {
   ];
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9996, background: '#05080a', overflowY: 'auto' }}>
-      <div style={{ height: 90, background: `linear-gradient(135deg, ${GREEN}33, ${PURPLE}33)`, position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 14, left: 14, background: 'rgba(0,0,0,0.35)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <ChevronLeft className="w-5 h-5" style={{ color: 'white' }} />
-        </button>
+    <Overlay variant="panel" maxWidth="sm:max-w-xl" zIndex={9996} onClose={onClose}>
+      <div className="flex-1 overflow-y-auto">
+        <div className="h-[90px] relative" style={{ background: `linear-gradient(135deg, ${GREEN}33, ${PURPLE}33)` }}>
+          <button
+            onClick={onClose}
+            className="absolute top-3.5 left-3.5 bg-black/35 border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer"
+            aria-label="Close"
+          >
+            <ChevronLeft className="w-5 h-5 text-white" />
+          </button>
+        </div>
+        <div className="px-4 sm:px-5 pb-7 -mt-9">
+          <div
+            className="w-[72px] h-[72px] rounded-[22px] border-[3px] flex items-center justify-center font-black text-2xl mb-2.5 overflow-hidden"
+            style={{ borderColor: '#0b1016', background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
+          >
+            {profile.profile_image
+              ? <img src={profile.profile_image} alt="" className="w-full h-full object-cover" />
+              : (profile.nickname || '?')[0].toUpperCase()}
+          </div>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-lg font-black text-white truncate">{profile.nickname}</span>
+            {!isOwnProfile && viewerAddress && (
+              <button
+                onClick={toggleFollow}
+                disabled={followBusy}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full cursor-pointer font-extrabold text-xs shrink-0 border"
+                style={{
+                  borderColor: following ? 'rgba(255,255,255,0.15)' : 'transparent',
+                  background: following ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg, ${GREEN}, ${PURPLE})`,
+                  color: following ? 'rgba(255,255,255,0.7)' : '#04140a',
+                }}
+              >
+                {following ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+                {following ? 'Following' : 'Follow'}
+              </button>
+            )}
+          </div>
+          <div className="text-xs text-white/40 mb-3.5">
+            Lab Level {profile.level}
+            {profile.favorite_ingredient ? ` · Favorite ingredient: ${profile.favorite_ingredient}` : ''}
+            {profile.leaderboard_rank ? ` · Rank #${profile.leaderboard_rank} earner` : ''}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {stats.map(([label, value]) => (
+              <div key={label} className="text-center py-2.5 px-1 rounded-xl border border-white/[0.06]" style={{ background: 'rgba(255,255,255,0.025)' }}>
+                <div className="text-[15px] font-black" style={{ color: GREEN }}>{value}</div>
+                <div className="text-[9px] text-white/40 mt-0.5">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-xs font-extrabold text-white/50 mb-2">BADGES</div>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 pb-1">
+            {profile.badges.length === 0 && <span className="text-xs text-white/30">None yet</span>}
+            {profile.badges.map((b) => (
+              <div
+                key={b.badge_id}
+                title={b.description}
+                className="shrink-0 w-16 text-center py-2.5 px-1 rounded-2xl border"
+                style={{ background: `${GREEN}0f`, borderColor: `${GREEN}33` }}
+              >
+                <div className="text-[22px]">{b.emoji}</div>
+                <div className="text-[8px] font-extrabold mt-1" style={{ color: GREEN }}>{b.name}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-xs font-extrabold text-white/50 mb-2">LAB NOTES</div>
+          <div className="flex flex-col gap-2.5">
+            {profile.posts.length === 0 && <span className="text-xs text-white/30">No Lab Notes yet.</span>}
+            {profile.posts.map((note) => (
+              <div
+                key={note.id}
+                onClick={() => onOpenPost(note)}
+                className="p-3 rounded-2xl border border-white/[0.06] cursor-pointer hover:bg-white/[0.03]"
+                style={{ background: 'rgba(255,255,255,0.025)' }}
+              >
+                <p className="text-[13px] text-white/85 mb-1.5 break-words">{note.content}</p>
+                <div className="text-[10px] text-white/35">{note.likes_count || 0} likes · {note.comments_count || 0} comments · {timeAgo(note.created_at)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-      <div style={{ padding: '0 18px 30px', marginTop: -36 }}>
-        <div style={{ width: 72, height: 72, borderRadius: 22, border: '3px solid #05080a', background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 28, color: '#04140a', marginBottom: 10 }}>
-          {profile.profile_image ? <img src={profile.profile_image} alt="" style={{ width: '100%', height: '100%', borderRadius: 19, objectFit: 'cover' }} /> : (profile.nickname || '?')[0].toUpperCase()}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{ fontSize: 19, fontWeight: 900, color: 'white' }}>{profile.nickname}</span>
-          {!isOwnProfile && viewerAddress && (
-            <button onClick={toggleFollow} disabled={followBusy} style={{
-              display: 'flex', alignItems: 'center', gap: 5, padding: '7px 16px', borderRadius: 99, cursor: 'pointer',
-              border: following ? '1px solid rgba(255,255,255,0.15)' : 'none',
-              background: following ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg, ${GREEN}, ${PURPLE})`,
-              color: following ? 'rgba(255,255,255,0.7)' : '#04140a', fontWeight: 800, fontSize: 12,
-            }}>
-              {following ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
-              {following ? 'Following' : 'Follow'}
-            </button>
-          )}
-        </div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 14 }}>
-          Lab Level {profile.level}
-          {profile.favorite_ingredient ? ` · Favorite ingredient: ${profile.favorite_ingredient}` : ''}
-          {profile.leaderboard_rank ? ` · Rank #${profile.leaderboard_rank} earner` : ''}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
-          {stats.map(([label, value]) => (
-            <div key={label} style={{ textAlign: 'center', padding: '10px 4px', borderRadius: 12, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize: 15, fontWeight: 900, color: GREEN }}>{value}</div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>BADGES</div>
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 18, paddingBottom: 4 }}>
-          {profile.badges.length === 0 && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>None yet</span>}
-          {profile.badges.map((b) => (
-            <div key={b.badge_id} title={b.description} style={{
-              flexShrink: 0, width: 64, textAlign: 'center', padding: '10px 4px', borderRadius: 14,
-              background: `${GREEN}0f`, border: `1px solid ${GREEN}33`,
-            }}>
-              <div style={{ fontSize: 22 }}>{b.emoji}</div>
-              <div style={{ fontSize: 8, color: GREEN, fontWeight: 800, marginTop: 4 }}>{b.name}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>LAB NOTES</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {profile.posts.length === 0 && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>No Lab Notes yet.</span>}
-          {profile.posts.map((note) => (
-            <div key={note.id} onClick={() => onOpenPost(note)} style={{
-              padding: 12, borderRadius: 14, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer',
-            }}>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 6 }}>{note.content}</p>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{note.likes_count || 0} likes · {note.comments_count || 0} comments · {timeAgo(note.created_at)}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    </Overlay>
   );
 };
 
@@ -808,15 +982,14 @@ const BadgeToast = ({ badgeId, onDone }) => {
   }, [onDone]);
   const info = LAB_BADGE_META[badgeId] || { name: badgeId, emoji: '🏅' };
   return (
-    <div style={{
-      position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 10000,
-      display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', borderRadius: 16,
-      background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, boxShadow: `0 8px 30px ${GREEN}55`,
-    }}>
-      <span style={{ fontSize: 22 }}>{info.emoji}</span>
+    <div
+      className="fixed top-[70px] left-1/2 -translate-x-1/2 z-[10000] flex items-center gap-2.5 px-[18px] py-3 rounded-2xl"
+      style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, boxShadow: `0 8px 30px ${GREEN}55` }}
+    >
+      <span className="text-[22px]">{info.emoji}</span>
       <div>
-        <div style={{ fontSize: 10, fontWeight: 800, color: '#04140a', opacity: 0.7 }}>BADGE UNLOCKED</div>
-        <div style={{ fontSize: 13, fontWeight: 900, color: '#04140a' }}>{info.name}</div>
+        <div className="text-[10px] font-extrabold opacity-70" style={{ color: '#04140a' }}>BADGE UNLOCKED</div>
+        <div className="text-[13px] font-black" style={{ color: '#04140a' }}>{info.name}</div>
       </div>
     </div>
   );
@@ -922,104 +1095,125 @@ const LabFeed = ({ playerAddress }) => {
     setNotes((prev) => [note, ...prev]);
   };
 
+  // Shared by both the composer teaser bar and the floating action button.
+  const openComposer = () => {
+    if (!effectiveAddress) { alert('Connect a wallet or sign in to post.'); return; }
+    if (!canInteract) { requireApproval(() => setShowCreate(true)); return; }
+    setShowCreate(true);
+  };
+
   return (
-    <div style={{ minHeight: '100vh', background: 'radial-gradient(ellipse at top, #0f1a13 0%, #05080a 60%)', color: 'white', paddingBottom: 100 }}>
+    <div className="min-h-screen text-white pb-28" style={{ background: 'radial-gradient(ellipse at top, #0f1a13 0%, #05080a 60%)' }}>
       <LabNotesStyles />
 
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(5,8,10,0.92)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px' }}>
-          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-            <ChevronLeft className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.7)' }} />
+      {/* Sticky nav + tabs */}
+      <div className="sticky top-0 z-20 border-b border-white/[0.06]" style={{ background: 'rgba(5,8,10,0.92)', backdropFilter: 'blur(8px)' }}>
+        <div className={`${SHELL_WIDTH} flex items-center gap-2.5 px-4 py-3`}>
+          <button onClick={() => navigate('/')} className="bg-transparent border-none cursor-pointer p-1 -ml-1" aria-label="Back">
+            <ChevronLeft className="w-5 h-5 text-white/70" />
           </button>
-          <div style={{ width: 30, height: 30, borderRadius: 10, background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})` }}>
             <FlaskConical className="w-4 h-4" style={{ color: '#04140a' }} />
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 900, lineHeight: 1 }}>LabFeed</div>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Powered by DogeOS</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-black leading-none">LabFeed</div>
+            <div className="text-[9px] text-white/40 mt-0.5">Powered by DogeOS</div>
           </div>
-          <button onClick={() => setShowLeaderboard(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }} aria-label="Leaderboard">
-            <Trophy className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.6)' }} />
+          <button onClick={() => setShowLeaderboard(true)} className="bg-transparent border-none cursor-pointer p-1" aria-label="Leaderboard">
+            <Trophy className="w-5 h-5 text-white/60" />
           </button>
           <button
             onClick={() => { if (effectiveAddress) { setShowNotifications(true); setUnreadCount(0); } }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
+            className="bg-transparent border-none cursor-pointer relative p-1"
             aria-label="Notifications"
           >
-            <Bell className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.6)' }} />
+            <Bell className="w-5 h-5 text-white/60" />
             {unreadCount > 0 && (
-              <span style={{
-                position: 'absolute', top: -3, right: -3, minWidth: 15, height: 15, borderRadius: 99,
-                background: '#f472b6', color: 'white', fontSize: 9, fontWeight: 900,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px',
-              }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+              <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] rounded-full bg-pink-400 text-white text-[9px] font-black flex items-center justify-center px-[3px]">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
+          <button
+            onClick={() => effectiveAddress && setViewingProfile(effectiveAddress)}
+            className="bg-transparent border-none cursor-pointer p-0.5 -mr-1"
+            aria-label="Your profile"
+          >
+            <UserCircle className="w-6 h-6 text-white/60" />
+          </button>
         </div>
-        <div style={{ display: 'flex', overflowX: 'auto', gap: 4, padding: '0 12px 10px' }}>
+
+        <div className={`${SHELL_WIDTH} flex gap-5 overflow-x-auto scrollbar-hide px-4`}>
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              style={{
-                flexShrink: 0, padding: '7px 13px', borderRadius: 99, fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                border: tab === t.id ? `1px solid ${GREEN}` : '1px solid transparent',
-                background: tab === t.id ? `${GREEN}1f` : 'rgba(255,255,255,0.04)',
-                color: tab === t.id ? GREEN : 'rgba(255,255,255,0.55)',
-                whiteSpace: 'nowrap',
-              }}
+              className={`relative flex items-center gap-1.5 whitespace-nowrap py-3 text-[12.5px] font-extrabold shrink-0 bg-transparent border-none cursor-pointer transition-colors ${tab === t.id ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
             >
-              <t.Icon className="w-3.5 h-3.5" style={{ display: 'inline', marginRight: 2, verticalAlign: -2 }} /> {t.label}
+              <t.Icon className="w-3.5 h-3.5" />
+              {t.label}
+              {tab === t.id && (
+                <span className="absolute left-0 right-0 -bottom-px h-[3px] rounded-full" style={{ background: `linear-gradient(90deg, ${GREEN}, ${PURPLE})` }} />
+              )}
             </button>
           ))}
         </div>
       </div>
 
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {loading && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', gap: 10 }}>
-            <img src="/dogefood-logo.png" alt="" className="lab-feed-breathe" style={{ width: 48, height: 48 }} />
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Loading experiments…</span>
-          </div>
-        )}
+      {/* Feed + desktop rail */}
+      <div className={`${SHELL_WIDTH} px-3 sm:px-4 lg:px-6 py-4 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6 lg:items-start`}>
+        <div className="flex flex-col gap-3 min-w-0">
+          <button
+            onClick={openComposer}
+            className="flex items-center gap-3 rounded-2xl border border-white/[0.07] px-4 py-3.5 text-left cursor-pointer"
+            style={{ background: 'linear-gradient(160deg, rgba(88,255,122,0.05), rgba(168,85,247,0.05)), rgba(255,255,255,0.025)' }}
+          >
+            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})` }}>
+              <FlaskConical className="w-4 h-4" style={{ color: '#04140a' }} />
+            </div>
+            <span className="text-[13px] text-white/40">Share your latest experiment…</span>
+          </button>
 
-        {!loading && notes.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <FlaskConical className="w-8 h-8" style={{ color: 'rgba(255,255,255,0.2)', margin: '0 auto 10px' }} />
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
-              {tab === 'following' ? "You're not following any scientists yet." : 'No experiments published yet — be the first!'}
-            </p>
-          </div>
-        )}
+          {loading && (
+            <div className="flex flex-col items-center py-16 gap-2.5">
+              <img src="/dogefood-logo.png" alt="" className="lab-feed-breathe w-12 h-12" />
+              <span className="text-xs text-white/40">Loading experiments…</span>
+            </div>
+          )}
 
-        {!loading && notes.map((note) => (
-          <NoteCard
-            key={note.id}
-            note={{ ...note, _viewerAddress: effectiveAddress }}
-            address={effectiveAddress}
-            canInteract={canInteract}
-            onLike={handleLike}
-            onOpenComments={setActiveComments}
-            onOpenTip={setActiveTip}
-            onOpenProfile={setViewingProfile}
-            onRequireApproval={() => requireApproval(null)}
-          />
-        ))}
+          {!loading && notes.length === 0 && (
+            <div className="text-center py-16 px-5">
+              <FlaskConical className="w-8 h-8 text-white/20 mx-auto mb-2.5" />
+              <p className="text-[13px] text-white/40">
+                {tab === 'following' ? "You're not following any scientists yet." : 'No experiments published yet — be the first!'}
+              </p>
+            </div>
+          )}
+
+          {!loading && notes.map((note) => (
+            <NoteCard
+              key={note.id}
+              note={{ ...note, _viewerAddress: effectiveAddress }}
+              address={effectiveAddress}
+              canInteract={canInteract}
+              onLike={handleLike}
+              onOpenComments={setActiveComments}
+              onOpenTip={setActiveTip}
+              onOpenProfile={setViewingProfile}
+              onRequireApproval={() => requireApproval(null)}
+            />
+          ))}
+        </div>
+
+        <aside className="hidden lg:block sticky top-[108px]">
+          <TopEarnersRail onOpenLeaderboard={() => setShowLeaderboard(true)} onViewProfile={setViewingProfile} />
+        </aside>
       </div>
 
       <button
-        onClick={() => {
-          if (!effectiveAddress) { alert('Connect a wallet or sign in to post.'); return; }
-          if (!canInteract) { requireApproval(() => setShowCreate(true)); return; }
-          setShowCreate(true);
-        }}
-        className="ln-glow"
-        style={{
-          position: 'fixed', bottom: 90, right: 18, zIndex: 900,
-          width: 56, height: 56, borderRadius: '50%', border: 'none', cursor: 'pointer',
-          background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}
+        onClick={openComposer}
+        className="ln-glow fixed right-4 sm:right-6 lg:right-8 z-[900] w-14 h-14 rounded-full border-none cursor-pointer flex items-center justify-center"
+        style={{ bottom: 'calc(20px + env(safe-area-inset-bottom, 0px))', background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})` }}
         aria-label="New Lab Note"
       >
         <Plus className="w-7 h-7" style={{ color: '#04140a' }} strokeWidth={3} />
