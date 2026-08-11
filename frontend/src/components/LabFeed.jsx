@@ -216,8 +216,8 @@ const ApprovalGate = ({ address, onApproved, onCancel }) => {
         </div>
         <h2 className="text-lg font-black text-white mb-2">Join LabFeed</h2>
         <p className="text-[13px] text-white/55 leading-relaxed mb-5">
-          One signature approves posting, liking, and commenting — no gas, and no more wallet popups after this.
-          Tipping stays its own separate confirmation, since you choose the amount each time.
+          One signature approves posting and sharing — no gas, and no more wallet popups for those.
+          Likes, comments, and tips are each their own on-chain transaction, so your wallet will ask you to confirm those individually.
         </p>
         {error && (
           <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2 mb-3.5">
