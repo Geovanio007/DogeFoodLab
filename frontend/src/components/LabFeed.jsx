@@ -8,6 +8,7 @@ import {
   Bell, Trophy, UserPlus, UserCheck, UserCircle, Image as ImageIcon,
 } from 'lucide-react';
 import { dogeOSDevnet } from '../config/wagmi';
+import { useLabFeedSocial, onChainErrorMessage } from '../hooks/useLabFeedSocial';
 
 /* ============================================================
    DogeFood Lab — LAB FEED (Lab Notes)
@@ -456,8 +457,9 @@ const TipModal = ({ note, onClose, onTipped }) => {
 // ─── Shared post content: avatar/name row, text, image, action bar ─────────
 // Used by both the feed card (cropped image, tap-to-open-post) and the full
 // post-detail view below (uncropped image, no re-trigger on further tap).
-const PostBody = ({ note, address, canInteract, onLike, onOpenComments, onOpenTip, onOpenProfile, onRequireApproval, imageMode = 'crop' }) => {
+const PostBody = ({ note, address, canInteract, onLike, onLikeOnChain, onOpenComments, onOpenTip, onOpenProfile, onRequireApproval, imageMode = 'crop' }) => {
   const [burst, setBurst] = useState(false);
+  const [likePending, setLikePending] = useState(false);
 
   const guarded = (fn) => () => {
     if (!address) { alert('Connect a wallet to interact.'); return; }
@@ -465,11 +467,26 @@ const PostBody = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
     fn();
   };
 
-  const handleLikeClick = guarded(() => {
-    if (!note.liked_by_me) setBurst(true);
-    onLike(note.id);
-    setTimeout(() => setBurst(false), 650);
-  });
+  // Likes are now a real on-chain transaction (see useLabFeedSocial), so
+  // this no longer goes through the old one-time-approval gate — every
+  // like is its own signed transaction, approval or not. onLikeOnChain
+  // owns the optimistic update and reverts it on failure; this just tracks
+  // the in-flight spinner and the coin-fly flourish.
+  const handleLikeClick = async () => {
+    if (!address) { alert('Connect a wallet to like.'); return; }
+    if (note.liked_by_me || likePending) return;
+    setBurst(true);
+    setLikePending(true);
+    try {
+      await onLikeOnChain(note);
+    } catch {
+      // onLikeOnChain already reverted the optimistic state and alerted
+      // on any real (non-cancellation) failure.
+    } finally {
+      setLikePending(false);
+      setTimeout(() => setBurst(false), 650);
+    }
+  };
 
   const openProfile = (e) => { e.stopPropagation(); onOpenProfile(note.author_address); };
 
@@ -512,12 +529,16 @@ const PostBody = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
       )}
 
       <div className="flex items-center gap-4 sm:gap-5" onClick={(e) => e.stopPropagation()}>
-        <button onClick={handleLikeClick} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative">
-          <Heart
-            className="w-4 h-4 transition-colors group-hover:text-pink-300"
-            fill={note.liked_by_me ? '#f472b6' : 'none'}
-            style={{ color: note.liked_by_me ? '#f472b6' : 'rgba(255,255,255,0.5)' }}
-          />
+        <button onClick={handleLikeClick} disabled={likePending} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative">
+          {likePending ? (
+            <Loader2 className="w-4 h-4 animate-spin text-white/40" />
+          ) : (
+            <Heart
+              className="w-4 h-4 transition-colors group-hover:text-pink-300"
+              fill={note.liked_by_me ? '#f472b6' : 'none'}
+              style={{ color: note.liked_by_me ? '#f472b6' : 'rgba(255,255,255,0.5)' }}
+            />
+          )}
           <span className="text-[11px] text-white/45">{note.likes_count || 0} · {LIKE_COST}◈</span>
           {burst && <img src="/dogecoin-logo.png" alt="" className="ln-coin-fly absolute -top-2.5 left-2.5 w-3.5 h-3.5" />}
         </button>
@@ -532,7 +553,7 @@ const PostBody = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
             <span className="text-[11px] text-white/45">{note.comments_count || 0} · {COMMENT_COST}◈</span>
           </div>
         )}
-        <button onClick={guarded(() => onLike(note.id, 'share'))} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
+        <button onClick={guarded(() => onLike(note.id))} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
           <Repeat2 className="w-4 h-4 text-white/50 transition-colors group-hover:text-emerald-300" />
           <span className="text-[11px] text-white/45">{note.shares_count || 0}</span>
         </button>
@@ -557,7 +578,7 @@ const PostBody = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
 };
 
 // ─── Feed card ────────────────────────────────────────────────────────────────
-const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTip, onOpenProfile, onRequireApproval }) => (
+const NoteCard = ({ note, address, canInteract, onLike, onLikeOnChain, onOpenComments, onOpenTip, onOpenProfile, onRequireApproval }) => (
   <article
     onClick={() => onOpenComments(note)}
     className="rounded-[20px] p-3.5 sm:p-4 relative overflow-hidden border border-white/[0.07] hover:border-white/[0.12] transition-colors cursor-pointer"
@@ -568,6 +589,7 @@ const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
       address={address}
       canInteract={canInteract}
       onLike={onLike}
+      onLikeOnChain={onLikeOnChain}
       onOpenComments={onOpenComments}
       onOpenTip={onOpenTip}
       onOpenProfile={onOpenProfile}
@@ -578,7 +600,7 @@ const NoteCard = ({ note, address, canInteract, onLike, onOpenComments, onOpenTi
 );
 
 // ─── Post detail: full post, uncropped image, comments underneath ──────────
-const PostDetailModal = ({ note, address, canInteract, onLike, onOpenTip, onOpenProfile, onRequireApproval, onClose, onCommented }) => {
+const PostDetailModal = ({ note, address, canInteract, onLike, onLikeOnChain, onCommentOnChain, onOpenTip, onOpenProfile, onRequireApproval, onClose }) => {
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(true);
   const [text, setText] = useState('');
@@ -592,22 +614,27 @@ const PostDetailModal = ({ note, address, canInteract, onLike, onOpenTip, onOpen
       .finally(() => setLoadingComments(false));
   }, [note.id]);
 
+  // Comments are now a real on-chain transaction too. The comment shows up
+  // immediately (optimistic, dimmed with a spinner) while the wallet
+  // signs and the chain confirms; onCommentOnChain owns telling the
+  // backend about it and bumping the feed's count. If it fails, the
+  // optimistic comment is removed and the draft text is restored.
   const handleSend = async () => {
-    if (!text.trim() || !canInteract) return;
+    const content = text.trim();
+    if (!content || sending) return;
+    if (!address) { alert('Connect a wallet to comment.'); return; }
+
     setSending(true);
+    const optimisticId = `pending-${Date.now()}`;
+    setComments((prev) => [...prev, { id: optimisticId, author_nickname: 'You', content, created_at: new Date().toISOString(), pending: true }]);
+    setText('');
+
     try {
-      const res = await fetch(`${API_URL}/api/lab-notes/${note.id}/comment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ player_address: address, content: text.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail);
-      setComments((prev) => [...prev, data.comment]);
-      setText('');
-      onCommented(note.id, data.comments_count, data.new_badges);
-    } catch (e) {
-      alert(e?.message || 'Failed to comment.');
+      await onCommentOnChain(note, content);
+      setComments((prev) => prev.map((c) => (c.id === optimisticId ? { ...c, pending: false } : c)));
+    } catch {
+      setComments((prev) => prev.filter((c) => c.id !== optimisticId));
+      setText(content);
     } finally {
       setSending(false);
     }
@@ -629,6 +656,7 @@ const PostDetailModal = ({ note, address, canInteract, onLike, onOpenTip, onOpen
             address={address}
             canInteract={canInteract}
             onLike={onLike}
+            onLikeOnChain={onLikeOnChain}
             onOpenTip={onOpenTip}
             onOpenProfile={onOpenProfile}
             onRequireApproval={onRequireApproval}
@@ -645,7 +673,7 @@ const PostDetailModal = ({ note, address, canInteract, onLike, onOpenTip, onOpen
             <p className="text-center text-white/35 text-[13px] py-5">Be the first to comment.</p>
           )}
           {comments.map((c) => (
-            <div key={c.id} className="flex gap-2.5">
+            <div key={c.id} className="flex gap-2.5" style={{ opacity: c.pending ? 0.55 : 1 }}>
               <div
                 className="w-[30px] h-[30px] rounded-full shrink-0 flex items-center justify-center text-[13px] font-black"
                 style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})`, color: '#04140a' }}
@@ -653,8 +681,9 @@ const PostDetailModal = ({ note, address, canInteract, onLike, onOpenTip, onOpen
                 {(c.author_nickname || '?')[0].toUpperCase()}
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-extrabold text-white">
-                  {c.author_nickname} <span className="text-white/30 font-medium">· {timeAgo(c.created_at)}</span>
+                <div className="text-xs font-extrabold text-white flex items-center gap-1.5">
+                  {c.author_nickname} <span className="text-white/30 font-medium">· {c.pending ? 'securing on-chain…' : timeAgo(c.created_at)}</span>
+                  {c.pending && <Loader2 className="w-3 h-3 animate-spin text-white/40" />}
                 </div>
                 <div className="text-[13px] text-white/80 mt-0.5 break-words">{c.content}</div>
               </div>
@@ -666,17 +695,17 @@ const PostDetailModal = ({ note, address, canInteract, onLike, onOpenTip, onOpen
       <div className="p-3.5 border-t border-white/[0.06] flex gap-2 shrink-0">
         <input
           value={text} onChange={(e) => setText(e.target.value)}
-          placeholder={canInteract ? 'Add a comment…' : 'Sign the LabFeed approval to comment'}
-          disabled={!canInteract}
+          placeholder={address ? 'Add a comment…' : 'Connect a wallet to comment'}
+          disabled={sending}
           className="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl text-[13px] outline-none border border-white/[0.08] bg-white/[0.04] text-white placeholder:text-white/30"
         />
         <button
           onClick={handleSend}
-          disabled={sending || !canInteract || !text.trim()}
+          disabled={sending || !text.trim()}
           className="w-[42px] h-[42px] rounded-xl border-none shrink-0 flex items-center justify-center cursor-pointer"
           style={{ background: `linear-gradient(135deg, ${GREEN}, ${PURPLE})` }}
         >
-          <Send className="w-4 h-4" style={{ color: '#04140a' }} />
+          {sending ? <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#04140a' }} /> : <Send className="w-4 h-4" style={{ color: '#04140a' }} />}
         </button>
       </div>
     </Overlay>
@@ -1070,6 +1099,7 @@ const LabFeed = ({ playerAddress }) => {
   const pendingActionRef = useRef(null);
 
   const canInteract = isConnected && approved;
+  const { likeOnChain, commentOnChain } = useLabFeedSocial(effectiveAddress);
 
   const queueBadges = (ids) => {
     if (ids && ids.length) setBadgeQueue((prev) => [...prev, ...ids]);
@@ -1124,23 +1154,55 @@ const LabFeed = ({ playerAddress }) => {
     if (pendingActionRef.current) { pendingActionRef.current(); pendingActionRef.current = null; }
   };
 
-  const handleLike = async (noteId, action = 'like') => {
-    setNotes((prev) => prev.map((n) => n.id === noteId
-      ? { ...n, liked_by_me: action === 'like' ? true : n.liked_by_me, likes_count: action === 'like' && !n.liked_by_me ? (n.likes_count || 0) + 1 : n.likes_count, shares_count: action === 'share' ? (n.shares_count || 0) + 1 : n.shares_count }
-      : n));
+  // Shares stay exactly as they were - free, instant, covered by the
+  // one-time approval signature. Only likes and comments moved on-chain
+  // (see handleLikeOnChain / handleCommentOnChain below).
+  const handleShare = async (noteId) => {
+    setNotes((prev) => prev.map((n) => n.id === noteId ? { ...n, shares_count: (n.shares_count || 0) + 1 } : n));
     try {
-      const res = await fetch(`${API_URL}/api/lab-notes/${noteId}/${action}`, {
+      const res = await fetch(`${API_URL}/api/lab-notes/${noteId}/share`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player_address: effectiveAddress }),
       });
       const data = await res.json();
       queueBadges(data.new_badges);
-    } catch (e) { console.warn('[LabFeed] interaction failed:', e); }
+    } catch (e) { console.warn('[LabFeed] share failed:', e); }
   };
 
-  const handleCommented = (noteId, count, newBadges) => {
-    setNotes((prev) => prev.map((n) => n.id === noteId ? { ...n, comments_count: count } : n));
-    queueBadges(newBadges);
+  // Likes are a real on-chain transaction now (see useLabFeedSocial). The
+  // UI updates the moment the wallet accepts the signature, before the
+  // transaction is even mined - if it fails or is cancelled, this is what
+  // puts the count back.
+  const handleLikeOnChain = async (note) => {
+    const bump = (n) => ({ ...n, liked_by_me: true, likes_count: (n.likes_count || 0) + 1 });
+    const revert = (n) => ({ ...n, liked_by_me: false, likes_count: Math.max(0, (n.likes_count || 0) - 1) });
+    setNotes((prev) => prev.map((n) => (n.id === note.id ? bump(n) : n)));
+    setActivePost((prev) => (prev && prev.id === note.id ? bump(prev) : prev));
+    try {
+      await likeOnChain(note);
+    } catch (e) {
+      setNotes((prev) => prev.map((n) => (n.id === note.id ? revert(n) : n)));
+      setActivePost((prev) => (prev && prev.id === note.id ? revert(prev) : prev));
+      const msg = onChainErrorMessage(e);
+      if (msg) alert(msg);
+      throw e;
+    }
+  };
+
+  // Comments are also on-chain now. PostDetailModal shows the comment
+  // optimistically the moment it's submitted; this just handles the
+  // transaction itself and bumps the feed's count once it's sent.
+  const handleCommentOnChain = async (note, content) => {
+    try {
+      const result = await commentOnChain(note, content);
+      setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, comments_count: (n.comments_count || 0) + 1 } : n)));
+      setActivePost((prev) => (prev && prev.id === note.id ? { ...prev, comments_count: (prev.comments_count || 0) + 1 } : prev));
+      return result;
+    } catch (e) {
+      const msg = onChainErrorMessage(e);
+      if (msg) alert(msg);
+      throw e;
+    }
   };
 
   const handlePublished = (note) => {
@@ -1249,7 +1311,8 @@ const LabFeed = ({ playerAddress }) => {
               note={{ ...note, _viewerAddress: effectiveAddress }}
               address={effectiveAddress}
               canInteract={canInteract}
-              onLike={handleLike}
+              onLike={handleShare}
+              onLikeOnChain={handleLikeOnChain}
               onOpenComments={setActivePost}
               onOpenTip={setActiveTip}
               onOpenProfile={setViewingProfile}
@@ -1283,12 +1346,13 @@ const LabFeed = ({ playerAddress }) => {
           note={activePost}
           address={effectiveAddress}
           canInteract={canInteract}
-          onLike={handleLike}
+          onLike={handleShare}
+          onLikeOnChain={handleLikeOnChain}
+          onCommentOnChain={handleCommentOnChain}
           onOpenTip={setActiveTip}
           onOpenProfile={setViewingProfile}
           onRequireApproval={() => requireApproval(null)}
           onClose={() => setActivePost(null)}
-          onCommented={handleCommented}
         />
       )}
       {activeTip && (
