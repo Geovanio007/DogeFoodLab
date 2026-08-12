@@ -528,48 +528,48 @@ const PostBody = ({ note, address, canInteract, onLike, onLikeOnChain, onOpenCom
         )
       )}
 
-      <div className="flex items-center gap-4 sm:gap-5" onClick={(e) => e.stopPropagation()}>
-        <button onClick={handleLikeClick} disabled={likePending} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative">
+      <div className="flex items-center gap-3 sm:gap-5" onClick={(e) => e.stopPropagation()}>
+        <button onClick={handleLikeClick} disabled={likePending} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer relative shrink-0">
           {likePending ? (
-            <Loader2 className="w-4 h-4 animate-spin text-white/40" />
+            <Loader2 className="w-4 h-4 shrink-0 animate-spin text-white/40" />
           ) : (
             <Heart
-              className="w-4 h-4 transition-colors group-hover:text-pink-300"
+              className="w-4 h-4 shrink-0 transition-colors group-hover:text-pink-300"
               fill={note.liked_by_me ? '#f472b6' : 'none'}
               style={{ color: note.liked_by_me ? '#f472b6' : 'rgba(255,255,255,0.5)' }}
             />
           )}
-          <span className="text-[11px] text-white/45">{note.likes_count || 0} · {LIKE_COST}◈</span>
+          <span className="text-[11px] text-white/45 whitespace-nowrap">{note.likes_count || 0} · {LIKE_COST}◈</span>
           {burst && <img src="/dogecoin-logo.png" alt="" className="ln-coin-fly absolute -top-2.5 left-2.5 w-3.5 h-3.5" />}
         </button>
         {onOpenComments ? (
-          <button onClick={() => onOpenComments(note)} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
-            <MessageCircle className="w-4 h-4 text-white/50 transition-colors group-hover:text-sky-300" />
-            <span className="text-[11px] text-white/45">{note.comments_count || 0} · {COMMENT_COST}◈</span>
+          <button onClick={() => onOpenComments(note)} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer shrink-0">
+            <MessageCircle className="w-4 h-4 shrink-0 text-white/50 transition-colors group-hover:text-sky-300" />
+            <span className="text-[11px] text-white/45 whitespace-nowrap">{note.comments_count || 0} · {COMMENT_COST}◈</span>
           </button>
         ) : (
-          <div className="flex items-center gap-1.5">
-            <MessageCircle className="w-4 h-4 text-white/50" />
-            <span className="text-[11px] text-white/45">{note.comments_count || 0} · {COMMENT_COST}◈</span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <MessageCircle className="w-4 h-4 shrink-0 text-white/50" />
+            <span className="text-[11px] text-white/45 whitespace-nowrap">{note.comments_count || 0} · {COMMENT_COST}◈</span>
           </div>
         )}
-        <button onClick={guarded(() => onLike(note.id))} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer">
-          <Repeat2 className="w-4 h-4 text-white/50 transition-colors group-hover:text-emerald-300" />
-          <span className="text-[11px] text-white/45">{note.shares_count || 0}</span>
+        <button onClick={guarded(() => onLike(note.id))} className="group flex items-center gap-1.5 bg-transparent border-none cursor-pointer shrink-0">
+          <Repeat2 className="w-4 h-4 shrink-0 text-white/50 transition-colors group-hover:text-emerald-300" />
+          <span className="text-[11px] text-white/45 whitespace-nowrap">{note.shares_count || 0}</span>
         </button>
 
         <div className="ml-auto flex items-center gap-2 shrink-0">
-          <span className="flex items-center gap-1">
-            <img src="/dogecoin-logo.png" alt="" className="w-3 h-3" />
-            <span className="text-[11px] font-black" style={{ color: GREEN }}>{(note.earnings_doge || 0).toFixed(2)}</span>
+          <span className="flex items-center gap-1 shrink-0">
+            <img src="/dogecoin-logo.png" alt="" className="w-3 h-3 shrink-0" />
+            <span className="text-[11px] font-black whitespace-nowrap" style={{ color: GREEN }}>{(note.earnings_doge || 0).toFixed(2)}</span>
           </span>
           <button
             onClick={() => onOpenTip(note)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full cursor-pointer border"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full cursor-pointer border shrink-0"
             style={{ borderColor: `${PURPLE}55`, background: `${PURPLE}18` }}
           >
-            <Coins className="w-3.5 h-3.5" style={{ color: PURPLE }} />
-            <span className="text-[11px] font-black" style={{ color: PURPLE }}>Tip</span>
+            <Coins className="w-3.5 h-3.5 shrink-0" style={{ color: PURPLE }} />
+            <span className="text-[11px] font-black whitespace-nowrap" style={{ color: PURPLE }}>Tip</span>
           </button>
         </div>
       </div>
