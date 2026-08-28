@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useAccount as useWagmiAccount } from 'wagmi';
+import { useAccount as useDogeAccount } from '@dogeos/dogeos-sdk';
 import { GameProvider } from './contexts/GameContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { TelegramProvider, useTelegram } from './contexts/TelegramContext';
@@ -51,7 +52,13 @@ const AutoMixerSubscription = lazy(() => import('./components/AutoMixerSubscript
 
 // Inner App component that has access to wagmi and telegram hooks
 const InnerApp = () => {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useWagmiAccount();
+  // DogeOS is the authoritative wallet source. Wagmi automatic injected
+  // discovery is disabled to prevent the desktop createEmitter crash, so
+  // desktop wallets can be connected while Wagmi may remain disconnected.
+  const { address: dogeAddress } = useDogeAccount();
+  const address = dogeAddress || wagmiAddress;
+  const isConnected = Boolean(dogeAddress || wagmiConnected);
   const { isTelegram, telegramUser, isAuthenticated: isTelegramAuthenticated, isLoading: isTelegramLoading } = useTelegram();
   const { notificationsEnabled, permissionStatus } = useNotifications();
   const { currentHolder: kernelHolder } = useKernelOfWow();
