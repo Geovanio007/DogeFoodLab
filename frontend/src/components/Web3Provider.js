@@ -9,21 +9,22 @@ import { dogeosConfig, dogeOSChikyuTestnet } from '../config/dogeos';
  * Wallet provider stack for the app.
  *
  * Stack (outside → inside):
- *   QueryClientProvider      ← required by wagmi v2
- *     WagmiProvider          ← supplies wagmi React context (useAccount, etc.)
- *       WalletConnectProvider← supplies the DogeOS SDK context (modal, etc.)
+ *   QueryClientProvider       ← required by wagmi v2
+ *     WagmiProvider           ← supplies wagmi React context
+ *       WalletConnectProvider ← supplies the DogeOS SDK context
  *
- * The DogeOS SDK manages its own internal multi-chain wallet state, but the
- * rest of the app already uses wagmi v2 hooks (`useAccount`, `useSignMessage`,
- * `useChainId`, `useSwitchChain`, ...), so we keep a thin wagmi setup wired
- * to the DogeOS Chikyū Testnet for EVM read calls.
-*/
+ * Wagmi is kept as a thin EVM read/context layer. Wallet discovery is
+ * deliberately disabled here because the DogeOS SDK owns wallet connection
+ * handling. This also prevents desktop browser extensions discovered through
+ * EIP-6963 from being auto-registered as wagmi connectors during startup.
+ */
 
 const wagmiConfig = createConfig({
   chains: [dogeOSChikyuTestnet],
   transports: {
     [dogeOSChikyuTestnet.id]: http(),
   },
+  multiInjectedProviderDiscovery: false,
   ssr: false,
 });
 
