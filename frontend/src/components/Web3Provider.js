@@ -1,6 +1,5 @@
 import React from 'react';
 import { WagmiProvider, createConfig, http } from 'wagmi';
-import { injected } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletConnectProvider } from '@dogeos/dogeos-sdk';
 import '@dogeos/dogeos-sdk/style.css';
@@ -22,7 +21,6 @@ import { dogeosConfig, dogeOSChikyuTestnet } from '../config/dogeos';
 
 const wagmiConfig = createConfig({
   chains: [dogeOSChikyuTestnet],
-  connectors: [injected()],
   transports: {
     [dogeOSChikyuTestnet.id]: http(),
   },
