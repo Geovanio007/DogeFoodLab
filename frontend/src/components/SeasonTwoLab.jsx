@@ -726,7 +726,7 @@ const SeasonTwoLab = ({ playerAddress }) => {
       />
        {/* ── Crate Banner — same width as the player information card (TopBar) ── */}
       <div className="relative z-30 px-3 sm:px-4 pt-3" data-testid="crate-banner-lab">
-        <div className="max-w-6xl mx-auto rounded-2xl overflow-hidden border border-cyan-400/30">
+        <div className="rounded-2xl overflow-hidden border border-cyan-400/30">
           <img
             src="/Cratebanner.png"
             alt="Crates"
