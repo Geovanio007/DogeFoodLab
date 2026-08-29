@@ -1,11 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useReadContract } from 'wagmi';
+import { useReadContract } from 'wagmi';
+import { useEffectiveAccount } from './useEffectiveAccount';
 import { CONTRACT_ADDRESSES, DOGEFOOD_NFT_ABI } from '../config/contracts';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export const useNFTVerification = () => {
-  const { address, isConnected } = useAccount();
+  // balanceOf is a read-only call, so it doesn't need a real wagmi
+  // connector behind the address - the DogeOS-aware address is fine here
+  // and fixes NFT/VIP status for desktop wallets connected via the DogeOS
+  // SDK (see useEffectiveAccount for why raw wagmi useAccount() misses them).
+  const { address, isConnected } = useEffectiveAccount();
   const [nftBalance, setNftBalance] = useState(0);
   const [isNFTHolder, setIsNFTHolder] = useState(false);
   const [loading, setLoading] = useState(false);
