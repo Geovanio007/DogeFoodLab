@@ -1,5 +1,6 @@
 import React from 'react';
 import { WagmiProvider, createConfig, http } from 'wagmi';
+import { injected } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletConnectProvider } from '@dogeos/dogeos-sdk';
 import '@dogeos/dogeos-sdk/style.css';
@@ -13,14 +14,27 @@ import { dogeosConfig, dogeOSChikyuTestnet } from '../config/dogeos';
  *     WagmiProvider           ← supplies wagmi React context
  *       WalletConnectProvider ← supplies the DogeOS SDK context
  *
- * Wagmi is kept as a thin EVM read/context layer. Wallet discovery is
- * deliberately disabled here because the DogeOS SDK owns wallet connection
- * handling. This also prevents desktop browser extensions discovered through
- * EIP-6963 from being auto-registered as wagmi connectors during startup.
+ * multiInjectedProviderDiscovery is disabled because the DogeOS SDK owns
+ * general wallet discovery (it auto-loads its own EIP-6963/WalletConnect
+ * connectors internally — see getConnectors() in the SDK README) and to
+ * avoid desktop browser extensions being double-registered.
+ *
+ * DO NOT also remove the explicit `injected()` connector below — unlike
+ * general wallet discovery, it is NOT redundant with the DogeOS SDK.
+ * MyDogeAutoConnect.jsx and MyDogeConnectBanner.jsx call wagmi's own
+ * useConnect().connect({ connector }) directly to wire an
+ * already-MyDoge-approved wallet into wagmi state (MyDoge's in-app
+ * browser isn't reliably picked up by the DogeOS SDK's own discovery,
+ * which is the entire reason those two components exist). They look
+ * specifically for an `id === 'injected'` connector. With none
+ * registered, that wiring silently no-ops: MyDoge approves the
+ * connection at the provider level, but the app never reflects it as
+ * connected, so returning wallet users get treated as logged out.
  */
 
 const wagmiConfig = createConfig({
   chains: [dogeOSChikyuTestnet],
+  connectors: [injected()],
   transports: {
     [dogeOSChikyuTestnet.id]: http(),
   },
