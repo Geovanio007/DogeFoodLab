@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowDownUp, Info, Zap, Clock, ChevronDown, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { ArrowDownUp, Info, Zap, Clock, ChevronDown, AlertCircle, CheckCircle } from 'lucide-react';
 
 /* ============================================================
    DogeFood Lab — Points ↔ $LAB Swap Widget
