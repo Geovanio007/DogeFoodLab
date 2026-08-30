@@ -13,7 +13,6 @@ import {
   Settings,
   TrendingUp,
   Eye,
-  Ban,
   CheckCircle
 } from 'lucide-react';
 
