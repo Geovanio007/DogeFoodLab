@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beaker, Zap, ChevronLeft, X, TrendingUp, Bot, AlertTriangle, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Beaker, Zap, ChevronLeft, X, TrendingUp, Bot, AlertTriangle, Volume2, VolumeX,} from 'lucide-react';
 import INGREDIENT_ICONS from '../config/ingredientIcons';
 import { useAudio } from '../contexts/AudioContext';
 import { useTelegram } from '../contexts/TelegramContext';
