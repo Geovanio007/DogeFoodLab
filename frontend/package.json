@@ -5,7 +5,7 @@
   "scripts": {
     "start": "craco start",
     "postinstall": "node scripts/patch-dogeos-sdk.js",
-    "prebuild": "node scripts/update-version.js && node scripts/patch-dogeos-sdk.js",
+    "prebuild": "node scripts/check-lucide-imports.js && node scripts/update-version.js && node scripts/patch-dogeos-sdk.js",
     "build": "craco build",
     "render-build": "node scripts/update-version.js && node scripts/patch-dogeos-sdk.js && craco build",
     "test": "craco test",
@@ -57,8 +57,8 @@
   "devDependencies": {
     "@craco/craco": "^7.1.0",
     "@eslint/js": "^9.33.0",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
     "assert": "^2.1.0",
     "autoprefixer": "^10.4.21",
     "browserify-zlib": "^0.2.0",
@@ -77,7 +77,8 @@
     "stream-http": "^3.2.0",
     "tailwindcss": "^3.4.17",
     "url": "^0.11.4",
-    "vm-browserify": "^1.1.2"
+    "vm-browserify": "^1.1.2",
+    "typescript": "5.7.3"
   },
   "browserslist": {
     "production": [
@@ -90,5 +91,12 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "trustedDependencies": [
+    "@dogeos/dogeos-sdk",
+    "@parcel/watcher",
+    "@swc/core",
+    "esbuild",
+    "core-js"
+  ]
 }
