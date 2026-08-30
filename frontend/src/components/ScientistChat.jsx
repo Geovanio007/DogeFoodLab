@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { useTelegram } from '../contexts/TelegramContext';
 import { useGame } from '../contexts/GameContext';
-import { MessageCircle, Send, X, ChevronUp, Reply, Trash2, Minimize2, Maximize2 } from 'lucide-react';
+import { MessageCircle, Send, X, ChevronUp, Trash2, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from './ui/button';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -293,7 +293,7 @@ const ScientistChat = () => {
                           }}
                           className="p-1 hover:bg-white/10 rounded text-white/60 transition-colors"
                         >
-                          <Reply className="w-3 h-3" />
+                          <MessageCircle className="w-3 h-3" />
                         </button>
                         
                         {/* Delete button (own messages only) */}
@@ -320,7 +320,7 @@ const ScientistChat = () => {
       {replyingTo && (
         <div className="px-3 py-2 bg-emerald-900/30 border-t border-emerald-500/20 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-emerald-300">
-            <Reply className="w-3 h-3" />
+            <MessageCircle className="w-3 h-3" />
             <span>Replying to {replyingTo.sender_nickname}</span>
           </div>
           <button onClick={() => setReplyingTo(null)} className="p-1 hover:bg-white/10 rounded">
