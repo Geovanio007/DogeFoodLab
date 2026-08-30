@@ -68,11 +68,13 @@ module.exports = {
         })
       );
 
-      // ESM imports are handled by CRA/Webpack defaults.
-      // Do not add a global fullySpecified rule: it can interfere with
-      // package ESM export resolution (including lucide-react).
+      // Allow ESM imports without fully specified file extensions.
       webpackConfig.module = webpackConfig.module || {};
       webpackConfig.module.rules = webpackConfig.module.rules || [];
+      webpackConfig.module.rules.push({
+        test: /\.m?js$/,
+        resolve: { fullySpecified: false },
+      });
 
       // â”€â”€ DogeOS SDK CSS: bypass Tailwind / PostCSS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       // CRA's CSS handling sits inside the big `oneOf` array of the main rule.
