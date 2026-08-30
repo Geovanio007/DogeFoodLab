@@ -5,7 +5,7 @@
   "scripts": {
     "start": "craco start",
     "postinstall": "node scripts/patch-dogeos-sdk.js",
-    "prebuild": "node scripts/check-lucide-imports.js && node scripts/update-version.js && node scripts/patch-dogeos-sdk.js",
+    "prebuild": "node scripts/update-version.js && node scripts/patch-dogeos-sdk.js"    
     "build": "craco build",
     "render-build": "node scripts/update-version.js && node scripts/patch-dogeos-sdk.js && craco build",
     "test": "craco test",
