@@ -16,7 +16,6 @@ import {
   X,
   CircleDot,
   Clock,
-  ShoppingCart,
   AlertCircle
 } from 'lucide-react';
 
