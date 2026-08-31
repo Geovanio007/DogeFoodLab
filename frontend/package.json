@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@dogeos/dogeos-sdk": "3.3.0-beta.3",
-    "@headlessui/react": "^2.2.7",
+    "@headlessui/react": "2.2.7",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.14",
