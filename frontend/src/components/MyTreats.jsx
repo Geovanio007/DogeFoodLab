@@ -680,14 +680,21 @@ const MyTreats = () => {
   }, []);
   
   // Get effective player address
+  const normalizeWalletAddress = (value) => {
+    if (!value || typeof value !== 'string') return value;
+    return value.trim().toLowerCase().startsWith('0x')
+      ? value.trim().toLowerCase()
+      : value;
+  };
+
   const getEffectiveAddress = () => {
-    if (address) return address;
+    if (address) return normalizeWalletAddress(address);
     if (isTelegram && telegramUser?.id) return `TG_${telegramUser.id}`;
     const storedPlayer = localStorage.getItem('dogefood_player');
     if (storedPlayer) {
       try {
         const player = JSON.parse(storedPlayer);
-        return player.guest_id || player.id || player.address;
+        return normalizeWalletAddress(player.guest_id || player.id || player.address);
       } catch (e) {
         // Failed to parse stored player
       }
