@@ -4,14 +4,8 @@ const path = require('path');
 /**
  * CRACO configuration.
  *
- * 1. Adds browser polyfills for Node core modules pulled in by DogeOS SDK's
- *    multi-chain wallet libraries (Bitcoin/Dogecoin, Cosmos, Keplr, Starknet,
- *    OKX, ...).
- *
- * 2. Routes the DogeOS SDK's prebuilt CSS bundle through a minimal css-loader
- *    pipeline that skips PostCSS / Tailwind processing. The SDK ships with
- *    Tailwind v4 `@layer base` syntax which Tailwind v3 (used in this app)
- *    can't parse.
+ * Adds browser polyfills for Node core modules pulled in by DogeOS SDK
+ * dependencies and routes the SDK CSS through a minimal css-loader pipeline.
  */
 
 const DOGEOS_CSS_RE = /node_modules[\\/]@dogeos[\\/]dogeos-sdk[\\/]dist[\\/].+\.css$/;
@@ -19,7 +13,6 @@ const DOGEOS_CSS_RE = /node_modules[\\/]@dogeos[\\/]dogeos-sdk[\\/]dist[\\/].+\.
 module.exports = {
   webpack: {
     configure: (webpackConfig) => {
-      // ── Node polyfills ─────────────────────────────────────────────────────
       webpackConfig.resolve = webpackConfig.resolve || {};
       webpackConfig.resolve.fallback = {
         ...(webpackConfig.resolve.fallback || {}),
@@ -40,22 +33,9 @@ module.exports = {
         tls: false,
         child_process: false,
         starknet: false,
-        // @metamask/sdk (via wagmi) optionally imports this React-Native-only
-        // package which doesn't exist in a web build.
         '@react-native-async-storage/async-storage': false,
       };
 
-      // ── React Aria resolution ─────────────────────────────────────────────
-      // Force Webpack to use the exact top-level copies installed by Bun.
-      // This prevents a nested/mismatched React Aria copy from being selected
-      // and addresses the focusSafely export mismatch.
-      webpackConfig.resolve.alias = {
-        ...(webpackConfig.resolve.alias || {}),
-        '@react-aria/focus$': require.resolve('@react-aria/focus'),
-        '@react-aria/interactions$': require.resolve('@react-aria/interactions'),
-      };
-
-      // ── Stub unused multi-chain SDKs ──────────────────────────────────────
       const chainStub = path.resolve(__dirname, 'src/empty-chain-stub.js');
       const UNUSED_CHAIN_RE = /^(?:@mysten\/sui|@mysten\/bcs|tronweb|@solana\/web3\.js|@cosmjs\/[a-z-]+|@keplr-wallet\/crypto|@cubist-labs\/cubesigner-sdk|@okxweb3\/coin-bitcoin|bitcore-lib-doge|aptos|near-api-js|@aptos-labs\/ts-sdk)(?:\/.*)?$/;
 
@@ -73,7 +53,6 @@ module.exports = {
         })
       );
 
-      // Allow ESM imports without fully specified file extensions.
       webpackConfig.module = webpackConfig.module || {};
       webpackConfig.module.rules = webpackConfig.module.rules || [];
       webpackConfig.module.rules.push({
@@ -81,7 +60,6 @@ module.exports = {
         resolve: { fullySpecified: false },
       });
 
-      // ── DogeOS SDK CSS: bypass Tailwind / PostCSS ──────────────────────────
       const mainRule = webpackConfig.module.rules.find(
         (r) => Array.isArray(r.oneOf)
       );
