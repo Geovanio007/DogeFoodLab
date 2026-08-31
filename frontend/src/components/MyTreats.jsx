@@ -680,21 +680,18 @@ const MyTreats = () => {
   }, []);
   
   // Get effective player address
-  const normalizeWalletAddress = (value) => {
-    if (!value || typeof value !== 'string') return value;
-    return value.trim().toLowerCase().startsWith('0x')
-      ? value.trim().toLowerCase()
-      : value;
-  };
-
+  // Keep the wallet address in its canonical form. The backend treats
+  // EVM addresses case-insensitively when looking up historical treats.
+  // IMPORTANT: do not lowercase here because that can prevent exact
+  // matches against addresses stored with checksum casing.
   const getEffectiveAddress = () => {
-    if (address) return normalizeWalletAddress(address);
+    if (address) return address.trim();
     if (isTelegram && telegramUser?.id) return `TG_${telegramUser.id}`;
     const storedPlayer = localStorage.getItem('dogefood_player');
     if (storedPlayer) {
       try {
         const player = JSON.parse(storedPlayer);
-        return normalizeWalletAddress(player.guest_id || player.id || player.address);
+        return player.guest_id || player.id || player.address || null;
       } catch (e) {
         // Failed to parse stored player
       }
