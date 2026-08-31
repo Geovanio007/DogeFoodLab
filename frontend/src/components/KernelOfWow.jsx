@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Zap, Crown, AlertCircle } from 'lucide-react';
-import Sparkles from './icons/Sparkles';
+import { Clock, Zap, Crown, AlertCircle, Sparkles } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 
