@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@dogeos/dogeos-sdk": "3.3.0-beta.3",
-    "@headlessui/react": "2.2.9",
+    "@headlessui/react": "2.2.10",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.14",
@@ -53,8 +53,8 @@
     "three": "^0.179.1",
     "viem": "^2.33.3",
     "wagmi": "^2.16.3",
-    "@react-aria/focus": "3.21.5",
-    "@react-aria/interactions": "3.27.1"
+    "@react-aria/focus": "3.22.1",
+    "@react-aria/interactions": "3.28.1"
   },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
