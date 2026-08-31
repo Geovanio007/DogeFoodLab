@@ -331,7 +331,13 @@ const TreatCard = ({ treat, index, ingredientMap = {}, onListForSale, isListed =
   const xp   = treat.xp_reward || treat.xp || 0;
 
   const getIngredientName = (ing) => {
-    if (ing && ing.startsWith('ING')) return ingredientMap[ing] || ing;
+    if (typeof ing !== 'string') {
+      if (ing == null) return '';
+      return typeof ing === 'object'
+        ? (ing.name || ing.id || JSON.stringify(ing))
+        : String(ing);
+    }
+    if (ing.startsWith('ING')) return ingredientMap[ing] || ing;
     return ing;
   };
 
@@ -663,6 +669,12 @@ const MyTreats = () => {
   const [listingLoading, setListingLoading] = useState(false);
   const [listedTreats, setListedTreats] = useState(new Set());
 
+  // Render only a small page of cards at a time. A player can have hundreds
+  // of historical treats; rendering all of them at once can freeze/crash
+  // mobile browsers even though the API request succeeds.
+  const TREATS_PER_PAGE = 24;
+  const [treatPage, setTreatPage] = useState(1);
+
   // Cinematic reveal — fired when arriving from a collect action
   const [revealTreat, setRevealTreat] = useState(null);
 
@@ -680,18 +692,21 @@ const MyTreats = () => {
   }, []);
   
   // Get effective player address
-  // Keep the wallet address in its canonical form. The backend treats
-  // EVM addresses case-insensitively when looking up historical treats.
-  // IMPORTANT: do not lowercase here because that can prevent exact
-  // matches against addresses stored with checksum casing.
+  const normalizeWalletAddress = (value) => {
+    if (!value || typeof value !== 'string') return value;
+    return value.trim().toLowerCase().startsWith('0x')
+      ? value.trim().toLowerCase()
+      : value;
+  };
+
   const getEffectiveAddress = () => {
-    if (address) return address.trim();
+    if (address) return normalizeWalletAddress(address);
     if (isTelegram && telegramUser?.id) return `TG_${telegramUser.id}`;
     const storedPlayer = localStorage.getItem('dogefood_player');
     if (storedPlayer) {
       try {
         const player = JSON.parse(storedPlayer);
-        return player.guest_id || player.id || player.address || null;
+        return normalizeWalletAddress(player.guest_id || player.id || player.address);
       } catch (e) {
         // Failed to parse stored player
       }
@@ -842,6 +857,17 @@ const MyTreats = () => {
   const filteredTreats = treats.filter(treat => 
     selectedRarity === 'all' || treat.rarity?.toLowerCase() === selectedRarity.toLowerCase()
   );
+
+  const totalTreatPages = Math.max(1, Math.ceil(filteredTreats.length / TREATS_PER_PAGE));
+  const safeTreatPage = Math.min(treatPage, totalTreatPages);
+  const paginatedTreats = filteredTreats.slice(
+    (safeTreatPage - 1) * TREATS_PER_PAGE,
+    safeTreatPage * TREATS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setTreatPage(1);
+  }, [selectedRarity]);
 
   const rarityStats = {
     mythic: treats.filter(t => t.rarity?.toLowerCase() === 'mythic').length,
@@ -1076,7 +1102,7 @@ const MyTreats = () => {
               ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4' 
               : 'flex flex-col gap-3'}
           `}>
-            {filteredTreats.map((treat, index) => (
+            {paginatedTreats.map((treat, index) => (
               <TreatCard 
                 key={treat.id || index} 
                 treat={treat} 
@@ -1089,10 +1115,40 @@ const MyTreats = () => {
           </div>
         )}
         
-        {/* Results Count */}
+        {/* Pagination + Results Count */}
         {!loading && filteredTreats.length > 0 && (
-          <div className="text-center mt-8 text-slate-500 text-sm">
-            Showing {filteredTreats.length} of {treats.length} treats
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <div className="text-center text-slate-500 text-sm">
+              Showing {(safeTreatPage - 1) * TREATS_PER_PAGE + 1}–
+              {Math.min(safeTreatPage * TREATS_PER_PAGE, filteredTreats.length)}
+              {" "}of {filteredTreats.length} treats
+            </div>
+
+            {totalTreatPages > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={safeTreatPage <= 1}
+                  onClick={() => setTreatPage(p => Math.max(1, p - 1))}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700"
+                >
+                  Previous
+                </button>
+
+                <span className="px-3 py-2 text-sm text-slate-400">
+                  Page {safeTreatPage} of {totalTreatPages}
+                </span>
+
+                <button
+                  type="button"
+                  disabled={safeTreatPage >= totalTreatPages}
+                  onClick={() => setTreatPage(p => Math.min(totalTreatPages, p + 1))}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
