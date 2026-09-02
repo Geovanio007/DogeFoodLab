@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useEffectiveAccount } from '../hooks/useEffectiveAccount';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -644,7 +644,7 @@ const StatsCard = ({ icon: Icon, value, label, color = 'green', subtext }) => {
 };
 
 const MyTreats = () => {
-  const { isConnected, address } = useAccount();
+  const { isConnected, address } = useEffectiveAccount();
   const { isTelegram, telegramUser } = useTelegram();
   const { user, points: contextPoints, currentLevel, isNFTHolder, loadPlayerData, dispatch, createdTreats } = useGame();
   const [selectedRarity, setSelectedRarity] = useState('all');
