@@ -646,7 +646,7 @@ const StatsCard = ({ icon: Icon, value, label, color = 'green', subtext }) => {
 const MyTreats = () => {
   const { isConnected, address } = useAccount();
   const { isTelegram, telegramUser } = useTelegram();
-  const { user, points: contextPoints, currentLevel, isNFTHolder, loadPlayerData, dispatch } = useGame();
+  const { user, points: contextPoints, currentLevel, isNFTHolder, loadPlayerData, dispatch, createdTreats } = useGame();
   const [selectedRarity, setSelectedRarity] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [treats, setTreats] = useState([]);
@@ -727,10 +727,18 @@ const MyTreats = () => {
       
       try {
         setLoading(true);
-        
-        const [playerResponse, treatsResponse, ingredientsResponse, labEstimateResponse] = await Promise.all([
+
+        // Treats are loaded through GameContext.loadPlayerData — the same
+        // function the rest of the app already uses, and confirmed to load
+        // treats correctly. This page previously ran its own independent
+        // fetch of /api/treats/{address} in parallel below, and that
+        // duplicate fetch was the source of the "My Treats" empty-list bug
+        // for wallet-connected players. createdTreats (synced below) is now
+        // the single source of truth instead.
+        await loadPlayerData(effectiveAddress);
+
+        const [playerResponse, ingredientsResponse, labEstimateResponse] = await Promise.all([
           fetch(`${BACKEND_URL}/api/player/${effectiveAddress}`),
-          fetch(`${BACKEND_URL}/api/treats/${effectiveAddress}`),
           fetch(`${BACKEND_URL}/api/ingredients/catalog`),
           fetch(`${BACKEND_URL}/api/player/${effectiveAddress}/lab-estimate`)
         ]);
@@ -751,14 +759,6 @@ const MyTreats = () => {
           setPlayerPoints(playerData.points || 0);
           setPlayerLevel(playerData.level || 1);
           if (playerData.s1_lab_tokens != null) setPlayerLabTokens(playerData.s1_lab_tokens);
-          if (dispatch) {
-            dispatch({ type: 'SET_NFT_HOLDER', payload: playerData.is_nft_holder === true });
-            dispatch({ type: 'LOAD_PLAYER_DATA', payload: {
-              level: playerData.level || 1,
-              experience: playerData.experience || 0,
-              points: playerData.points || 0
-            }});
-          }
         }
 
         if (labEstimateResponse.ok) {
@@ -766,24 +766,22 @@ const MyTreats = () => {
           setEstimatedLabTokens(labEstimateData.estimated_lab ?? 0);
           setEstimatedLabRank(labEstimateData.rank ?? null);
         }
-        
-        if (treatsResponse.ok) {
-          const data = await treatsResponse.json();
-          setTreats(Array.isArray(data) ? data : data.treats || []);
-        } else {
-          setTreats([]);
-        }
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load treats');
-        setTreats([]);
       } finally {
         setLoading(false);
       }
     };
     
     fetchData();
-  }, [effectiveAddress, dispatch]);
+  }, [effectiveAddress, loadPlayerData]);
+
+  // Single source of truth for treats: keep the local list in sync with
+  // GameContext, which loadPlayerData (above) populates.
+  useEffect(() => {
+    setTreats(createdTreats || []);
+  }, [createdTreats]);
   
   // Fetch which treats are already listed
   useEffect(() => {
