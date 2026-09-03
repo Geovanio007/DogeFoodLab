@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DogeFood Lab — LabFeed Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #e2e8f0;
+            background: #04030f;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 52px 24px 44px;
+            background: linear-gradient(135deg, #0c1a3f 0%, #0d1e4a 40%, #0a1530 100%);
+            border-radius: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(56,189,248,0.2);
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(250,204,21,0.18) 0%, transparent 60%);
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(56,189,248,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56,189,248,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .header-inner { position: relative; z-index: 1; }
+        .header .season-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(52,211,153,0.15);
+            border: 1px solid rgba(52,211,153,0.5);
+            border-radius: 50px;
+            padding: 6px 18px;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: #6ee7b7;
+            margin-bottom: 16px;
+        }
+        .header .season-badge .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #34d399;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+        .header h1 {
+            font-size: 2.6em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 0%, #bae6fd 60%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p { font-size: 1.05em; color: rgba(186,230,253,0.85); }
+
+        /* ── Sections ── */
+        .section {
+            margin-bottom: 28px;
+            padding: 28px;
+            background: #0d1224;
+            border-radius: 16px;
+            border-left: 4px solid #0ea5e9;
+            border: 1px solid rgba(56,189,248,0.12);
+        }
+        .section h2 {
+            color: #38bdf8;
+            font-size: 1.5em;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section h3 {
+            color: #7dd3fc;
+            font-size: 1.1em;
+            margin: 18px 0 8px;
+        }
+        .section p, .section li { margin-bottom: 8px; font-size: 0.97em; color: #94a3b8; }
+        .section ul, .section ol { margin-left: 20px; margin-bottom: 16px; }
+
+        .highlight {
+            background: rgba(12,74,110,0.4);
+            padding: 18px 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #38bdf8;
+        }
+        .highlight h3 { border-bottom: none; margin-top: 0; color: #7dd3fc; }
+        .highlight li { color: #bae6fd; }
+
+        /* ── Numbered steps ── */
+        .steps { counter-reset: step; margin: 20px 0; list-style: none; margin-left: 0; }
+        .steps li {
+            counter-increment: step;
+            position: relative;
+            padding: 14px 16px 14px 52px;
+            margin-bottom: 10px;
+            background: #060d1f;
+            border: 1px solid rgba(30,58,95,0.8);
+            border-radius: 12px;
+            color: #cbd5e1;
+        }
+        .steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 14px; top: 50%;
+            transform: translateY(-50%);
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#0ea5e9,#38bdf8);
+            color: #04140a;
+            font-weight: 800;
+            font-size: 0.85em;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .steps li strong { color: #e2e8f0; }
+        .ui-label {
+            display: inline-block;
+            background: rgba(52,211,153,0.12);
+            border: 1px solid rgba(52,211,153,0.35);
+            color: #6ee7b7;
+            padding: 1px 8px;
+            border-radius: 5px;
+            font-size: 0.88em;
+            font-weight: 600;
+        }
+
+        /* ── Do / Don't grid ── */
+        .dodont-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 18px 0; }
+        .dodont-card { border-radius: 12px; padding: 16px 18px; border: 1px solid; }
+        .dodont-card.do { background: rgba(16,90,60,0.25); border-color: rgba(52,211,153,0.35); }
+        .dodont-card.dont { background: rgba(120,20,20,0.2); border-color: rgba(248,113,113,0.35); }
+        .dodont-card h4 { margin-bottom: 8px; font-size: 0.95em; }
+        .dodont-card.do h4 { color: #6ee7b7; }
+        .dodont-card.dont h4 { color: #fca5a5; }
+        .dodont-card li { font-size: 0.9em; margin-bottom: 6px; }
+        .dodont-card.do li { color: #bbf7d0; }
+        .dodont-card.dont li { color: #fecaca; }
+
+        .note {
+            background: rgba(250,204,21,0.08);
+            border: 1px solid rgba(250,204,21,0.3);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.9em;
+            color: #fde68a;
+            margin: 14px 0;
+        }
+
+        /* ── Back button ── */
+        .back-button {
+            position: fixed; top: 20px; left: 20px;
+            background: linear-gradient(135deg,#0284c7,#0ea5e9);
+            color: white; border: none; padding: 11px 20px;
+            border-radius: 50px; cursor: pointer;
+            font-weight: 600; font-size: 0.9em;
+            box-shadow: 0 4px 16px rgba(14,165,233,0.35);
+            transition: all 0.2s; z-index: 1000;
+        }
+        .back-button:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(14,165,233,0.5); }
+
+        .emoji { font-size: 1.25em; }
+
+        .footer-cta {
+            text-align: center;
+            background: linear-gradient(135deg,#0c1a3f,#0a1530);
+            color: white;
+            border: 1px solid rgba(56,189,248,0.25);
+        }
+        .footer-cta h2 { justify-content: center; color: #7dd3fc; }
+        .footer-cta a.cta-button {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 12px 28px;
+            border-radius: 50px;
+            background: linear-gradient(135deg,#0ea5e9,#38bdf8);
+            color: #04140a;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        @media (max-width: 640px) {
+            .header h1 { font-size: 2em; }
+            .back-button { top: 12px; left: 12px; padding: 9px 16px; font-size: 0.85em; }
+        }
+    </style>
+</head>
+<body>
+    <button class="back-button" onclick="location.href='/'">← Back to Game</button>
+
+    <div class="container">
+
+        <!-- ── HEADER ── -->
+        <div class="header">
+            <div class="header-inner">
+                <div class="season-badge"><span class="dot"></span> LabFeed Guide</div>
+                <h1>Publishing a Lab Note</h1>
+                <p>How to share an experiment on LabFeed — and how to do it well</p>
+            </div>
+        </div>
+
+        <!-- ── WHAT IS LABFEED ── -->
+        <div class="section">
+            <h2><span class="emoji">🧪</span> What is LabFeed?</h2>
+            <p>LabFeed is DogeFood Lab's on-chain social feed — the place scientists post about what they're brewing. A <strong>Lab Note</strong> is a short post, optionally with a photo, that other players can like, comment on, and tip in DOGE.</p>
+        </div>
+
+        <!-- ── HOW TO PUBLISH ── -->
+        <div class="section">
+            <h2><span class="emoji">📝</span> How to publish a Lab Note with an image</h2>
+            <ol class="steps">
+                <li>Open <strong>LabFeed</strong> from the main menu, then tap the flask <span class="ui-label">+</span> button to open the composer.</li>
+                <li>Write about your experiment in the text box (placeholder reads <em>"Share your latest experiment…"</em>). There's a character counter so you can see how much room you have left.</li>
+                <li>Tap the small image icon next to the text box to attach a photo — a screenshot of a treat you brewed works great. Images must be under <strong>2MB</strong> and in a standard format (JPG, PNG, etc.). You'll see a preview once it's attached, with an option to remove it before posting.</li>
+                <li>Tap <span class="ui-label">Publish</span>. Your note goes live immediately and appears at the top of the feed.</li>
+            </ol>
+            <div class="note">
+                <strong>First time posting?</strong> You'll be asked to sign one message with your wallet. This is a one-time approval that covers all future likes and comments — it's free and doesn't cost gas, it just confirms it's really you.
+            </div>
+        </div>
+
+        <!-- ── PRIVACY & COMMUNITY GUIDANCE ── -->
+        <div class="section">
+            <h2><span class="emoji">🛡️</span> Privacy &amp; community guidance</h2>
+            <p>LabFeed is public — anything you post is visible to every player. A few things to keep in mind before you publish:</p>
+            <div class="dodont-grid">
+                <div class="dodont-card do">
+                    <h4>✅ Good practice</h4>
+                    <ul>
+                        <li>Post your own DogeFood Lab treats, results, and moments</li>
+                        <li>Keep photos appropriate for all ages</li>
+                        <li>Be respectful in comments and captions</li>
+                        <li>Use the report option if you see something that breaks these guidelines</li>
+                    </ul>
+                </div>
+                <div class="dodont-card dont">
+                    <h4>🚫 Avoid</h4>
+                    <ul>
+                        <li>Personal details — full name, address, phone number, financial info</li>
+                        <li>Screenshots containing someone else's private information</li>
+                        <li>Spam, scams, or repeated promotional posting</li>
+                        <li>Harassment, hate speech, or graphic content</li>
+                    </ul>
+                </div>
+            </div>
+            <p>A good rule of thumb: if you wouldn't want it visible to every player in the game forever, don't post it. Lab Notes are on-chain — they aren't meant to be deleted after the fact.</p>
+        </div>
+
+        <!-- ── FOOTER CTA ── -->
+        <div class="section footer-cta">
+            <h2>Ready to publish?</h2>
+            <p>Head back to the Lab and share your first experiment.</p>
+            <a class="cta-button" href="/">Open DogeFood Lab</a>
+        </div>
+
+    </div>
+</body>
+</html>
