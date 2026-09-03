@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useEffectiveAccount } from '../hooks/useEffectiveAccount';
+import { useChainId, useSwitchChain, useWalletClient, usePublicClient } from 'wagmi';
+import { HEIST_MEDAL_ABI } from '../config/contracts';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
-import { ArrowLeft, Crown, Wallet, Filter, Grid3X3, List, Trophy, Beaker, Coins, ChevronDown, Tag, Store, X, Loader2, Check } from 'lucide-react';
+import { ArrowLeft, Crown, Wallet, Filter, Grid3X3, List, Trophy, Beaker, Coins, ChevronDown, Tag, Store, X, Loader2, Check, Medal } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import { useTelegram } from '../contexts/TelegramContext';
 import TreatIcon from './TreatIcon';
@@ -643,6 +645,207 @@ const StatsCard = ({ icon: Icon, value, label, color = 'green', subtext }) => {
   );
 };
 
+/* ============================================================
+   DOGEOS GRAND HEIST — HEIST MEDAL PANEL
+   Shown when the "Medals" filter is selected. Eligibility (did this
+   wallet create a Lab Launcher token) and the claim signature come from
+   the backend (services/dogeos_medal_signer.py + dogeos_medal_routes.py);
+   whether it's actually been minted is read directly on-chain via
+   hasClaimed(), since that's the one thing only the chain truly knows.
+   ============================================================ */
+const HEIST_MEDAL_IMAGE_URL = 'https://violet-additional-donkey-813.mypinata.cloud/ipfs/bafybeiai3pxpruuzoxqyvfgwhdoke45vzsrmacflqyimvhedse35bjzsm4';
+
+const HeistMedalPanel = ({ address, isConnected }) => {
+  const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
+  const { data: walletClient } = useWalletClient();
+
+  const [config, setConfig] = useState(null);       // GET /api/dogeos-medal/config
+  const [eligibility, setEligibility] = useState(null); // GET /api/dogeos-medal/eligibility/{wallet}
+  const [hasClaimedOnChain, setHasClaimedOnChain] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState('');
+  const [claimSuccess, setClaimSuccess] = useState(false);
+
+  const publicClient = usePublicClient({ chainId: config?.chain_id });
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const configRes = await fetch(`${BACKEND_URL}/api/dogeos-medal/config`);
+        const configData = await configRes.json();
+        if (cancelled) return;
+        setConfig(configData);
+
+        if (isConnected && address) {
+          const eligRes = await fetch(`${BACKEND_URL}/api/dogeos-medal/eligibility/${address}`);
+          const eligData = await eligRes.json();
+          if (cancelled) return;
+          setEligibility(eligData);
+        }
+      } catch (e) {
+        console.error('Failed to load heist medal status:', e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [address, isConnected]);
+
+  // Read the true on-chain claimed status once we know the contract address.
+  useEffect(() => {
+    let cancelled = false;
+    const readOnChain = async () => {
+      if (!config?.contract_address || !isConnected || !address || !publicClient) return;
+      try {
+        const claimed = await publicClient.readContract({
+          address: config.contract_address,
+          abi: HEIST_MEDAL_ABI,
+          functionName: 'hasClaimed',
+          args: [address],
+        });
+        if (!cancelled) setHasClaimedOnChain(Boolean(claimed));
+      } catch (e) {
+        console.error('Failed to read hasClaimed on-chain:', e);
+      }
+    };
+    readOnChain();
+    return () => { cancelled = true; };
+  }, [config?.contract_address, address, isConnected, publicClient]);
+
+  const handleClaim = async () => {
+    if (!config?.contract_address || !walletClient) return;
+    setClaiming(true);
+    setClaimError('');
+    try {
+      // Make sure the wallet is on the chain the medal actually lives on
+      // before asking for a signature that would otherwise just fail on submit.
+      if (chainId !== config.chain_id) {
+        await switchChainAsync({ chainId: config.chain_id });
+      }
+
+      const sigRes = await fetch(`${BACKEND_URL}/api/dogeos-medal/claim-signature`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: address }),
+      });
+      if (!sigRes.ok) {
+        const err = await sigRes.json().catch(() => ({}));
+        throw new Error(err.detail || 'Could not get a claim signature');
+      }
+      const { signature, contract_address } = await sigRes.json();
+
+      const txHash = await walletClient.writeContract({
+        address: contract_address,
+        abi: HEIST_MEDAL_ABI,
+        functionName: 'claimMedal',
+        args: [signature],
+      });
+
+      if (publicClient) {
+        await publicClient.waitForTransactionReceipt({ hash: txHash });
+      }
+
+      setHasClaimedOnChain(true);
+      setClaimSuccess(true);
+    } catch (e) {
+      console.error('Medal claim failed:', e);
+      setClaimError(e?.shortMessage || e?.message || 'Claim failed — please try again.');
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  if (!isConnected) {
+    return (
+      <div className="text-center py-20">
+        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800/60 flex items-center justify-center">
+          <Medal className="w-9 h-9 text-slate-500" />
+        </div>
+        <h3 className="text-xl font-bold text-white mb-2">Connect your wallet</h3>
+        <p className="text-slate-400">Connect your wallet to check your Grand Heist medal status.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <LabInlineLoader message="Checking medal status…" minHeight={260} />;
+  }
+
+  if (!config?.configured) {
+    return (
+      <div className="text-center py-20">
+        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800/60 flex items-center justify-center">
+          <Medal className="w-9 h-9 text-slate-500" />
+        </div>
+        <h3 className="text-xl font-bold text-white mb-2">Coming soon</h3>
+        <p className="text-slate-400">The Grand Heist medal isn't live yet — check back soon.</p>
+      </div>
+    );
+  }
+
+  const campaignOpen = config.campaign_open && eligibility?.campaign_open !== false;
+  const eligible = Boolean(eligibility?.created_lab_launcher_token);
+
+  return (
+    <div className="max-w-md mx-auto py-8">
+      <Card className="bg-slate-800/60 border-slate-700/50 overflow-hidden">
+        <div className="p-6 text-center">
+          <img
+            src={HEIST_MEDAL_IMAGE_URL}
+            alt="DogeOS Grand Heist Medal"
+            className="w-36 h-36 mx-auto mb-4 rounded-2xl object-cover border border-amber-500/30 shadow-lg"
+          />
+          <h3 className="text-lg font-black text-white mb-1">Grand Heist Lab Launcher Medal</h3>
+          <p className="text-sm text-slate-400 mb-5">
+            Awarded for creating a token with Lab Launcher during the DogeOS Grand Heist.
+          </p>
+
+          {hasClaimedOnChain ? (
+            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 px-4 py-2 text-sm">
+              <Check className="w-4 h-4 mr-1 inline" /> Claimed
+            </Badge>
+          ) : !campaignOpen ? (
+            <Badge className="bg-slate-700 text-slate-400 px-4 py-2 text-sm">
+              Campaign closed
+            </Badge>
+          ) : !eligible ? (
+            <div>
+              <Badge className="bg-slate-700 text-slate-400 px-4 py-2 text-sm mb-3">
+                Not yet eligible
+              </Badge>
+              <p className="text-xs text-slate-500 mb-3">
+                Create a token with Lab Launcher during the Grand Heist to unlock this medal.
+              </p>
+              <Link to="/lab-launcher/create">
+                <Button className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                  Open Lab Launcher
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div>
+              <Button
+                onClick={handleClaim}
+                disabled={claiming}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2.5"
+              >
+                {claiming ? <Loader2 className="w-4 h-4 mr-2 inline animate-spin" /> : null}
+                {claiming ? 'Claiming…' : 'Claim Medal'}
+              </Button>
+              {claimError && <p className="text-xs text-red-400 mt-3">{claimError}</p>}
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 const MyTreats = () => {
   const { isConnected, address } = useEffectiveAccount();
   const { isTelegram, telegramUser } = useTelegram();
@@ -884,6 +1087,7 @@ const MyTreats = () => {
     { id: 'rare', label: 'Rare', count: rarityStats.rare, color: 'blue' },
     { id: 'uncommon', label: 'Uncommon', count: rarityStats.uncommon, color: 'cyan' },
     { id: 'common', label: 'Common', count: rarityStats.common, color: 'green' },
+    { id: 'medals', label: 'Medals', count: 0 },
   ];
 
   return (
@@ -1059,7 +1263,9 @@ const MyTreats = () => {
         </div>
 
         {/* Content */}
-        {loading ? (
+        {selectedRarity === 'medals' ? (
+          <HeistMedalPanel address={address} isConnected={isConnected} />
+        ) : loading ? (
           <LabInlineLoader message="Loading your treats…" minHeight={260} />
         ) : error ? (
           <div className="text-center py-20">
