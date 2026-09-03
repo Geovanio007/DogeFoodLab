@@ -287,3 +287,42 @@ export const DOGEFOOD_NFT_INFO = {
   maxSupply: 420,
   description: 'Exclusive NFT collection for DogeFood Lab VIP Scientists',
 };
+
+// --- Heist Medal (append to the end of src/config/contracts.js) ---
+// Deliberately NOT added to CONTRACT_ADDRESSES above — this campaign's
+// contract address comes from the backend at runtime instead (see
+// HeistMedalPanel in MyTreats.jsx, which calls GET /api/dogeos-medal/config).
+// That's a deliberate deviation from this file's usual "hardcoded address +
+// env var override" pattern: it means flipping the address from testnet to
+// mainnet later (once DogeOS has a mainnet and you redeploy there) is a
+// single Railway env var change, no frontend rebuild needed.
+export const HEIST_MEDAL_ABI = [
+  {
+    "inputs": [{ "internalType": "bytes", "name": "signature", "type": "bytes" }],
+    "name": "claimMedal",
+    "outputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "name": "hasClaimed",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "campaignOpen",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalClaimed",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
