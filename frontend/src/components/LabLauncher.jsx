@@ -1,137 +1,101 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAccount } from 'wagmi';
+import { useWalletConnect, useAccount as useDogeAccount } from '@dogeos/dogeos-sdk';
+import { formatUnits, parseUnits } from 'viem';
 import {
-  ChevronLeft, Rocket, Search, X, Plus, ArrowUpDown, ShieldCheck,
-  Flame, Coins, GraduationCap, Gem, Dog, Heart, Loader2, Users, Crown,
+  ChevronLeft, ShieldCheck, ShieldAlert, Lock, UserCheck, FileCheck,
+  Share2, Globe, Send, AtSign, Loader2, ArrowUpRight, ArrowDownRight,
+  Wallet, AlertTriangle, GraduationCap, Users, TrendingUp, Check,
 } from 'lucide-react';
+import { useWeb3 } from '../hooks/useWeb3';
+import { useUniversalWalletClient } from '../hooks/useUniversalWalletClient';
+import { blockchainService } from '../services/blockchain';
 
 /* ============================================================
-   DogeFood Lab — LAB LAUNCHER (Discovery)
-   Browse/search/sort every community-created token on the bonding
-   curve launcher. Read-only feed; buying/selling happens on the
-   token profile screen.
-
-   MyDoge WebView-hardened, following LabFeed.jsx / LabSurge.jsx:
-   ✅ No backdrop-filter / backdrop-blur
-   ✅ No filter:blur() on layout elements
-   ✅ No mix-blend-mode
-   ✅ All custom animations carry -webkit- prefixes
+   DogeFood Lab — LAB LAUNCHER (Token Profile + Trading)
+   MyDoge WebView-hardened, same rules as the other Lab Launcher
+   screens: no backdrop-blur, no mix-blend-mode, -webkit- prefixed
+   custom animations only.
    ============================================================ */
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
-const PAGE_SIZE = 20;
+const REFRESH_MS = 20000;
+const SLIPPAGE_BPS = 200n; // 2% — fixed rather than user-configurable, to keep this screen simple
+const CURVE_PATH = 'M2,34 C10,34 16,33 22,29 C30,23 34,10 46,3';
 
-const TABS = [
-  { key: 'trending', label: 'Trending', icon: Flame },
-  { key: 'new', label: 'New', icon: Coins },
-  { key: 'graduated', label: 'Graduated', icon: GraduationCap },
-  { key: 'highest_volume', label: 'Volume', icon: Gem },
-  { key: 'most_holders', label: 'Holders', icon: Dog },
-  { key: 'community_favorites', label: 'Favorites', icon: Heart },
-];
+const fmt = (wei, decimals = 4) => {
+  if (wei === null || wei === undefined) return '0';
+  try {
+    const big = typeof wei === 'bigint' ? wei : BigInt(wei);
+    const n = parseFloat(formatUnits(big, 18));
+    if (!Number.isFinite(n)) return '0';
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(2)}K`;
+    if (n === 0) return '0';
+    if (n < 0.0001) return n.toExponential(2);
+    return n.toFixed(decimals);
+  } catch {
+    return '0';
+  }
+};
 
-const SORTS = [
-  { key: '', label: 'Default for tab' },
-  { key: 'volume', label: 'Volume' },
-  { key: 'market_cap', label: 'Market cap' },
-  { key: 'holders', label: 'Holders' },
-  { key: 'newest', label: 'Newest' },
-  { key: 'graduated', label: 'Graduation date' },
-];
+const shortAddress = (addr) => (addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : '');
+const timeAgo = (iso) => {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+};
 
-function formatCompact(dogeString) {
-  const n = parseFloat(dogeString || '0');
-  if (!Number.isFinite(n)) return '0';
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  if (n >= 1) return n.toFixed(2);
-  return n.toFixed(4);
-}
-
-function shortAddress(addr) {
-  if (!addr) return '';
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
-
-// Styles injected once at module load — same pattern as LabFeed.jsx.
 let stylesInjected = false;
-const LabLauncherStyles = () => {
+const TradeStyles = () => {
   useEffect(() => {
     if (stylesInjected) return;
     stylesInjected = true;
     const style = document.createElement('style');
     style.textContent = `
-      @keyframes lab-launcher-shimmer {
-        0% { background-position: 0% 50%; }
-        100% { background-position: 200% 50%; }
-      }
-      .lab-launcher-curve-fill {
-        -webkit-animation: lab-launcher-shimmer 2.4s linear infinite;
-        animation: lab-launcher-shimmer 2.4s linear infinite;
-        background-size: 200% 100%;
-      }
-      @keyframes lab-launcher-pop {
-        0% { transform: scale(0.96); opacity: 0; }
-        100% { transform: scale(1); opacity: 1; }
-      }
-      .lab-launcher-card-in {
-        -webkit-animation: lab-launcher-pop 0.25s ease-out;
-        animation: lab-launcher-pop 0.25s ease-out;
-      }
+      @keyframes lab-trade-shimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+      .lab-trade-curve-fill { -webkit-animation: lab-trade-shimmer 2.4s linear infinite; animation: lab-trade-shimmer 2.4s linear infinite; background-size: 200% 100%; }
     `;
     document.head.appendChild(style);
   }, []);
   return null;
 };
 
-// Signature element: the bonding curve itself as the progress indicator,
-// not a generic bar. Same SVG path drawn twice - a dim track, and a
-// bright, clipped-to-progress copy on top of it.
-const CURVE_PATH = 'M2,34 C10,34 16,33 22,29 C30,23 34,10 46,3';
+const AntiRugBadge = ({ icon: Icon, label, ok, alert }) => (
+  <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${
+    alert ? 'bg-rose-500/10 border-rose-500/30' : ok ? 'bg-lime-500/10 border-lime-500/20' : 'bg-white/[0.03] border-white/[0.06]'
+  }`}>
+    <Icon className={`w-3.5 h-3.5 ${alert ? 'text-rose-400' : ok ? 'text-lime-400' : 'text-slate-500'}`} />
+    <span className={`text-[10px] font-bold ${alert ? 'text-rose-300' : ok ? 'text-lime-300' : 'text-slate-500'}`}>{label}</span>
+  </div>
+);
 
-const BondingCurveIndicator = ({ progressBps, graduated }) => {
+const BigCurve = ({ progressBps, graduated }) => {
   const pct = graduated ? 100 : Math.min(100, Math.max(0, progressBps / 100));
   return (
-    <div className="relative w-full">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
-          {graduated ? 'Graduated' : 'Bonding'}
-        </span>
-        <span className={`text-[10px] font-bold ${graduated ? 'text-lime-300' : 'text-amber-300'}`}>
-          {graduated ? 'DEX live' : `${pct.toFixed(1)}%`}
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3.5">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-bold text-slate-400">{graduated ? 'Graduated to DEX' : 'Bonding Progress'}</span>
+        <span className={`text-xs font-black ${graduated ? 'text-lime-300' : 'text-amber-300'}`}>
+          {graduated ? '100%' : `${pct.toFixed(1)}%`}
         </span>
       </div>
-      <div className="relative h-9 w-full">
+      <div className="relative h-14 w-full">
         <svg viewBox="0 0 48 36" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-          <path d={CURVE_PATH} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" strokeLinecap="round" />
+          <path d={CURVE_PATH} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" strokeLinecap="round" />
         </svg>
-        <div
-          className="absolute inset-0 overflow-hidden"
-          style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}
-        >
+        <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}>
           <svg viewBox="0 0 48 36" className="w-full h-full" preserveAspectRatio="none">
             <defs>
-              <linearGradient id={`curve-grad-${graduated ? 'g' : 'b'}`} x1="0" y1="0" x2="1" y2="0">
-                {graduated ? (
-                  <>
-                    <stop offset="0%" stopColor="#a3e635" />
-                    <stop offset="100%" stopColor="#4ade80" />
-                  </>
-                ) : (
-                  <>
-                    <stop offset="0%" stopColor="#fde68a" />
-                    <stop offset="100%" stopColor="#bef264" />
-                  </>
-                )}
+              <linearGradient id="big-curve-grad" x1="0" y1="0" x2="1" y2="0">
+                {graduated ? (<><stop offset="0%" stopColor="#a3e635" /><stop offset="100%" stopColor="#4ade80" /></>)
+                  : (<><stop offset="0%" stopColor="#fde68a" /><stop offset="100%" stopColor="#bef264" /></>)}
               </linearGradient>
             </defs>
-            <path
-              d={CURVE_PATH}
-              fill="none"
-              stroke={`url(#curve-grad-${graduated ? 'g' : 'b'})`}
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
+            <path d={CURVE_PATH} fill="none" stroke="url(#big-curve-grad)" strokeWidth="2.5" strokeLinecap="round" />
           </svg>
         </div>
       </div>
@@ -139,299 +103,420 @@ const BondingCurveIndicator = ({ progressBps, graduated }) => {
   );
 };
 
-const TokenCard = ({ token, onOpen }) => {
-  const graduated = token.status === 'graduated';
-  return (
-    <button
-      onClick={() => onOpen(token.token_address)}
-      className="lab-launcher-card-in w-full text-left rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3.5 active:scale-[0.98] transition-transform"
-      data-testid="lab-launcher-token-card"
-    >
-      <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl bg-black/40 border border-white/[0.06] overflow-hidden flex items-center justify-center shrink-0">
-          {token.logo ? (
-            <img src={token.logo} alt="" className="w-full h-full object-cover" loading="lazy"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          ) : (
-            <span className="text-lg font-black text-amber-300">{(token.symbol || '?')[0]}</span>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <h3 className="text-sm font-bold text-white truncate">{token.name}</h3>
-            {token.verified && (
-              <ShieldCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" aria-label="Verified" />
-            )}
-          </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[11px] font-bold text-slate-500">${token.symbol}</span>
-            <span className="text-[11px] text-slate-600">by {shortAddress(token.creator_wallet)}</span>
-          </div>
-
-          <div className="flex items-center gap-3 mt-2 text-[11px]">
-            <div>
-              <span className="text-slate-500">MCap </span>
-              <span className="font-bold text-white">{formatCompact(token.market_cap_doge)} DOGE</span>
-            </div>
-            <div className="flex items-center gap-0.5 text-slate-500">
-              <Users className="w-3 h-3" />
-              <span className="font-bold text-slate-300">{token.holders ?? 0}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-3">
-        <BondingCurveIndicator progressBps={token.bonding_progress_bps || 0} graduated={graduated} />
-      </div>
-    </button>
-  );
-};
-
-const LabLauncher = () => {
+const LabLauncherToken = () => {
+  const { address: tokenAddress } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('trending');
-  const [sort, setSort] = useState('');
-  const [showSort, setShowSort] = useState(false);
-  const [search, setSearch] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
-  const [tokens, setTokens] = useState([]);
-  const offsetRef = useRef(0);
-  const [hasMore, setHasMore] = useState(true);
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { walletClient } = useUniversalWalletClient();
+  const { isCorrectNetwork, switchToDogeOS } = useWeb3();
+  const { openModal, isConnecting } = useWalletConnect();
+  const { address: dogeAddress } = useDogeAccount();
+
+  const address = wagmiAddress || dogeAddress;
+  const isConnected = wagmiConnected || Boolean(dogeAddress);
+  const lowerToken = (tokenAddress || '').toLowerCase();
+
+  const [token, setToken] = useState(null);
+  const [trades, setTrades] = useState([]);
+  const [holders, setHolders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [loadFailed, setLoadFailed] = useState(false);
-  const sentinelRef = useRef(null);
-  const inFlightRef = useRef(false);
-  const searchInputRef = useRef(null);
+  const [notFound, setNotFound] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const loadPage = useCallback(async (nextOffset, replace, opts = {}) => {
-    if (inFlightRef.current) return;
-    inFlightRef.current = true;
+  const [side, setSide] = useState('buy'); // 'buy' | 'sell'
+  const [amount, setAmount] = useState('');
+  const [preview, setPreview] = useState(null); // { tokensOut/dogeOut, fee }
+  const [previewing, setPreviewing] = useState(false);
+  const [myBalance, setMyBalance] = useState(0n);
+  const [myAllowance, setMyAllowance] = useState(0n);
+  const [txState, setTxState] = useState('idle'); // idle | approving | pending | success | error
+  const [txError, setTxError] = useState('');
+  const [txSig, setTxSig] = useState(null);
+  const [switchingNetwork, setSwitchingNetwork] = useState(false);
+
+  const previewTimer = useRef(null);
+
+  const loadProfile = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const params = new URLSearchParams();
-      params.set('limit', PAGE_SIZE);
-      params.set('offset', nextOffset);
-      const tab = opts.tab ?? activeTab;
-      const s = opts.sort ?? sort;
-      const q = opts.search ?? search;
-      if (tab) params.set('tab', tab);
-      if (s) params.set('sort', s);
-      if (q.trim()) params.set('search', q.trim());
-
-      const res = await fetch(`${API_URL}/api/lab-launcher/tokens?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setTokens((prev) => (replace ? data.tokens : [...prev, ...data.tokens]));
-      setHasMore(data.tokens.length === PAGE_SIZE);
-      setLoadFailed(false);
+      const [tokenRes, tradesRes, holdersRes] = await Promise.all([
+        fetch(`${API_URL}/api/lab-launcher/tokens/${lowerToken}`),
+        fetch(`${API_URL}/api/lab-launcher/tokens/${lowerToken}/trades?limit=25`),
+        fetch(`${API_URL}/api/lab-launcher/tokens/${lowerToken}/holders?limit=15`),
+      ]);
+      if (tokenRes.status === 404) { setNotFound(true); return; }
+      if (!tokenRes.ok) throw new Error(`HTTP ${tokenRes.status}`);
+      const tokenData = await tokenRes.json();
+      setToken(tokenData);
+      if (tradesRes.ok) setTrades((await tradesRes.json()).trades || []);
+      if (holdersRes.ok) setHolders((await holdersRes.json()).holders || []);
+      setNotFound(false);
     } catch (e) {
-      console.warn('[LabLauncher] fetch failed:', e?.message || e);
-      if (replace) setLoadFailed(true);
+      console.warn('[LabLauncherToken] load failed:', e?.message || e);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
-      inFlightRef.current = false;
     }
-  }, [activeTab, sort, search]);
+  }, [lowerToken]);
 
   useEffect(() => {
-    setLoading(true);
-    offsetRef.current = 0;
-    loadPage(0, true);
-  }, [activeTab, sort]);
-
-  // Debounced search
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setLoading(true);
-      offsetRef.current = 0;
-      loadPage(0, true);
-    }, 350);
-    return () => clearTimeout(t);
-  }, [search]);
+    loadProfile();
+    const interval = setInterval(() => loadProfile(true), REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [loadProfile]);
 
   useEffect(() => {
-    const node = sentinelRef.current;
-    if (!node || loading || !hasMore) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !inFlightRef.current) {
-          setLoadingMore(true);
-          offsetRef.current += PAGE_SIZE;
-          loadPage(offsetRef.current, false);
-        }
-      },
-      { rootMargin: '200px' }
+    if (!address || !tokenAddress) return;
+    blockchainService.getTokenBalance(tokenAddress, address).then(setMyBalance);
+    blockchainService.getTokenAllowance(tokenAddress, address).then(setMyAllowance);
+  }, [address, tokenAddress, txState]);
+
+  // Live on-chain preview, debounced
+  useEffect(() => {
+    clearTimeout(previewTimer.current);
+    if (!amount || Number(amount) <= 0 || !token) { setPreview(null); return; }
+    previewTimer.current = setTimeout(async () => {
+      setPreviewing(true);
+      try {
+        const wei = parseUnits(amount, 18);
+        const result = side === 'buy'
+          ? await blockchainService.previewBuy(tokenAddress, wei)
+          : await blockchainService.previewSell(tokenAddress, wei);
+        setPreview(result);
+      } catch {
+        setPreview(null);
+      } finally {
+        setPreviewing(false);
+      }
+    }, 400);
+    return () => clearTimeout(previewTimer.current);
+  }, [amount, side, token, tokenAddress]);
+
+  const graduated = token?.status === 'graduated';
+  const isMyToken = address && token?.creator_wallet?.toLowerCase() === address.toLowerCase();
+  const myBalanceFormatted = useMemo(() => parseFloat(formatUnits(myBalance, 18)), [myBalance]);
+
+  const setQuickAmount = (fraction) => {
+    if (side === 'sell') {
+      const v = (myBalanceFormatted * fraction).toFixed(6);
+      setAmount(v === '0.000000' ? '' : v);
+    } else {
+      setAmount(String(fraction));
+    }
+  };
+
+  const handleSwitchNetwork = async () => {
+    setSwitchingNetwork(true);
+    try { await switchToDogeOS(); } finally { setSwitchingNetwork(false); }
+  };
+
+  const resetTx = () => { setTxState('idle'); setTxError(''); setTxSig(null); };
+
+  const handleTrade = async () => {
+    if (!walletClient || !amount || Number(amount) <= 0) return;
+    const wei = parseUnits(amount, 18);
+
+    if (side === 'buy') {
+      setTxState('pending');
+      const previewNow = await blockchainService.previewBuy(tokenAddress, wei);
+      const minTokensOut = previewNow ? (previewNow.tokensOut * (10000n - SLIPPAGE_BPS)) / 10000n : 0n;
+      const result = await blockchainService.buyToken(walletClient, address, tokenAddress, wei, minTokensOut);
+      if (result.success) {
+        setTxState('success'); setTxSig(result.txHash); setAmount(''); loadProfile(true);
+      } else {
+        setTxState('error'); setTxError(result.error);
+      }
+      return;
+    }
+
+    // sell
+    if (myAllowance < wei) {
+      setTxState('approving');
+      const approveResult = await blockchainService.approveToken(walletClient, address, tokenAddress, wei);
+      if (!approveResult.success) {
+        setTxState('error'); setTxError(approveResult.error);
+        return;
+      }
+      setMyAllowance(wei);
+    }
+    setTxState('pending');
+    const previewNow = await blockchainService.previewSell(tokenAddress, wei);
+    const minDogeOut = previewNow ? (previewNow.dogeOut * (10000n - SLIPPAGE_BPS)) / 10000n : 0n;
+    const result = await blockchainService.sellToken(walletClient, address, tokenAddress, wei, minDogeOut);
+    if (result.success) {
+      setTxState('success'); setTxSig(result.txHash); setAmount(''); loadProfile(true);
+    } else {
+      setTxState('error'); setTxError(result.error);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/lab-launcher/token/${tokenAddress}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: token?.name, url }); } catch { /* user cancelled the share sheet */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      } catch { /* clipboard unavailable, no-op */ }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0e17] flex flex-col items-center justify-center">
+        <Loader2 className="w-6 h-6 text-amber-400 animate-spin mb-3" />
+        <p className="text-xs text-slate-500">Loading token…</p>
+      </div>
     );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [loading, hasMore, loadPage]);
+  }
 
-  const openSearch = () => {
-    setShowSearch(true);
-    setTimeout(() => searchInputRef.current?.focus(), 50);
-  };
-  const closeSearch = () => {
-    setShowSearch(false);
-    setSearch('');
-  };
+  if (notFound || !token) {
+    return (
+      <div className="min-h-screen bg-[#0a0e17] flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-sm font-bold text-white mb-1">Token not found</p>
+        <p className="text-xs text-slate-500 mb-4">It may still be indexing, or the address is wrong.</p>
+        <button onClick={() => navigate('/lab-launcher')} className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/[0.1] text-sm font-bold text-slate-300">
+          Back to Launcher
+        </button>
+      </div>
+    );
+  }
 
-  const activeSortLabel = useMemo(() => SORTS.find((s) => s.key === sort)?.label || 'Sort', [sort]);
-  const showEmpty = !loading && tokens.length === 0;
+  const canTrade = amount && Number(amount) > 0 && (side === 'buy' || myBalanceFormatted >= Number(amount));
+  const needsApproval = side === 'sell' && amount && myAllowance < parseUnits(amount || '0', 18);
 
   return (
-    <div className="min-h-screen bg-[#0a0e17] text-white pb-8">
-      <LabLauncherStyles />
+    <div className="min-h-screen bg-[#0a0e17] text-white pb-10">
+      <TradeStyles />
 
-      <div className="sticky top-0 z-20 bg-[#0a0e17]/95 border-b border-white/[0.06] px-4 py-3">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/5" aria-label="Back">
-            <ChevronLeft className="w-5 h-5 text-slate-300" />
-          </button>
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-300 to-lime-400 flex items-center justify-center">
-            <Rocket className="w-4.5 h-4.5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base font-black leading-none">Lab Launcher</h1>
-            <p className="text-[10px] text-slate-500 mt-0.5">Launch it. Trade it. Graduate it.</p>
-          </div>
-          {!showSearch && (
-            <button onClick={openSearch} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Search" data-testid="lab-launcher-search-open">
-              <Search className="w-4.5 h-4.5 text-slate-400" />
-            </button>
+      <div className="sticky top-0 z-20 bg-[#0a0e17]/95 border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
+        <button onClick={() => navigate('/lab-launcher')} className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/5" aria-label="Back">
+          <ChevronLeft className="w-5 h-5 text-slate-300" />
+        </button>
+        <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/[0.06] overflow-hidden flex items-center justify-center shrink-0">
+          {token.logo ? (
+            <img src={token.logo} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          ) : (
+            <span className="text-sm font-black text-amber-300">{token.symbol?.[0]}</span>
           )}
-          {!showSearch && (
-            <button onClick={() => navigate('/lab-launcher/creator')} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Your creator dashboard" data-testid="lab-launcher-my-dashboard">
-              <Crown className="w-4.5 h-4.5 text-slate-400" />
-            </button>
-          )}
-          <button
-            onClick={() => navigate('/lab-launcher/create')}
-            className="flex items-center gap-1 pl-2 pr-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-300 to-lime-400 text-white text-xs font-bold active:scale-95 transition-transform"
-            data-testid="lab-launcher-create-cta"
-          >
-            <Plus className="w-3.5 h-3.5" /> Create
-          </button>
         </div>
-
-        {showSearch && (
-          <div className="mt-2.5 flex items-center gap-2 rounded-xl bg-white/[0.05] border border-white/[0.08] px-3 py-2">
-            <Search className="w-4 h-4 text-slate-500 shrink-0" />
-            <input
-              ref={searchInputRef}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name or symbol"
-              className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-600 outline-none"
-              data-testid="lab-launcher-search-input"
-            />
-            <button onClick={closeSearch} aria-label="Close search">
-              <X className="w-4 h-4 text-slate-500" />
-            </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1">
+            <h1 className="text-sm font-black truncate">{token.name}</h1>
+            {token.verified && <ShieldCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />}
           </div>
-        )}
-
-        <div className="mt-3 flex items-center gap-2">
-          <div className="flex-1 flex gap-1.5 overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors shrink-0 ${
-                    active
-                      ? 'bg-gradient-to-r from-amber-400/25 to-lime-500/25 border border-amber-400/40 text-amber-200'
-                      : 'bg-white/[0.04] border border-transparent text-slate-400 hover:text-slate-300'
-                  }`}
-                  data-testid={`lab-launcher-tab-${tab.key}`}
-                >
-                  <Icon className="w-3 h-3" /> {tab.label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="relative shrink-0">
-            <button
-              onClick={() => setShowSort((s) => !s)}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] font-bold text-slate-400"
-              data-testid="lab-launcher-sort-toggle"
-            >
-              <ArrowUpDown className="w-3 h-3" /> {activeSortLabel}
-            </button>
-            {showSort && (
-              <div className="absolute right-0 top-full mt-1.5 w-40 rounded-xl bg-[#12172a] border border-white/[0.08] overflow-hidden z-30 shadow-xl">
-                {SORTS.map((s) => (
-                  <button
-                    key={s.key || 'default'}
-                    onClick={() => { setSort(s.key); setShowSort(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs font-semibold ${
-                      sort === s.key ? 'text-amber-300 bg-amber-500/10' : 'text-slate-300 hover:bg-white/5'
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <span className="text-[11px] font-bold text-slate-500">${token.symbol}</span>
         </div>
+        <button onClick={handleShare} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Share">
+          {copied ? <Check className="w-4.5 h-4.5 text-lime-400" /> : <Share2 className="w-4.5 h-4.5 text-slate-400" />}
+        </button>
       </div>
 
-      <div className="px-4 pt-4 max-w-md mx-auto">
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-16" data-testid="lab-launcher-loading">
-            <img src="/dogefood-logo.png" alt="" className="w-14 h-14 opacity-70 animate-pulse" />
-            <p className="text-slate-500 text-xs mt-3">Loading tokens…</p>
+      <div className="px-4 pt-4 max-w-md mx-auto space-y-4">
+        <div className="grid grid-cols-3 gap-2">
+          <Stat label="Price" value={`${parseFloat(token.last_price_doge || '0').toFixed(8)}`} sub="DOGE" />
+          <Stat label="Market Cap" value={`${parseFloat(token.market_cap_doge || '0').toLocaleString(undefined, { maximumFractionDigits: 0 })}`} sub="DOGE" />
+          <Stat label="Volume" value={`${parseFloat(token.volume_doge || '0').toLocaleString(undefined, { maximumFractionDigits: 0 })}`} sub="DOGE" />
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
+          <Users className="w-3.5 h-3.5" /> {token.holders ?? 0} holders
+          <span className="text-slate-700">•</span>
+          <span>by {shortAddress(token.creator_wallet)}</span>
+          {isMyToken && (
+            <button
+              onClick={() => navigate('/lab-launcher/creator')}
+              className="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded"
+            >
+              YOU · Dashboard
+            </button>
+          )}
+        </div>
+
+        <BigCurve progressBps={token.bonding_progress_bps || 0} graduated={graduated} />
+
+        <div className="flex flex-wrap gap-1.5">
+          <AntiRugBadge icon={UserCheck} label="Ownership Renounced" ok={token.anti_rug?.ownership_renounced} />
+          <AntiRugBadge icon={Lock} label={graduated ? 'Liquidity Locked' : 'Locks at graduation'} ok={token.anti_rug?.liquidity_locked} />
+          <AntiRugBadge icon={FileCheck} label="Contract Verified" ok={token.anti_rug?.contract_verified} />
+          {token.anti_rug?.large_wallet_alert && (
+            <AntiRugBadge icon={ShieldAlert} label={`Top holder ${token.anti_rug.top_holder_pct}%`} alert />
+          )}
+        </div>
+
+        {token.description && <p className="text-sm text-slate-400">{token.description}</p>}
+
+        {(token.website || token.telegram || token.twitter) && (
+          <div className="flex gap-2">
+            {token.website && <LinkChip icon={Globe} href={token.website} />}
+            {token.telegram && <LinkChip icon={Send} href={`https://${token.telegram.replace(/^https?:\/\//, '')}`} />}
+            {token.twitter && <LinkChip icon={AtSign} href={`https://x.com/${token.twitter.replace(/^@/, '')}`} />}
           </div>
         )}
 
-        {showEmpty && (
-          <div className="text-center py-16" data-testid="lab-launcher-empty">
-            <p className="text-slate-400 text-sm mb-1">
-              {loadFailed ? "Couldn't reach the launcher right now." : search ? 'No tokens match your search.' : 'No tokens here yet.'}
-            </p>
-            <p className="text-slate-600 text-xs mb-4">
-              {!loadFailed && !search && 'Be the first to launch one.'}
-            </p>
-            {!search && !loadFailed && (
-              <button
-                onClick={() => navigate('/lab-launcher/create')}
-                className="px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-300 text-sm font-bold hover:bg-amber-500/25 transition-colors"
-              >
-                Create a token
-              </button>
-            )}
-            {loadFailed && (
-              <button
-                onClick={() => { setLoading(true); offsetRef.current = 0; loadPage(0, true); }}
-                className="px-4 py-2 rounded-xl bg-white/[0.06] border border-white/[0.1] text-slate-300 text-sm font-bold"
-              >
-                Retry
-              </button>
-            )}
+        {graduated ? (
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.06] p-4 text-center">
+            <GraduationCap className="w-6 h-6 text-amber-300 mx-auto mb-2" />
+            <p className="text-sm font-bold text-amber-200">This token graduated to the DEX</p>
+            <p className="text-xs text-amber-300/70 mt-1">Bonding curve trading is closed — swap it on DogeOS's DEX instead.</p>
+            {token.dex_pair && <p className="text-[10px] font-mono text-slate-600 mt-2 break-all">{token.dex_pair}</p>}
           </div>
-        )}
-
-        {!loading && tokens.length > 0 && (
-          <div className="space-y-2.5">
-            {tokens.map((token) => (
-              <TokenCard key={token.token_address} token={token} onOpen={(addr) => navigate(`/lab-launcher/token/${addr}`)} />
-            ))}
-            <div ref={sentinelRef} className="h-10 flex items-center justify-center">
-              {loadingMore && <Loader2 className="w-4 h-4 animate-spin text-slate-600" />}
-              {!hasMore && !loadingMore && (
-                <span className="text-[11px] text-slate-700">That's every token on this tab</span>
-              )}
+        ) : (
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3.5">
+            <div className="flex gap-1.5 mb-3">
+              <button
+                onClick={() => { setSide('buy'); setAmount(''); resetTx(); }}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${side === 'buy' ? 'bg-lime-500/20 border border-lime-400/40 text-lime-300' : 'bg-white/[0.03] border border-transparent text-slate-500'}`}
+                data-testid="trade-tab-buy"
+              >
+                Buy
+              </button>
+              <button
+                onClick={() => { setSide('sell'); setAmount(''); resetTx(); }}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${side === 'sell' ? 'bg-rose-500/20 border border-rose-400/40 text-rose-300' : 'bg-white/[0.03] border border-transparent text-slate-500'}`}
+                data-testid="trade-tab-sell"
+              >
+                Sell
+              </button>
             </div>
+
+            {side === 'sell' && (
+              <p className="text-[11px] text-slate-500 mb-2">Your balance: {myBalanceFormatted.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${token.symbol}</p>
+            )}
+
+            <div className="flex items-center gap-2 bg-black/30 border border-white/[0.08] rounded-xl px-3 py-2.5 mb-2">
+              <input
+                type="number"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.0"
+                className="flex-1 bg-transparent text-lg font-bold text-white placeholder:text-slate-700 outline-none min-w-0"
+                data-testid="trade-amount-input"
+              />
+              <span className="text-xs font-bold text-slate-500 shrink-0">{side === 'buy' ? 'DOGE' : token.symbol}</span>
+            </div>
+
+            <div className="flex gap-1.5 mb-3">
+              {side === 'buy'
+                ? [1, 5, 10, 25].map((v) => <QuickBtn key={v} onClick={() => setAmount(String(v))} label={`${v}`} />)
+                : [0.25, 0.5, 0.75, 1].map((f) => <QuickBtn key={f} onClick={() => setQuickAmount(f)} label={f === 1 ? 'Max' : `${f * 100}%`} />)}
+            </div>
+
+            <div className="text-xs text-slate-500 min-h-[18px] mb-3">
+              {previewing ? (
+                <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Estimating…</span>
+              ) : preview ? (
+                side === 'buy'
+                  ? <span>You'll get ≈ <b className="text-white">{fmt(preview.tokensOut, 2)} {token.symbol}</b> <span className="text-slate-600">(fee {fmt(preview.fee, 4)} DOGE)</span></span>
+                  : <span>You'll get ≈ <b className="text-white">{fmt(preview.dogeOut, 4)} DOGE</b> <span className="text-slate-600">(fee {fmt(preview.fee, 4)} DOGE)</span></span>
+              ) : null}
+            </div>
+
+            {txState === 'error' && (
+              <div className="flex items-start gap-2 rounded-lg bg-rose-500/10 border border-rose-500/30 px-3 py-2 mb-3">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-rose-300 break-words">{txError}</p>
+              </div>
+            )}
+            {txState === 'success' && (
+              <div className="flex items-center gap-2 rounded-lg bg-lime-500/10 border border-lime-500/30 px-3 py-2 mb-3">
+                <Check className="w-3.5 h-3.5 text-lime-400 shrink-0" />
+                <p className="text-[11px] text-lime-300">Trade confirmed{txSig ? ` — ${shortAddress(txSig)}` : ''}</p>
+              </div>
+            )}
+
+            {!isConnected ? (
+              <button onClick={openModal} disabled={isConnecting} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-sm font-bold text-white disabled:opacity-60">
+                <Wallet className="w-4 h-4" /> {isConnecting ? 'Connecting…' : 'Connect Wallet'}
+              </button>
+            ) : !isCorrectNetwork ? (
+              <button onClick={handleSwitchNetwork} disabled={switchingNetwork} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500/15 border border-amber-400/30 text-sm font-bold text-amber-300 disabled:opacity-60">
+                {switchingNetwork ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />} Switch Network
+              </button>
+            ) : (
+              <button
+                onClick={handleTrade}
+                disabled={!canTrade || txState === 'pending' || txState === 'approving'}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-transform active:scale-[0.98] ${
+                  side === 'buy' ? 'bg-gradient-to-r from-lime-500 to-lime-600' : 'bg-gradient-to-r from-rose-500 to-rose-600'
+                }`}
+                data-testid="trade-submit"
+              >
+                {txState === 'approving' && <><Loader2 className="w-4 h-4 animate-spin" /> Approving…</>}
+                {txState === 'pending' && <><Loader2 className="w-4 h-4 animate-spin" /> Confirm in wallet…</>}
+                {(txState === 'idle' || txState === 'success' || txState === 'error') && (needsApproval ? 'Approve & Sell' : side === 'buy' ? 'Buy' : 'Sell')}
+              </button>
+            )}
           </div>
         )}
+
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">Recent Trades</h2>
+          {trades.length === 0 ? (
+            <p className="text-xs text-slate-600 py-4 text-center">No trades yet — be the first.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {trades.slice(0, 12).map((t, i) => (
+                <div key={`${t.tx_hash}-${t.log_index ?? i}`} className="flex items-center justify-between rounded-xl bg-white/[0.02] px-3 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {t.is_buy ? <ArrowUpRight className="w-3.5 h-3.5 text-lime-400 shrink-0" /> : <ArrowDownRight className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
+                    <span className="text-xs text-slate-400 truncate">{shortAddress(t.trader)}</span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={`text-xs font-bold ${t.is_buy ? 'text-lime-400' : 'text-rose-400'}`}>{parseFloat(t.doge_amount || '0').toFixed(2)} DOGE</p>
+                    <p className="text-[10px] text-slate-600">{timeAgo(t.timestamp)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2 flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" /> Top Holders
+          </h2>
+          {holders.length === 0 ? (
+            <p className="text-xs text-slate-600 py-4 text-center">No holders yet.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {holders.slice(0, 10).map((h, i) => (
+                <div key={h.wallet} className="flex items-center justify-between rounded-xl bg-white/[0.02] px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-slate-600 w-4">{i + 1}</span>
+                    <span className="text-xs text-slate-400">{shortAddress(h.wallet)}</span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-300">{h.pct}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default LabLauncher;
+const Stat = ({ label, value, sub }) => (
+  <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-2.5 py-2">
+    <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
+    <p className="text-sm font-black text-white truncate">{value}</p>
+    {sub && <p className="text-[9px] text-slate-600">{sub}</p>}
+  </div>
+);
+
+const QuickBtn = ({ onClick, label }) => (
+  <button onClick={onClick} className="flex-1 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] font-bold text-slate-400 active:scale-95 transition-transform">
+    {label}
+  </button>
+);
+
+const LinkChip = ({ icon: Icon, href }) => (
+  <a href={href} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/[0.04] border border-white/[0.08]">
+    <Icon className="w-3.5 h-3.5 text-slate-400" />
+  </a>
+);
+
+export default LabLauncherToken;
