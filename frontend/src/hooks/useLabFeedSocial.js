@@ -1,5 +1,6 @@
-import { useWriteContract, usePublicClient, useReadContracts } from 'wagmi';
+import { usePublicClient, useReadContracts } from 'wagmi';
 import { keccak256, toBytes } from 'viem';
+import { useUniversalWalletClient } from './useUniversalWalletClient';
 
 // Deployed on DogeOS Chikyu Testnet — contracts/deployments/dogeosTestnet/LabFeedSocial.json.
 // Update this if the contract is ever redeployed.
@@ -74,7 +75,7 @@ export function onChainErrorMessage(e) {
  */
 export function useLabFeedSocial(effectiveAddress) {
   const publicClient = usePublicClient();
-  const { writeContractAsync } = useWriteContract();
+  const { walletClient } = useUniversalWalletClient();
 
   const { data: priceData } = useReadContracts({
     contracts: [
@@ -87,14 +88,14 @@ export function useLabFeedSocial(effectiveAddress) {
 
   const likeOnChain = async (note) => {
     if (likePrice === undefined) throw new Error('Still loading — try again in a moment.');
+    if (!walletClient) throw new Error('Wallet not connected. Please reconnect and try again.');
     const auth = await fetchAuth(note.id);
-    const txHash = await writeContractAsync({
+    const txHash = await walletClient.writeContract({
       address: auth.contract_address,
       abi: LABFEED_SOCIAL_ABI,
       functionName: 'likePost',
       args: [auth.post_id, auth.author, auth.registration_signature],
       value: likePrice,
-      chainId: auth.chain_id,
     });
     fetch(`${API_URL}/api/lab-feed-social/${note.id}/like-tx`, {
       method: 'POST',
@@ -108,17 +109,17 @@ export function useLabFeedSocial(effectiveAddress) {
 
   const commentOnChain = async (note, content) => {
     if (commentPrice === undefined) throw new Error('Still loading — try again in a moment.');
+    if (!walletClient) throw new Error('Wallet not connected. Please reconnect and try again.');
     const trimmed = content.trim();
     const commentId = randomBytes32();
     const commentHash = keccak256(toBytes(trimmed));
     const auth = await fetchAuth(note.id);
-    const txHash = await writeContractAsync({
+    const txHash = await walletClient.writeContract({
       address: auth.contract_address,
       abi: LABFEED_SOCIAL_ABI,
       functionName: 'commentPost',
       args: [auth.post_id, commentId, commentHash, auth.author, auth.registration_signature],
       value: commentPrice,
-      chainId: auth.chain_id,
     });
     fetch(`${API_URL}/api/lab-feed-social/${note.id}/comment-tx`, {
       method: 'POST',
