@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useWalletClient } from 'wagmi';
+import { useEffectiveAccount } from './useEffectiveAccount';
+import { useUniversalWalletClient } from './useUniversalWalletClient';
 import { blockchainService } from '../services/blockchain';
 import { useGame } from '../contexts/GameContext';
 
 export const useWeb3Game = () => {
-  const { address, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  const { address, isConnected } = useEffectiveAccount();
+  const { walletClient } = useUniversalWalletClient();
   const { dispatch } = useGame();
   const [web3Profile, setWeb3Profile] = useState(null);
   const [loading, setLoading] = useState(false);
