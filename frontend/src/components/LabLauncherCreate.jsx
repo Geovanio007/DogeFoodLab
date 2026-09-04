@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAccount, useWalletClient } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { useWalletConnect, useAccount as useDogeAccount } from '@dogeos/dogeos-sdk';
 import {
   ChevronLeft, Rocket, ImageIcon, Globe, Send, AtSign, Loader2,
   CheckCircle2, AlertTriangle, ExternalLink, PartyPopper, Wallet,
 } from 'lucide-react';
 import { useWeb3 } from '../hooks/useWeb3';
+import { useUniversalWalletClient } from '../hooks/useUniversalWalletClient';
 import { blockchainService } from '../services/blockchain';
 
 /* ============================================================
@@ -40,7 +41,7 @@ const STEPS = {
 const LabLauncherCreate = () => {
   const navigate = useNavigate();
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  const { walletClient } = useUniversalWalletClient();
   const { isCorrectNetwork, switchToDogeOS } = useWeb3();
   const { openModal, isConnecting } = useWalletConnect();
   const { address: dogeAddress } = useDogeAccount();
