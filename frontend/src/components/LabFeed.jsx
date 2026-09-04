@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAccount, useSignMessage, useSendTransaction } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { parseEther } from 'viem';
 import {
   ChevronLeft, ChevronRight, Heart, MessageCircle, Repeat2, X, Send,
   FlaskConical, Plus, Loader2, Coins, Users, TrendingUp, Clock,
   Bell, Trophy, UserPlus, UserCheck, UserCircle, Image as ImageIcon,
 } from 'lucide-react';
-import { dogeOSDevnet } from '../config/wagmi';
+import { useUniversalWalletClient } from '../hooks/useUniversalWalletClient';
 import { useLabFeedSocial, onChainErrorMessage } from '../hooks/useLabFeedSocial';
 
 /* ============================================================
@@ -362,7 +362,7 @@ const CreateNoteModal = ({ address, onClose, onPublished }) => {
 
 // ─── Tip modal — real wallet-signed on-chain transfer ───────────────────────
 const TipModal = ({ note, onClose, onTipped }) => {
-  const { sendTransactionAsync } = useSendTransaction();
+  const { walletClient, isReady } = useUniversalWalletClient();
   const [amount, setAmount] = useState('5');
   const [phase, setPhase] = useState('idle'); // idle -> sending -> confirming -> done -> error
   const [error, setError] = useState(null);
@@ -374,13 +374,17 @@ const TipModal = ({ note, onClose, onTipped }) => {
       setError("This creator hasn't connected a wallet yet, so they can't receive on-chain tips.");
       return;
     }
+    if (!isReady) {
+      setError('Wallet not connected. Please reconnect your wallet and try again.');
+      setPhase('error');
+      return;
+    }
     setPhase('sending');
     setError(null);
     try {
-      const hash = await sendTransactionAsync({
+      const hash = await walletClient.sendTransaction({
         to: note.author_address,
         value: parseEther(String(amt)),
-        chainId: dogeOSDevnet.id,
       });
       setPhase('confirming');
       const res = await fetch(`${API_URL}/api/lab-notes/${note.id}/tip`, {
