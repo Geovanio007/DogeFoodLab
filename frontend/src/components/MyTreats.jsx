@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useEffectiveAccount } from '../hooks/useEffectiveAccount';
-import { useChainId, useSwitchChain, useWalletClient, usePublicClient } from 'wagmi';
+import { useChainId, useSwitchChain, usePublicClient } from 'wagmi';
+import { useUniversalWalletClient } from '../hooks/useUniversalWalletClient';
 import { HEIST_MEDAL_ABI } from '../config/contracts';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -658,7 +659,7 @@ const HEIST_MEDAL_IMAGE_URL = 'https://violet-additional-donkey-813.mypinata.clo
 const HeistMedalPanel = ({ address, isConnected }) => {
   const chainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
-  const { data: walletClient } = useWalletClient();
+  const { walletClient } = useUniversalWalletClient();
 
   const [config, setConfig] = useState(null);       // GET /api/dogeos-medal/config
   const [eligibility, setEligibility] = useState(null); // GET /api/dogeos-medal/eligibility/{wallet}
