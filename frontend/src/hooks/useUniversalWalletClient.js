@@ -52,9 +52,21 @@ export function useUniversalWalletClient() {
 
   const fallbackClient = useMemo(() => {
     if (wagmiWalletClient) return null; // wagmi already has a real client — nothing to do
-    if (!dogeAddress || !currentProvider || typeof currentProvider.request !== 'function') {
+    if (!dogeAddress) return null;
+
+    if (!currentProvider || typeof currentProvider.request !== 'function') {
+      // Diagnostic only — this tells us exactly what DogeOS SDK is (or
+      // isn't) exposing for this connection, so the fallback below can be
+      // fixed precisely instead of guessed at again. Safe to leave in;
+      // fires only when the fallback can't be used anyway.
+      console.warn(
+        '[useUniversalWalletClient] DogeOS SDK reports a connected address ' +
+        `(${dogeAddress}) but no usable currentProvider — on-chain writes ` +
+        'will fail for this connection. currentProvider:', currentProvider
+      );
       return null;
     }
+
     try {
       return createWalletClient({
         account: dogeAddress,
