@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAccount, useSignMessage } from 'wagmi';
 import { parseEther } from 'viem';
 import {
   ChevronLeft, ChevronRight, Heart, MessageCircle, Repeat2, X, Send,
   FlaskConical, Plus, Loader2, Coins, Users, TrendingUp, Clock,
   Bell, Trophy, UserPlus, UserCheck, UserCircle, Image as ImageIcon,
 } from 'lucide-react';
+import { useEffectiveAccount } from '../hooks/useEffectiveAccount';
 import { useUniversalWalletClient } from '../hooks/useUniversalWalletClient';
 import { useLabFeedSocial, onChainErrorMessage } from '../hooks/useLabFeedSocial';
 
@@ -177,7 +177,7 @@ const Overlay = ({ onClose, children, variant = 'dialog', maxWidth = 'sm:max-w-s
 
 // ─── Approval gate: one-time signed message before any interaction ─────────
 const ApprovalGate = ({ address, onApproved, onCancel }) => {
-  const { signMessageAsync } = useSignMessage();
+  const { walletClient } = useUniversalWalletClient();
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState(null);
 
@@ -185,9 +185,10 @@ const ApprovalGate = ({ address, onApproved, onCancel }) => {
     setSigning(true);
     setError(null);
     try {
+      if (!walletClient) throw new Error('Wallet not connected. Please reconnect and try again.');
       const msgRes = await fetch(`${API_URL}/api/lab-notes/approval-message/${address}`);
       const { message } = await msgRes.json();
-      const signature = await signMessageAsync({ message });
+      const signature = await walletClient.signMessage({ message });
       const res = await fetch(`${API_URL}/api/lab-notes/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1084,7 +1085,7 @@ const BadgeToast = ({ badgeId, onDone }) => {
 // ─── Main LabFeed ─────────────────────────────────────────────────────────────
 const LabFeed = ({ playerAddress }) => {
   const navigate = useNavigate();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useEffectiveAccount();
   const effectiveAddress = address || playerAddress;
 
   const [tab, setTab] = useState('for_you');
