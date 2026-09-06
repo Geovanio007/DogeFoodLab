@@ -93,18 +93,32 @@ const LabLauncherCreate = () => {
   };
 
   const saveMetadata = async (tokenAddress) => {
-    const res = await fetch(`${API_URL}/api/lab-launcher/tokens/${tokenAddress}/metadata`, {
+    const body = JSON.stringify({
+      creator_wallet: address,
+      description: description.trim() || null,
+      logo: logo.trim() || null,
+      website: website.trim() || null,
+      telegram: telegram.trim() || null,
+      twitter: twitter.trim() || null,
+    });
+    const attempt = () => fetch(`${API_URL}/api/lab-launcher/tokens/${tokenAddress}/metadata`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        creator_wallet: address,
-        description: description.trim() || null,
-        logo: logo.trim() || null,
-        website: website.trim() || null,
-        telegram: telegram.trim() || null,
-        twitter: twitter.trim() || null,
-      }),
+      body,
     });
+
+    // The indexer polls on its own cycle (up to ~30s) after the on-chain
+    // create tx confirms, so the token may not exist in the backend yet on
+    // the first attempt. Retry with backoff to cover one full poll cycle
+    // before surfacing an error — this is the same 404 the backend
+    // documents as expected ("indexer usually picks up a new token within
+    // one poll cycle... try again shortly").
+    const delaysMs = [3000, 5000, 8000, 13000, 13000];
+    let res = await attempt();
+    for (let i = 0; !res.ok && res.status === 404 && i < delaysMs.length; i++) {
+      await new Promise((r) => setTimeout(r, delaysMs[i]));
+      res = await attempt();
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
   };
 
@@ -315,7 +329,7 @@ const LabLauncherCreate = () => {
           <div className="flex flex-col items-center justify-center py-20 text-center" data-testid="create-token-busy">
             <Loader2 className="w-8 h-8 text-amber-400 animate-spin mb-4" />
             <p className="text-sm font-bold text-white">
-              {step === STEPS.DEPLOYING ? 'Confirm in your wallet…' : 'Saving your token details…'}
+              {step === STEPS.DEPLOYING ? 'Confirm in your wallet…' : 'Saving your token details… this can take up to a minute while it confirms on-chain.'}
             </p>
             <p className="text-xs text-slate-500 mt-1.5 max-w-[260px]">
               {step === STEPS.DEPLOYING
