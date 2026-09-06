@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAccount, useSignMessage, useChainId, useSwitchChain } from 'wagmi';
+import { useAccount as useDogeAccount } from '@dogeos/dogeos-sdk';
 import { dogeOSDevnet } from '../config/wagmi';
 
 // DogeOS Chikyū Testnet chain ID - check for multiple formats for mobile wallet compatibility
@@ -29,12 +30,22 @@ export const useWeb3 = () => {
   const { signMessageAsync } = useSignMessage();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
+  const { address: dogeAddress } = useDogeAccount();
   
   // Initialize detectedChainId with current value
   const [detectedChainId, setDetectedChainId] = useState(() => getDirectChainId());
 
   // Compute isCorrectNetwork using useMemo
   const isCorrectNetwork = useMemo(() => {
+    // A DogeOS-SDK-only connection (not bridged into wagmi) is never on the
+    // wrong chain in the first place — the SDK is configured for exactly
+    // one chain (see src/config/dogeos.js), so there's nothing to switch.
+    // Without this, wagmi's own chainId (unset for these connections) and
+    // window.ethereum (which doesn't exist for embedded/social-login
+    // wallets) would both be unavailable, making this incorrectly report
+    // false and block on-chain actions that would otherwise work fine.
+    if (dogeAddress && !isConnected) return true;
+
     // Check wagmi's reported chainId
     const wagmiMatch = chainId === dogeOSDevnet.id || DOGEOS_CHAIN_IDS.includes(chainId);
     
@@ -54,7 +65,7 @@ export const useWeb3 = () => {
     }
     
     return wagmiMatch || directMatch;
-  }, [chainId, detectedChainId]);
+  }, [chainId, detectedChainId, dogeAddress, isConnected]);
 
   // Listen for chain changes from mobile wallets
   useEffect(() => {
