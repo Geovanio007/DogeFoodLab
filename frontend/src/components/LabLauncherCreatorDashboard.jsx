@@ -6,6 +6,7 @@ import { formatUnits } from 'viem';
 import {
   ChevronLeft, Crown, Wallet, Loader2, Coins, Users, TrendingUp,
   ShoppingBag, GraduationCap, ShieldCheck, Gift, AlertTriangle, Check,
+  Pencil, X,
 } from 'lucide-react';
 import { useWeb3 } from '../hooks/useWeb3';
 import { useUniversalWalletClient } from '../hooks/useUniversalWalletClient';
@@ -37,13 +38,13 @@ const SummaryStat = ({ icon: Icon, label, value }) => (
   </div>
 );
 
-const TokenRow = ({ token, pending, claiming, isOwner, onClaim, onOpen }) => {
+const TokenRow = ({ token, pending, claiming, isOwner, canEdit, onClaim, onOpen, onEdit }) => {
   const graduated = token.status === 'graduated';
   const hasPending = pending && pending > 0n;
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3.5">
-      <button onClick={() => onOpen(token.token_address)} className="w-full text-left flex items-center gap-2.5 mb-3">
-        <div className="min-w-0 flex-1">
+      <div className="w-full flex items-center gap-2.5 mb-3">
+        <button onClick={() => onOpen(token.token_address)} className="min-w-0 flex-1 text-left">
           <div className="flex items-center gap-1.5">
             <h3 className="text-sm font-bold text-white truncate">{token.name}</h3>
             {graduated
@@ -51,8 +52,18 @@ const TokenRow = ({ token, pending, claiming, isOwner, onClaim, onOpen }) => {
               : null}
           </div>
           <span className="text-[11px] font-bold text-slate-500">${token.symbol} • {graduated ? 'Graduated' : 'Bonding'}</span>
-        </div>
-      </button>
+        </button>
+        {canEdit && (
+          <button
+            onClick={() => onEdit(token)}
+            className="shrink-0 p-2 rounded-lg bg-white/[0.05] border border-white/[0.08] text-slate-400"
+            aria-label="Edit token info"
+            data-testid={`edit-token-info-${token.token_address}`}
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-3 gap-2 mb-3">
         <MiniStat label="Market Cap" value={`${fmtDoge(token.market_cap_doge)}`} />
@@ -91,6 +102,86 @@ const MiniStat = ({ label, value }) => (
   </div>
 );
 
+const fieldClass = "w-full rounded-xl bg-white/[0.04] border border-white/[0.08] px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-300/40";
+
+const EditMetadataModal = ({ token, myAddress, onClose, onSaved }) => {
+  const [description, setDescription] = useState(token.description || '');
+  const [logo, setLogo] = useState(token.logo || '');
+  const [website, setWebsite] = useState(token.website || '');
+  const [telegram, setTelegram] = useState(token.telegram || '');
+  const [twitter, setTwitter] = useState(token.twitter || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/api/lab-launcher/tokens/${token.token_address}/metadata`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          creator_wallet: myAddress,
+          description: description.trim() || null,
+          logo: logo.trim() || null,
+          website: website.trim() || null,
+          telegram: telegram.trim() || null,
+          twitter: twitter.trim() || null,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      onSaved();
+    } catch (e) {
+      setError(
+        e?.message === 'HTTP 403'
+          ? "Only this token's creator can edit its info."
+          : 'Failed to save — please try again.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-sm rounded-2xl bg-[#0c0f14] border border-white/[0.08] p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-white">Edit {token.symbol} info</h3>
+          <button onClick={onClose} className="text-slate-500" data-testid="edit-metadata-close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="space-y-2.5">
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value.slice(0, 280))}
+            placeholder="Description"
+            rows={3}
+            className={`${fieldClass} resize-none`}
+          />
+          <input value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="Logo URL" className={fieldClass} />
+          <input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="Website URL" className={fieldClass} />
+          <input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="Telegram (t.me/yourgroup)" className={fieldClass} />
+          <input value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="X / Twitter handle" className={fieldClass} />
+        </div>
+        {error && <p className="text-[11px] text-red-400 mt-2">{error}</p>}
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full mt-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-300 to-lime-400 text-xs font-bold text-black disabled:opacity-50 flex items-center justify-center gap-1.5"
+          data-testid="edit-metadata-save"
+        >
+          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const LabLauncherCreatorDashboard = () => {
   const { wallet: routeWallet } = useParams();
   const navigate = useNavigate();
@@ -112,6 +203,7 @@ const LabLauncherCreatorDashboard = () => {
   const [claimingToken, setClaimingToken] = useState(null);
   const [claimError, setClaimError] = useState('');
   const [switchingNetwork, setSwitchingNetwork] = useState(false);
+  const [editingToken, setEditingToken] = useState(null);
 
   const loadDashboard = useCallback(async () => {
     if (!viewedWallet) { setLoading(false); return; }
@@ -246,8 +338,10 @@ const LabLauncherCreatorDashboard = () => {
                     pending={pendingByToken[t.token_address] ?? null}
                     claiming={claimingToken === t.token_address}
                     isOwner={isOwner && isCorrectNetwork}
+                    canEdit={isOwner}
                     onClaim={handleClaim}
                     onOpen={(addr) => navigate(`/lab-launcher/token/${addr}`)}
+                    onEdit={setEditingToken}
                   />
                 ))}
               </div>
@@ -275,6 +369,15 @@ const LabLauncherCreatorDashboard = () => {
           </>
         )}
       </div>
+
+      {editingToken && (
+        <EditMetadataModal
+          token={editingToken}
+          myAddress={myAddress}
+          onClose={() => setEditingToken(null)}
+          onSaved={() => { setEditingToken(null); loadDashboard(); }}
+        />
+      )}
     </div>
   );
 };
