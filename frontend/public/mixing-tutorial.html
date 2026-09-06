@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DogeFood Lab — Mixing Tutorial</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #e2e8f0;
+            background: #04030f;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding: 48px 24px 40px;
+            background: linear-gradient(135deg, #1a1204 0%, #241a06 40%, #0a1530 100%);
+            border-radius: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(250,204,21,0.25);
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(250,204,21,0.22) 0%, transparent 60%);
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(56,189,248,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56,189,248,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .header-inner { position: relative; z-index: 1; }
+        .logo {
+            width: 56px; height: 56px;
+            margin: 0 auto 14px;
+            display: block;
+            filter: drop-shadow(0 4px 14px rgba(250,204,21,0.4));
+        }
+        .header .season-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(250,204,21,0.15);
+            border: 1px solid rgba(250,204,21,0.5);
+            border-radius: 50px;
+            padding: 6px 18px;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: #fde68a;
+            margin-bottom: 16px;
+        }
+        .header .season-badge .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #facc15;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 0%, #fde68a 55%, #facc15 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p { font-size: 1.05em; color: rgba(253,230,138,0.8); }
+
+        /* ── Video lab-display frame ── */
+        .lab-screen-wrap {
+            margin: 0 0 28px;
+            padding: 22px;
+            background: #0a0d1a;
+            border-radius: 20px;
+            border: 1px solid rgba(56,189,248,0.15);
+            position: relative;
+        }
+        .lab-screen-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            font-size: 0.78em;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        .lab-screen-label .rec {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #f87171; font-weight: 700;
+        }
+        .rec .rec-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #f87171;
+            animation: pulse-dot 1.1s ease-in-out infinite;
+        }
+        .lab-screen {
+            position: relative;
+            border-radius: 14px;
+            padding: 3px;
+            background: linear-gradient(135deg, #38bdf8, #facc15, #38bdf8);
+            background-size: 200% 200%;
+            animation: border-shift 6s ease infinite;
+        }
+        @keyframes border-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .lab-screen-inner {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            aspect-ratio: 16 / 9;
+        }
+        .lab-screen-inner video {
+            width: 100%; height: 100%;
+            display: block;
+            object-fit: contain;
+            background: #000;
+        }
+        /* corner HUD ticks */
+        .hud-corner {
+            position: absolute;
+            width: 22px; height: 22px;
+            border: 2px solid rgba(56,189,248,0.7);
+            z-index: 2;
+            pointer-events: none;
+        }
+        .hud-corner.tl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .hud-corner.tr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+        .hud-corner.bl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
+        .hud-corner.br { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+        /* ── Sections ── */
+        .section {
+            margin-bottom: 24px;
+            padding: 26px 28px;
+            background: #0d1224;
+            border-radius: 16px;
+            border: 1px solid rgba(250,204,21,0.12);
+        }
+        .section h2 {
+            color: #facc15;
+            font-size: 1.35em;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section p { color: #94a3b8; font-size: 0.97em; margin-bottom: 10px; }
+
+        /* ── Quick facts grid ── */
+        .facts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-top: 4px;
+        }
+        .fact-card {
+            background: #060d1f;
+            border: 1px solid rgba(250,204,21,0.25);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .fact-card .fact-number {
+            font-size: 2.1em;
+            font-weight: 900;
+            background: linear-gradient(135deg,#facc15,#fde68a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .fact-card .fact-label {
+            font-size: 0.82em;
+            color: #cbd5e1;
+        }
+
+        .note {
+            background: rgba(56,189,248,0.08);
+            border: 1px solid rgba(56,189,248,0.3);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.9em;
+            color: #bae6fd;
+            margin-top: 16px;
+        }
+
+        /* ── Back button ── */
+        .back-button {
+            position: fixed; top: 20px; left: 20px;
+            background: linear-gradient(135deg,#d97706,#facc15);
+            color: #1a1204; border: none; padding: 11px 20px;
+            border-radius: 50px; cursor: pointer;
+            font-weight: 700; font-size: 0.9em;
+            box-shadow: 0 4px 16px rgba(250,204,21,0.35);
+            transition: all 0.2s; z-index: 1000;
+        }
+        .back-button:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(250,204,21,0.5); }
+
+        .emoji { font-size: 1.2em; }
+
+        .footer-cta {
+            text-align: center;
+            background: linear-gradient(135deg,#1a1204,#0a1530);
+            border: 1px solid rgba(250,204,21,0.25);
+        }
+        .footer-cta h2 { justify-content: center; }
+        .footer-cta a.cta-button {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 12px 28px;
+            border-radius: 50px;
+            background: linear-gradient(135deg,#facc15,#fde68a);
+            color: #1a1204;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        @media (max-width: 640px) {
+            .header h1 { font-size: 1.9em; }
+            .back-button { top: 12px; left: 12px; padding: 9px 16px; font-size: 0.85em; }
+            .lab-screen-wrap { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="back-button" onclick="location.href='/'">← Back to Game</button>
+
+    <div class="container">
+
+        <!-- ── HEADER ── -->
+        <div class="header">
+            <div class="header-inner">
+                <img class="logo" src="/dogefood-logo.png" alt="DogeFood Lab">
+                <div class="season-badge"><span class="dot"></span> Mixing Tutorial</div>
+                <h1>Brewing Your First Treat</h1>
+                <p>Everything you need to start mixing, in under a few minutes</p>
+            </div>
+        </div>
+
+        <!-- ── VIDEO ── -->
+        <div class="lab-screen-wrap">
+            <div class="lab-screen-label">
+                <span>🧪 Lab Feed — Tutorial Playback</span>
+                <span class="rec"><span class="rec-dot"></span> WATCH</span>
+            </div>
+            <div class="lab-screen">
+                <div class="lab-screen-inner">
+                    <div class="hud-corner tl"></div>
+                    <div class="hud-corner tr"></div>
+                    <div class="hud-corner bl"></div>
+                    <div class="hud-corner br"></div>
+                    <video controls playsinline preload="metadata">
+                        <source src="/Tutorial01.mp4" type="video/mp4">
+                        Your browser doesn't support embedded video — you can
+                        <a href="/Tutorial01.mp4" style="color:#38bdf8;">download it here</a> instead.
+                    </video>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── QUICK FACTS ── -->
+        <div class="section">
+            <h2><span class="emoji">📋</span> Quick facts from this video</h2>
+            <p>Keep these in mind while you watch — they come up again later.</p>
+            <div class="facts-grid">
+                <div class="fact-card">
+                    <div class="fact-number">3</div>
+                    <div class="fact-label">Characters to choose from</div>
+                </div>
+                <div class="fact-card">
+                    <div class="fact-number">3</div>
+                    <div class="fact-label">Free starting ingredients</div>
+                </div>
+                <div class="fact-card">
+                    <div class="fact-number">1</div>
+                    <div class="fact-label">Free spin every 24 hours</div>
+                </div>
+            </div>
+            <div class="note">
+                💡 Hold onto these numbers — they're exactly what the Lab Safety Check quiz asks about.
+            </div>
+        </div>
+
+        <!-- ── FOOTER CTA ── -->
+        <div class="section footer-cta">
+            <h2>Ready to start mixing?</h2>
+            <p>Head back to the Lab and brew your first treat.</p>
+            <a class="cta-button" href="/">Open DogeFood Lab</a>
+        </div>
+
+    </div>
+</body>
+</html>
