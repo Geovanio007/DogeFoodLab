@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, Trophy, Flame, Zap, Send, Users, Eye, Mic, Radio,
-  TrendingUp, Target, Clock, Award, AlertTriangle,
+  TrendingUp, Target, Clock, Award, AlertTriangle, Swords, Shield,
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -26,6 +26,15 @@ const RANK_BADGE = {
   2: { bg: 'from-slate-200 to-slate-400',  text: '#0b1738' },
   3: { bg: 'from-orange-300 to-amber-700', text: '#0b1738' },
 };
+
+// Mirrors backend arena_system.DIVISIONS — kept in sync manually since the
+// frontend can't import Python constants.
+const DIVISIONS_UI = [
+  { id: 'pup',    name: 'Pup',    emoji: '🐾', color: '#94a3b8' },
+  { id: 'shiba',  name: 'Shiba',  emoji: '🦴', color: '#38bdf8' },
+  { id: 'alpha',  name: 'Alpha',  emoji: '⚡', color: '#a78bfa' },
+  { id: 'mythic', name: 'Mythic', emoji: '👑', color: '#facc15' },
+];
 
 const formatHMS = (totalSec) => {
   const s = Math.max(0, totalSec);
@@ -73,13 +82,17 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
   const navigate = useNavigate();
   const [showStreamModal, setShowStreamModal] = useState(false);
   const [joinError, setJoinError] = useState(null);
+  const [lbDivision, setLbDivision] = useState(null); // null = all divisions
 
   // /api/arena/current returns { arena, entries, top, heat }
   // /api/arena/leaderboard returns { entries, top, total_entrants }
   // Poll /current for the arena object (prize_pool, ends_at, entries_count)
   // Poll /leaderboard separately at higher frequency for live score updates
   const currentPoll    = usePoll(`${API_URL}/api/arena/current`, 8000);
-  const lbPoll         = usePoll(`${API_URL}/api/arena/leaderboard?limit=50`, 4000);
+  const lbPoll         = usePoll(
+    `${API_URL}/api/arena/leaderboard?limit=50${lbDivision ? `&division=${lbDivision}` : ''}`,
+    4000
+  );
   const heatPoll       = usePoll(`${API_URL}/api/arena/heat`, 15000);
   const predictionPoll = usePoll(`${API_URL}/api/arena/prediction/${playerAddress}`, 8000);
 
@@ -165,6 +178,18 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
         />
       </div>
 
+      {/* Division standing */}
+      <div className="relative z-10 px-3 sm:px-6 mt-4 sm:mt-6">
+        <SectionHeader icon={<Trophy className="w-3.5 h-3.5" />} label="Your League" hint="Persists across arenas" />
+        <DivisionPanel playerAddress={playerAddress} isJoined={isJoined} />
+      </div>
+
+      {/* Duel Arena — head-to-head PvP */}
+      <div className="relative z-10 px-3 sm:px-6 mt-4 sm:mt-6">
+        <SectionHeader icon={<Swords className="w-3.5 h-3.5" />} label="Duel Arena" hint="Asynchronous PvP" />
+        <DuelPanel playerAddress={playerAddress} isJoined={isJoined} />
+      </div>
+
       {/* Streams placeholder */}
       <div className="relative z-10 px-3 sm:px-6 mt-4 sm:mt-6">
         <SectionHeader icon={<Radio className="w-3.5 h-3.5" />} label="Active Streams" hint="Preview · launching v2.1" />
@@ -174,7 +199,12 @@ const LabArena = ({ playerAddress = 'GUEST_USER', playerNickname = '' }) => {
       {/* Main 2-col grid */}
       <div className="relative z-10 px-3 sm:px-6 mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-3 sm:gap-4 pb-24">
         <div className="space-y-4">
-          <LeaderboardCard entries={entries} myAddress={playerAddress} />
+          <LeaderboardCard
+            entries={entries}
+            myAddress={playerAddress}
+            division={lbDivision}
+            onDivisionChange={setLbDivision}
+          />
         </div>
         <div className="space-y-4">
           <PredictionPanel
@@ -416,9 +446,370 @@ const ArenaBanner = ({ arena, competitorCount, prizePool, isJoined, onJoin, join
   );
 };
 
+/* ─── Division Panel ───
+   Persistent, cross-arena standing (trophies never reset at 00:00 UTC).
+   ✅ No backdrop-blur — solid dark bg                              */
+const DivisionPanel = ({ playerAddress, isJoined }) => {
+  const { data } = usePoll(
+    isJoined ? `${API_URL}/api/arena/division/${playerAddress}` : null,
+    15000
+  );
+
+  if (!isJoined) {
+    return (
+      <section
+        data-testid="division-panel"
+        className="rounded-2xl overflow-hidden py-6 px-4 text-center"
+        style={{ border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(10,15,36,0.92)' }}
+      >
+        <Trophy className="w-6 h-6 mx-auto mb-2" style={{ color: 'rgba(255,255,255,0.4)' }} />
+        <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          Join the arena to start earning league trophies
+        </div>
+      </section>
+    );
+  }
+
+  if (!data) {
+    return (
+      <section
+        data-testid="division-panel"
+        className="rounded-2xl overflow-hidden py-6 px-4 text-center text-xs"
+        style={{ border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(10,15,36,0.92)', color: 'rgba(255,255,255,0.4)' }}
+      >
+        Loading league standing…
+      </section>
+    );
+  }
+
+  const { division, trophies, next_division: next, trophies_to_next: toNext, division_rank: rank, division_size: size } = data;
+  const progressPct = next
+    ? Math.min(100, Math.round(((trophies - division.min_trophies) / (next.min_trophies - division.min_trophies)) * 100))
+    : 100;
+
+  return (
+    <section
+      data-testid="division-panel"
+      className="rounded-2xl overflow-hidden p-4"
+      style={{ border: `1px solid ${division.color}55`, backgroundColor: 'rgba(10,15,36,0.92)' }}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
+            style={{ backgroundColor: `${division.color}22`, border: `1.5px solid ${division.color}66` }}
+          >
+            {division.emoji}
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-white truncate">{division.name}</div>
+            <div className="text-[11px] font-mono tabular-nums" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              {rank ? `#${rank} of ${size} today` : 'Not ranked yet today'}
+            </div>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-base font-bold font-mono tabular-nums" style={{ color: division.color }}>
+            {trophies.toLocaleString()}
+          </div>
+          <div className="text-[9px] tracking-[0.15em] font-mono uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            trophies
+          </div>
+        </div>
+      </div>
+
+      {next ? (
+        <div className="mt-3">
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${progressPct}%`, backgroundColor: division.color, transition: 'width 0.4s ease' }}
+            />
+          </div>
+          <div className="text-[10px] font-mono mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            {toNext.toLocaleString()} trophies to {next.emoji} {next.name}
+          </div>
+        </div>
+      ) : (
+        <div className="text-[10px] font-mono mt-2" style={{ color: 'rgba(250,204,21,0.8)' }}>
+          Top league reached — defend your spot
+        </div>
+      )}
+    </section>
+  );
+};
+
+/* ─── Duel Panel ───
+   Asynchronous PvP: instantly resolves against a power-matched opponent.
+   ✅ No backdrop-blur — solid dark bg
+   ✅ No filter:blur on layout elements                         */
+const DuelPanel = ({ playerAddress, isJoined }) => {
+  const { data } = usePoll(
+    isJoined ? `${API_URL}/api/arena/duel/state/${playerAddress}` : null,
+    10000
+  );
+  const [stats, setStats]     = useState(null);
+  const [phase, setPhase]     = useState('idle'); // idle | matching | result
+  const [lastResult, setLastResult] = useState(null);
+  const [err, setErr]         = useState(null);
+
+  useEffect(() => {
+    if (data && data.joined) setStats(data);
+  }, [data]);
+
+  const duel = async () => {
+    if (!stats || stats.tickets_left <= 0 || phase === 'matching') return;
+    setErr(null);
+    setPhase('matching');
+    const started = Date.now();
+    try {
+      const res = await fetch(`${API_URL}/api/arena/duel/challenge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: playerAddress }),
+      });
+      const j = await res.json();
+      // Small minimum delay so the "scanning" beat is felt, not just a flash
+      const elapsed = Date.now() - started;
+      if (elapsed < 650) await new Promise((r) => setTimeout(r, 650 - elapsed));
+
+      if (!res.ok) {
+        setErr(j.detail || 'Duel failed');
+        setPhase('idle');
+        return;
+      }
+      setLastResult(j);
+      setStats((prev) => ({
+        ...prev,
+        power_score: j.my_power,
+        tickets_left: j.tickets_left,
+        duel_wins: (prev?.duel_wins || 0) + (j.result === 'win' ? 1 : 0),
+        duel_losses: (prev?.duel_losses || 0) + (j.result === 'loss' ? 1 : 0),
+        duel_streak: j.result === 'win' ? (prev?.duel_streak || 0) + 1 : 0,
+        log: [
+          { opponent: j.opponent.nickname, result: j.result, points: j.points_awarded, opponent_power: j.opponent.power_score, my_power: j.my_power },
+          ...(prev?.log || []),
+        ].slice(0, 10),
+      }));
+      setPhase('result');
+    } catch (e) {
+      setErr(e.message);
+      setPhase('idle');
+    }
+  };
+
+  if (!isJoined) {
+    return (
+      <section
+        data-testid="duel-panel"
+        className="rounded-2xl overflow-hidden py-8 px-4 text-center"
+        style={{ border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(10,15,36,0.92)' }}
+      >
+        <Swords className="w-6 h-6 mx-auto mb-2" style={{ color: 'rgba(255,255,255,0.4)' }} />
+        <div className="text-sm font-bold text-white mb-1">Join the arena to unlock Duels</div>
+        <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          Head-to-head PvP against a power-matched rival — instant result, real rewards.
+        </div>
+      </section>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <section
+        data-testid="duel-panel"
+        className="rounded-2xl overflow-hidden py-8 px-4 text-center text-xs"
+        style={{ border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(10,15,36,0.92)', color: 'rgba(255,255,255,0.4)' }}
+      >
+        Loading duel data…
+      </section>
+    );
+  }
+
+  return (
+    <section
+      data-testid="duel-panel"
+      className="rounded-2xl overflow-hidden"
+      style={{ border: '1px solid rgba(239,68,68,0.25)', backgroundColor: 'rgba(10,15,36,0.92)' }}
+    >
+      {/* Stat strip */}
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        <div className="flex items-center gap-1.5">
+          <Shield className="w-4 h-4" style={{ color: '#7dd3fc' }} />
+          <span className="font-mono font-bold tabular-nums text-sm" style={{ color: '#7dd3fc' }}>
+            {(stats.power_score || 0).toLocaleString()}
+          </span>
+          <span className="text-[9px] tracking-[0.2em] font-mono uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            power
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {stats.duel_streak > 0 && (
+            <span className="flex items-center gap-1 text-[11px] font-mono font-bold" style={{ color: 'rgba(253,186,116,0.9)' }}>
+              <Flame className="w-3.5 h-3.5" /> {stats.duel_streak}
+            </span>
+          )}
+          <span className="text-[11px] font-mono" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <span style={{ color: '#6ee7b7' }}>{stats.duel_wins || 0}W</span>
+            {' / '}
+            <span style={{ color: '#fca5a5' }}>{stats.duel_losses || 0}L</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="p-4">
+        {phase === 'result' && lastResult ? (
+          <DuelResultCard
+            result={lastResult}
+            ticketsLeft={stats.tickets_left}
+            onDuelAgain={duel}
+            onDone={() => setPhase('idle')}
+          />
+        ) : (
+          <div className="text-center py-3">
+            {phase === 'matching' ? (
+              <div className="py-4">
+                <div
+                  className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-3 arena-pulse"
+                  style={{ backgroundColor: 'rgba(239,68,68,0.15)', border: '1.5px solid rgba(239,68,68,0.4)' }}
+                >
+                  <Swords className="w-5 h-5" style={{ color: '#fca5a5' }} />
+                </div>
+                <div className="text-xs font-mono tracking-wider uppercase" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  Scanning the arena for a match…
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  data-testid="duel-challenge-btn"
+                  onClick={duel}
+                  disabled={stats.tickets_left <= 0}
+                  className={`arena-duel-btn relative w-full px-5 py-3.5 rounded-2xl font-bold text-sm sm:text-base ${stats.tickets_left <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <Swords className="w-4 h-4" />
+                    {stats.tickets_left > 0 ? 'Find Opponent' : 'No Duels Left'}
+                  </span>
+                </button>
+                <div className="text-[10px] font-mono mt-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  {stats.tickets_left > 0
+                    ? `${stats.tickets_left}/${stats.tickets_per_day} duel tickets left today`
+                    : 'More tickets tomorrow — try Predictions or keep mixing'}
+                </div>
+              </>
+            )}
+            {err && (
+              <div className="text-[10px] font-mono mt-2" style={{ color: '#fca5a5' }}>{err}</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Recent form */}
+      {stats.log?.length > 0 && phase !== 'result' && (
+        <div className="px-3 pb-3 space-y-1">
+          {stats.log.slice(0, 4).map((l, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-mono"
+              style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
+            >
+              <span className="truncate" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                vs {l.opponent}
+              </span>
+              <span className="font-bold shrink-0" style={{ color: l.result === 'win' ? '#6ee7b7' : '#fca5a5' }}>
+                {l.result === 'win' ? 'WIN' : 'LOSS'} +{l.points}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
+
+/* ─── Duel result reveal — VS card ─── */
+const DuelResultCard = ({ result, ticketsLeft, onDuelAgain, onDone }) => {
+  const won = result.result === 'win';
+  return (
+    <div>
+      <div className="flex items-center justify-center gap-3 sm:gap-5 mb-3">
+        <div className="text-center flex-1 min-w-0">
+          <div
+            className="w-12 h-12 sm:w-14 sm:h-14 mx-auto rounded-2xl flex items-center justify-center mb-1.5"
+            style={{ backgroundColor: 'rgba(125,211,252,0.15)', border: '1.5px solid rgba(125,211,252,0.4)' }}
+          >
+            <Shield className="w-6 h-6" style={{ color: '#7dd3fc' }} />
+          </div>
+          <div className="text-[10px] font-bold text-white truncate">You</div>
+          <div className="text-[10px] font-mono tabular-nums" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            {result.my_power.toLocaleString()} pwr
+          </div>
+        </div>
+        <div className="text-sm font-bold shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>VS</div>
+        <div className="text-center flex-1 min-w-0">
+          <div
+            className="w-12 h-12 sm:w-14 sm:h-14 mx-auto rounded-2xl flex items-center justify-center mb-1.5"
+            style={{ backgroundColor: 'rgba(239,68,68,0.15)', border: '1.5px solid rgba(239,68,68,0.4)' }}
+          >
+            <Swords className="w-6 h-6" style={{ color: '#fca5a5' }} />
+          </div>
+          <div className="text-[10px] font-bold text-white truncate">{result.opponent.nickname}</div>
+          <div className="text-[10px] font-mono tabular-nums" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            {result.opponent.power_score.toLocaleString()} pwr
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="text-center py-3 rounded-2xl mb-3"
+        style={{
+          backgroundColor: won ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+          border: `1.5px solid ${won ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}`,
+        }}
+      >
+        <div
+          className="text-xl sm:text-2xl font-bold tracking-wide"
+          style={{ fontFamily: "'Bowlby One', system-ui, sans-serif", fontWeight: 400, color: won ? '#6ee7b7' : '#fca5a5' }}
+        >
+          {won ? 'VICTORY' : 'DEFEAT'}
+        </div>
+        <div className="text-xs font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          +{result.points_awarded} points
+          {typeof result.trophies_awarded === 'number' && (
+            <span style={{ color: 'rgba(250,204,21,0.85)' }}> · +{result.trophies_awarded} trophies</span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          data-testid="duel-again-btn"
+          onClick={onDuelAgain}
+          disabled={ticketsLeft <= 0}
+          className={`arena-duel-btn flex-1 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm ${ticketsLeft <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          Duel Again ({ticketsLeft} left)
+        </button>
+        <button
+          onClick={onDone}
+          className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-colors"
+          style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)' }}
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  );
+};
+
 /* ─── Leaderboard ───
    ✅ No backdrop-blur — solid dark bg                        */
-const LeaderboardCard = ({ entries, myAddress }) => (
+const LeaderboardCard = ({ entries, myAddress, division, onDivisionChange }) => (
   <section
     data-testid="arena-leaderboard"
     className="rounded-2xl overflow-hidden"
@@ -436,10 +827,48 @@ const LeaderboardCard = ({ entries, myAddress }) => (
         {entries.length} live
       </span>
     </div>
+
+    {/* Division filter tabs */}
+    {onDivisionChange && (
+      <div
+        className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        data-testid="leaderboard-division-tabs"
+      >
+        <button
+          type="button"
+          onClick={() => onDivisionChange(null)}
+          className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wide transition-colors"
+          style={
+            !division
+              ? { backgroundColor: 'rgba(250,204,21,0.16)', color: '#fde047', border: '1px solid rgba(250,204,21,0.4)' }
+              : { backgroundColor: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }
+          }
+        >
+          All
+        </button>
+        {DIVISIONS_UI.map((d) => (
+          <button
+            key={d.id}
+            type="button"
+            onClick={() => onDivisionChange(d.id)}
+            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wide transition-colors"
+            style={
+              division === d.id
+                ? { backgroundColor: `${d.color}28`, color: d.color, border: `1px solid ${d.color}66` }
+                : { backgroundColor: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }
+            }
+          >
+            <span>{d.emoji}</span> {d.name}
+          </button>
+        ))}
+      </div>
+    )}
+
     {entries.length === 0 ? (
       <div className="py-10 text-center text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
         <Users className="w-6 h-6 mx-auto mb-2" style={{ opacity: 0.5 }} />
-        No competitors yet. Be the first to enter.
+        {division ? 'No one in this league yet — check back soon.' : 'No competitors yet. Be the first to enter.'}
       </div>
     ) : (
       <ul style={{ borderTop: 'none' }}>
@@ -969,6 +1398,30 @@ const ArenaStyles = () => (
       transform: translateY(5px);
       -webkit-box-shadow: 0 0 0 #422006, 0 4px 8px -3px rgba(250,204,21,0.4);
       box-shadow: 0 0 0 #422006, 0 4px 8px -3px rgba(250,204,21,0.4);
+    }
+
+    /* Duel button — same chunky pressed-button language, combat red */
+    .arena-duel-btn {
+      background: -webkit-linear-gradient(top, #fca5a5 0%, #ef4444 60%, #991b1b 100%);
+      background: linear-gradient(180deg, #fca5a5 0%, #ef4444 60%, #991b1b 100%);
+      color: #2a0a0a;
+      border: 3px solid #0b1738;
+      -webkit-box-shadow: 0 5px 0 #450a0a, 0 10px 20px -5px rgba(239,68,68,0.5);
+      box-shadow: 0 5px 0 #450a0a, 0 10px 20px -5px rgba(239,68,68,0.5);
+      -webkit-transition: -webkit-transform 0.18s ease, box-shadow 0.18s ease;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .arena-duel-btn:not(:disabled):hover {
+      -webkit-transform: translateY(2px);
+      transform: translateY(2px);
+      -webkit-box-shadow: 0 3px 0 #450a0a, 0 6px 14px -4px rgba(239,68,68,0.6);
+      box-shadow: 0 3px 0 #450a0a, 0 6px 14px -4px rgba(239,68,68,0.6);
+    }
+    .arena-duel-btn:not(:disabled):active {
+      -webkit-transform: translateY(5px);
+      transform: translateY(5px);
+      -webkit-box-shadow: 0 0 0 #450a0a, 0 4px 8px -3px rgba(239,68,68,0.4);
+      box-shadow: 0 0 0 #450a0a, 0 4px 8px -3px rgba(239,68,68,0.4);
     }
 
     .hide-scrollbar::-webkit-scrollbar { display: none; }
