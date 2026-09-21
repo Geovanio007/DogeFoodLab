@@ -1063,7 +1063,6 @@ const StakingVault = ({ address, treats }) => {
     fetchStakes();
     const poll = setInterval(fetchStakes, 15000);
     return () => clearInterval(poll);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
 
   // Drives the live-ticking counters between polls -- a plain re-render
