@@ -851,24 +851,16 @@ const HeistMedalPanel = ({ address, isConnected }) => {
    STAKING VAULT — stake up to 5 collected treats for real-time
    points yield. Payment goes through the same NOWPayments hosted
    checkout used for extra lives and the auto-mixer subscription.
+   Rarity styling reuses RARITY_CONFIG / getTreatImage / getTreatDisplayImage
+   so staked cards match the exact same NFT card language as TreatCard.
    ============================================================ */
-const RARITY_TIER_COLORS = {
-  common:    { grad: 'from-slate-400 to-slate-600',            text: 'text-slate-300',   glow: 'shadow-slate-500/20' },
-  uncommon:  { grad: 'from-emerald-400 to-emerald-600',        text: 'text-emerald-300', glow: 'shadow-emerald-500/20' },
-  rare:      { grad: 'from-sky-400 to-blue-600',               text: 'text-sky-300',     glow: 'shadow-sky-500/20' },
-  epic:      { grad: 'from-purple-400 to-fuchsia-600',         text: 'text-purple-300',  glow: 'shadow-purple-500/20' },
-  legendary: { grad: 'from-amber-400 to-orange-600',           text: 'text-amber-300',   glow: 'shadow-amber-500/20' },
-  mythic:    { grad: 'from-pink-400 via-fuchsia-500 to-purple-700', text: 'text-pink-300', glow: 'shadow-pink-500/30' },
-};
-const tierColors = (rarity) => RARITY_TIER_COLORS[(rarity || 'common').toLowerCase()] || RARITY_TIER_COLORS.common;
-
 const EmptyStakeSlot = ({ onClick, costDoge }) => (
   <button
     onClick={onClick}
-    className="min-h-[180px] rounded-2xl border-2 border-dashed border-slate-700 hover:border-amber-500/50 bg-slate-800/20 hover:bg-slate-800/40 flex flex-col items-center justify-center gap-1.5 transition-colors group"
+    className="min-h-[180px] rounded-2xl border-2 border-dashed border-slate-700 hover:border-white/30 bg-slate-800/20 hover:bg-slate-800/40 flex flex-col items-center justify-center gap-1.5 transition-colors group"
   >
-    <div className="w-8 h-8 rounded-full bg-slate-700/50 group-hover:bg-amber-500/20 flex items-center justify-center transition-colors">
-      <Plus className="w-4 h-4 text-slate-500 group-hover:text-amber-400" />
+    <div className="w-8 h-8 rounded-full bg-slate-700/50 group-hover:bg-white/10 flex items-center justify-center transition-colors">
+      <Plus className="w-4 h-4 text-slate-500 group-hover:text-white" />
     </div>
     <div className="text-[10px] text-slate-500 group-hover:text-slate-300">Stake a treat</div>
     <div className="text-[9px] text-slate-600">{costDoge} DOGE</div>
@@ -876,18 +868,20 @@ const EmptyStakeSlot = ({ onClick, costDoge }) => (
 );
 
 const StakeSlotCard = ({ stake, liveAmount, busy, onClaim, onUnstake }) => {
-  const colors = tierColors(stake.rarity);
+  const rKey = getRarityKey(stake.rarity);
+  const cfg = RARITY_CONFIG[rKey] || RARITY_CONFIG.common;
+  const img = getTreatImage(stake.rarity);
 
   if (stake.status === 'pending') {
     return (
-      <div className="relative rounded-2xl border border-dashed border-amber-500/40 bg-slate-800/40 p-3 flex flex-col items-center justify-center text-center min-h-[180px]">
-        <Loader2 className="w-5 h-5 text-amber-400 animate-spin mb-2" />
-        <div className="text-xs font-semibold text-amber-300">Awaiting payment</div>
+      <div className="relative rounded-2xl border border-dashed border-white/20 bg-slate-800/40 p-3 flex flex-col items-center justify-center text-center min-h-[180px]">
+        <Loader2 className="w-5 h-5 text-white animate-spin mb-2" />
+        <div className="text-xs font-semibold text-white">Awaiting payment</div>
         <div className="text-[10px] text-slate-500 mt-1">Complete checkout to activate</div>
         {stake.nowpayments_invoice_url && (
           <a
             href={stake.nowpayments_invoice_url}
-            className="mt-2 text-[10px] font-bold text-amber-400 underline underline-offset-2"
+            className="mt-2 text-[10px] font-bold text-white underline underline-offset-2"
           >
             Resume checkout
           </a>
@@ -899,15 +893,34 @@ const StakeSlotCard = ({ stake, liveAmount, busy, onClaim, onUnstake }) => {
   const claimable = Math.floor(liveAmount) >= 1;
 
   return (
-    <div className={`relative rounded-2xl bg-gradient-to-b ${colors.grad} p-[1.5px] shadow-lg ${colors.glow}`}>
-      <div className="rounded-2xl bg-slate-900/95 p-3 h-full flex flex-col min-h-[180px]">
+    <div
+      className="relative rounded-2xl overflow-hidden min-h-[180px] flex flex-col"
+      style={{
+        background: 'linear-gradient(160deg, #0f1623 0%, #0a0e18 100%)',
+        border: `1px solid ${cfg.border}`,
+        boxShadow: `0 0 0 1px ${cfg.border}, 0 4px 16px ${cfg.glow}`,
+      }}
+    >
+      {/* Corner accents — same NFT card frame language as TreatCard */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: 24, height: 24, borderTop: `2px solid ${cfg.hex}`, borderLeft: `2px solid ${cfg.hex}`, borderTopLeftRadius: 15, opacity: 0.7, zIndex: 3 }} />
+      <div style={{ position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderBottom: `2px solid ${cfg.hex}`, borderRight: `2px solid ${cfg.hex}`, borderBottomRightRadius: 15, opacity: 0.7, zIndex: 3 }} />
+
+      <div className="p-3 flex flex-col flex-1 relative z-10">
         <div className="flex items-center gap-2 mb-2">
-          {stake.treat_image && (
-            <img src={stake.treat_image} alt={stake.treat_name} className="w-9 h-9 rounded-lg object-cover shrink-0" />
-          )}
+          <div
+            className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center relative"
+            style={{ background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 75%)` }}
+          >
+            <img src={img} alt={stake.treat_name || stake.rarity} onError={(e) => { e.target.src = '/Common.png'; }} className="w-8 h-8 object-contain" />
+          </div>
           <div className="min-w-0">
-            <div className={`text-[10px] font-bold uppercase tracking-wide ${colors.text}`}>{stake.rarity}</div>
-            <div className="text-[11px] text-slate-300 truncate">{stake.treat_name}</div>
+            <div
+              className="inline-block text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+              style={{ background: cfg.badge, color: '#fff' }}
+            >
+              {stake.rarity}
+            </div>
+            <div className="text-[11px] text-slate-300 truncate mt-0.5">{stake.treat_name}</div>
           </div>
         </div>
 
@@ -916,14 +929,14 @@ const StakeSlotCard = ({ stake, liveAmount, busy, onClaim, onUnstake }) => {
             {liveAmount.toFixed(3)}
           </div>
           <div className="text-[9px] text-slate-500 uppercase tracking-wider">points earned</div>
-          <div className="text-[10px] text-emerald-400 font-mono mt-0.5">+{(stake.rate_per_min || 0).toFixed(2)}/min</div>
+          <div className="text-[10px] font-mono mt-0.5" style={{ color: cfg.hex }}>+{(stake.rate_per_min || 0).toFixed(2)}/min</div>
         </div>
 
         <div className="flex gap-1.5 mt-2">
           <button
             onClick={onClaim}
             disabled={busy || !claimable}
-            className="flex-1 text-[10px] font-bold py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 text-[10px] font-bold py-1.5 rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {busy ? '···' : 'Claim'}
           </button>
@@ -996,26 +1009,39 @@ const TreatPickerModal = ({ treats, stakedTreatIds, tiers, costDoge, address, on
           ) : (
             eligible.map((treat) => {
               const tier = tierFor(treat.rarity);
-              const colors = tierColors(treat.rarity);
+              const rKey = getRarityKey(treat.rarity);
+              const cfg = RARITY_CONFIG[rKey] || RARITY_CONFIG.common;
+              const img = getTreatDisplayImage(treat);
               return (
                 <button
                   key={treat.id}
                   onClick={() => handleStake(treat)}
                   disabled={submittingId === treat.id}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/40 transition-colors disabled:opacity-50"
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700 hover:border-white/30 transition-colors disabled:opacity-50"
                 >
-                  {treat.image && <img src={treat.image} alt={treat.name} className="w-11 h-11 rounded-lg object-cover shrink-0" />}
+                  <img
+                    src={img}
+                    alt={treat.name}
+                    onError={(e) => { e.target.src = '/Common.png'; }}
+                    className="w-11 h-11 rounded-lg object-contain shrink-0"
+                    style={{ background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 75%)` }}
+                  />
                   <div className="flex-1 min-w-0 text-left">
-                    <div className={`text-[10px] font-bold uppercase ${colors.text}`}>{treat.rarity}</div>
-                    <div className="text-sm text-white truncate">{treat.name}</div>
+                    <div
+                      className="inline-block text-[9px] font-bold uppercase px-1.5 py-0.5 rounded"
+                      style={{ background: cfg.badge, color: '#fff' }}
+                    >
+                      {treat.rarity}
+                    </div>
+                    <div className="text-sm text-white truncate mt-0.5">{treat.name}</div>
                   </div>
                   {tier && (
                     <div className="text-right shrink-0">
-                      <div className="text-xs font-mono font-bold text-emerald-400">{Math.round(tier.apy * 100)}% APY</div>
+                      <div className="text-xs font-mono font-bold text-white">{Math.round(tier.apy * 100)}% APY</div>
                       <div className="text-[9px] text-slate-500">{tier.principal} pts base</div>
                     </div>
                   )}
-                  {submittingId === treat.id && <Loader2 className="w-4 h-4 animate-spin text-amber-400 shrink-0" />}
+                  {submittingId === treat.id && <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />}
                 </button>
               );
             })
@@ -1036,7 +1062,7 @@ const StakingVault = ({ address, treats }) => {
   const [stakes, setStakes] = useState([]);
   const [maxStakes, setMaxStakes] = useState(5);
   const [tiers, setTiers] = useState({});
-  const [costDoge, setCostDoge] = useState(35);
+  const [costDoge, setCostDoge] = useState(30);
   const [fetchedAt, setFetchedAt] = useState(Date.now());
   const [showPicker, setShowPicker] = useState(false);
   const [busyId, setBusyId] = useState(null);
@@ -1103,10 +1129,10 @@ const StakingVault = ({ address, treats }) => {
   const stakedTreatIds = new Set(activeSlots.map((s) => s.treat_id));
 
   return (
-    <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800/80 to-slate-900 border border-amber-500/20 shadow-lg shadow-amber-900/10">
+    <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800/80 to-slate-900 border border-white/10 shadow-lg shadow-black/20">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
             <Lock className="w-4 h-4 text-white" />
           </div>
           <div>
