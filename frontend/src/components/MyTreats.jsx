@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
-import { ArrowLeft, Crown, Wallet, Filter, Grid3X3, List, Trophy, Beaker, Coins, ChevronDown, Tag, Store, X, Loader2, Check, Medal } from 'lucide-react';
+import { ArrowLeft, Crown, Wallet, Filter, Grid3X3, List, Trophy, Beaker, Coins, ChevronDown, Tag, Store, X, Loader2, Check, Medal, Lock, Plus } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import { useTelegram } from '../contexts/TelegramContext';
 import TreatIcon from './TreatIcon';
@@ -847,6 +847,311 @@ const HeistMedalPanel = ({ address, isConnected }) => {
   );
 };
 
+/* ============================================================
+   STAKING VAULT — stake up to 5 collected treats for real-time
+   points yield. Payment goes through the same NOWPayments hosted
+   checkout used for extra lives and the auto-mixer subscription.
+   ============================================================ */
+const RARITY_TIER_COLORS = {
+  common:    { grad: 'from-slate-400 to-slate-600',            text: 'text-slate-300',   glow: 'shadow-slate-500/20' },
+  uncommon:  { grad: 'from-emerald-400 to-emerald-600',        text: 'text-emerald-300', glow: 'shadow-emerald-500/20' },
+  rare:      { grad: 'from-sky-400 to-blue-600',               text: 'text-sky-300',     glow: 'shadow-sky-500/20' },
+  epic:      { grad: 'from-purple-400 to-fuchsia-600',         text: 'text-purple-300',  glow: 'shadow-purple-500/20' },
+  legendary: { grad: 'from-amber-400 to-orange-600',           text: 'text-amber-300',   glow: 'shadow-amber-500/20' },
+  mythic:    { grad: 'from-pink-400 via-fuchsia-500 to-purple-700', text: 'text-pink-300', glow: 'shadow-pink-500/30' },
+};
+const tierColors = (rarity) => RARITY_TIER_COLORS[(rarity || 'common').toLowerCase()] || RARITY_TIER_COLORS.common;
+
+const EmptyStakeSlot = ({ onClick, costDoge }) => (
+  <button
+    onClick={onClick}
+    className="min-h-[180px] rounded-2xl border-2 border-dashed border-slate-700 hover:border-amber-500/50 bg-slate-800/20 hover:bg-slate-800/40 flex flex-col items-center justify-center gap-1.5 transition-colors group"
+  >
+    <div className="w-8 h-8 rounded-full bg-slate-700/50 group-hover:bg-amber-500/20 flex items-center justify-center transition-colors">
+      <Plus className="w-4 h-4 text-slate-500 group-hover:text-amber-400" />
+    </div>
+    <div className="text-[10px] text-slate-500 group-hover:text-slate-300">Stake a treat</div>
+    <div className="text-[9px] text-slate-600">{costDoge} DOGE</div>
+  </button>
+);
+
+const StakeSlotCard = ({ stake, liveAmount, busy, onClaim, onUnstake }) => {
+  const colors = tierColors(stake.rarity);
+
+  if (stake.status === 'pending') {
+    return (
+      <div className="relative rounded-2xl border border-dashed border-amber-500/40 bg-slate-800/40 p-3 flex flex-col items-center justify-center text-center min-h-[180px]">
+        <Loader2 className="w-5 h-5 text-amber-400 animate-spin mb-2" />
+        <div className="text-xs font-semibold text-amber-300">Awaiting payment</div>
+        <div className="text-[10px] text-slate-500 mt-1">Complete checkout to activate</div>
+        {stake.nowpayments_invoice_url && (
+          <a
+            href={stake.nowpayments_invoice_url}
+            className="mt-2 text-[10px] font-bold text-amber-400 underline underline-offset-2"
+          >
+            Resume checkout
+          </a>
+        )}
+      </div>
+    );
+  }
+
+  const claimable = Math.floor(liveAmount) >= 1;
+
+  return (
+    <div className={`relative rounded-2xl bg-gradient-to-b ${colors.grad} p-[1.5px] shadow-lg ${colors.glow}`}>
+      <div className="rounded-2xl bg-slate-900/95 p-3 h-full flex flex-col min-h-[180px]">
+        <div className="flex items-center gap-2 mb-2">
+          {stake.treat_image && (
+            <img src={stake.treat_image} alt={stake.treat_name} className="w-9 h-9 rounded-lg object-cover shrink-0" />
+          )}
+          <div className="min-w-0">
+            <div className={`text-[10px] font-bold uppercase tracking-wide ${colors.text}`}>{stake.rarity}</div>
+            <div className="text-[11px] text-slate-300 truncate">{stake.treat_name}</div>
+          </div>
+        </div>
+
+        <div className="flex-1 flex flex-col items-center justify-center py-1">
+          <div className="text-lg font-mono font-bold text-white tabular-nums tracking-tight">
+            {liveAmount.toFixed(3)}
+          </div>
+          <div className="text-[9px] text-slate-500 uppercase tracking-wider">points earned</div>
+          <div className="text-[10px] text-emerald-400 font-mono mt-0.5">+{(stake.rate_per_min || 0).toFixed(2)}/min</div>
+        </div>
+
+        <div className="flex gap-1.5 mt-2">
+          <button
+            onClick={onClaim}
+            disabled={busy || !claimable}
+            className="flex-1 text-[10px] font-bold py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {busy ? '···' : 'Claim'}
+          </button>
+          <button
+            onClick={onUnstake}
+            disabled={busy}
+            className="flex-1 text-[10px] font-bold py-1.5 rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-700 disabled:opacity-40 transition-colors"
+          >
+            Unstake
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TreatPickerModal = ({ treats, stakedTreatIds, tiers, costDoge, address, onClose, onStaked }) => {
+  const [submittingId, setSubmittingId] = useState(null);
+  const [error, setError] = useState('');
+
+  const eligible = (treats || []).filter(
+    (t) => t.brewing_status === 'collected' && !stakedTreatIds.has(t.id)
+  );
+
+  const tierFor = (rarity) => {
+    const key = Object.keys(tiers || {}).find((k) => k.toLowerCase() === (rarity || '').toLowerCase());
+    return key ? tiers[key] : null;
+  };
+
+  const handleStake = async (treat) => {
+    setSubmittingId(treat.id);
+    setError('');
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/nowpayments/treat-stake/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_address: address, treat_id: treat.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to start staking');
+      if (data.invoice_url) {
+        window.location.href = data.invoice_url;
+      } else {
+        onStaked();
+      }
+    } catch (e) {
+      setError(e.message);
+      setSubmittingId(null);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="w-full sm:max-w-lg bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-slate-800">
+          <div>
+            <h3 className="text-base font-bold text-white">Choose a treat to stake</h3>
+            <p className="text-xs text-slate-400">{costDoge} DOGE per stake · rarer treats earn more</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto p-3 space-y-2">
+          {eligible.length === 0 ? (
+            <div className="text-center py-10 text-sm text-slate-500 px-4">
+              No eligible treats. Treats must be fully collected (not still brewing) and not already staked.
+            </div>
+          ) : (
+            eligible.map((treat) => {
+              const tier = tierFor(treat.rarity);
+              const colors = tierColors(treat.rarity);
+              return (
+                <button
+                  key={treat.id}
+                  onClick={() => handleStake(treat)}
+                  disabled={submittingId === treat.id}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/40 transition-colors disabled:opacity-50"
+                >
+                  {treat.image && <img src={treat.image} alt={treat.name} className="w-11 h-11 rounded-lg object-cover shrink-0" />}
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className={`text-[10px] font-bold uppercase ${colors.text}`}>{treat.rarity}</div>
+                    <div className="text-sm text-white truncate">{treat.name}</div>
+                  </div>
+                  {tier && (
+                    <div className="text-right shrink-0">
+                      <div className="text-xs font-mono font-bold text-emerald-400">{Math.round(tier.apy * 100)}% APY</div>
+                      <div className="text-[9px] text-slate-500">{tier.principal} pts base</div>
+                    </div>
+                  )}
+                  {submittingId === treat.id && <Loader2 className="w-4 h-4 animate-spin text-amber-400 shrink-0" />}
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        {error && <div className="px-4 pb-2 text-xs text-red-400">{error}</div>}
+
+        <div className="p-3 border-t border-slate-800 text-center">
+          <p className="text-[10px] text-slate-500">You'll be redirected to a secure NOWPayments checkout to complete payment.</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StakingVault = ({ address, treats }) => {
+  const [stakes, setStakes] = useState([]);
+  const [maxStakes, setMaxStakes] = useState(5);
+  const [tiers, setTiers] = useState({});
+  const [costDoge, setCostDoge] = useState(35);
+  const [fetchedAt, setFetchedAt] = useState(Date.now());
+  const [showPicker, setShowPicker] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+  const [, forceTick] = useState(0);
+
+  const fetchStakes = async () => {
+    if (!address) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/treat-stakes/${address}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStakes(data.stakes || []);
+        setMaxStakes(data.max_stakes || 5);
+        setTiers(data.tiers || {});
+        setCostDoge(data.cost_doge || 35);
+        setFetchedAt(Date.now());
+      }
+    } catch (e) {
+      console.error('Error fetching treat stakes:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchStakes();
+    const poll = setInterval(fetchStakes, 15000);
+    return () => clearInterval(poll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
+
+  // Drives the live-ticking counters between polls -- a plain re-render
+  // tick, not an accumulator, so there's no drift: the displayed value is
+  // always recomputed fresh from the last poll snapshot + elapsed time.
+  useEffect(() => {
+    const tick = setInterval(() => forceTick((n) => n + 1), 200);
+    return () => clearInterval(tick);
+  }, []);
+
+  const liveAccrued = (stake) => {
+    if (stake.status !== 'active') return 0;
+    const elapsedSincePoll = (Date.now() - fetchedAt) / 1000;
+    const ratePerSecond = (stake.rate_per_min || 0) / 60;
+    return (stake.accrued_preview || 0) + ratePerSecond * elapsedSincePoll;
+  };
+
+  const runAction = async (stakeId, endpoint) => {
+    setBusyId(stakeId);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/treat-stakes/${stakeId}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_address: address }),
+      });
+      if (res.ok) await fetchStakes();
+    } catch (e) {
+      console.error(`${endpoint} failed:`, e);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (!address) return null;
+
+  const activeSlots = stakes.filter((s) => s.status !== 'unstaked');
+  const slots = Array.from({ length: maxStakes }, (_, i) => activeSlots[i] || null);
+  const stakedTreatIds = new Set(activeSlots.map((s) => s.treat_id));
+
+  return (
+    <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800/80 to-slate-900 border border-amber-500/20 shadow-lg shadow-amber-900/10">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shrink-0">
+            <Lock className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-white">Staking Vault</h2>
+            <p className="text-xs text-slate-400">Stake treats for real-time points yield</p>
+          </div>
+        </div>
+        <div className="text-xs font-mono text-slate-400 shrink-0">
+          {activeSlots.length}/{maxStakes} slots
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {slots.map((stake, i) =>
+          stake ? (
+            <StakeSlotCard
+              key={stake.id}
+              stake={stake}
+              liveAmount={liveAccrued(stake)}
+              busy={busyId === stake.id}
+              onClaim={() => runAction(stake.id, 'claim')}
+              onUnstake={() => runAction(stake.id, 'unstake')}
+            />
+          ) : (
+            <EmptyStakeSlot key={`empty-${i}`} onClick={() => setShowPicker(true)} costDoge={costDoge} />
+          )
+        )}
+      </div>
+
+      {showPicker && (
+        <TreatPickerModal
+          treats={treats}
+          stakedTreatIds={stakedTreatIds}
+          tiers={tiers}
+          costDoge={costDoge}
+          address={address}
+          onClose={() => setShowPicker(false)}
+          onStaked={() => { setShowPicker(false); fetchStakes(); }}
+        />
+      )}
+    </div>
+  );
+};
+
 const MyTreats = () => {
   const { isConnected, address } = useEffectiveAccount();
   const { isTelegram, telegramUser } = useTelegram();
@@ -1187,6 +1492,9 @@ const MyTreats = () => {
             </div>
           </div>
         )}
+
+        {/* Staking Vault — stake up to 5 collected treats for real-time points yield */}
+        <StakingVault address={effectiveAddress} treats={treats} />
 
         {/* Filter Controls */}
         <div className="mb-6">
