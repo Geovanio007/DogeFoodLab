@@ -930,6 +930,23 @@ const StakeSlotCard = ({ stake, liveAmount, busy, onClaim, onUnstake }) => {
           </div>
           <div className="text-[9px] text-slate-500 uppercase tracking-wider">points earned</div>
           <div className="text-[10px] font-mono mt-0.5" style={{ color: cfg.hex }}>+{(stake.rate_per_min || 0).toFixed(2)}/min</div>
+          <div className="flex items-center gap-1 mt-1 flex-wrap justify-center">
+            {stake.loyalty_bonus_percent > 0 && (
+              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-white/10 text-slate-200 border border-white/10">
+                🔒 +{stake.loyalty_bonus_percent}% loyalty
+              </span>
+            )}
+            {stake.happy_hour_active && (
+              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                😊 Happy Hour
+              </span>
+            )}
+            {stake.golden_hour_active && (
+              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                ✨ Golden Hour 2x
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-1.5 mt-2">
@@ -1066,6 +1083,8 @@ const StakingVault = ({ address, treats }) => {
   const [fetchedAt, setFetchedAt] = useState(Date.now());
   const [showPicker, setShowPicker] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [happyHourActive, setHappyHourActive] = useState(false);
+  const [goldenHourActive, setGoldenHourActive] = useState(false);
   const [, forceTick] = useState(0);
 
   const fetchStakes = async () => {
@@ -1077,7 +1096,9 @@ const StakingVault = ({ address, treats }) => {
         setStakes(data.stakes || []);
         setMaxStakes(data.max_stakes || 5);
         setTiers(data.tiers || {});
-        setCostDoge(data.cost_doge || 35);
+        setCostDoge(data.cost_doge || 30);
+        setHappyHourActive(!!data.happy_hour_active);
+        setGoldenHourActive(!!data.golden_hour_active);
         setFetchedAt(Date.now());
       }
     } catch (e) {
@@ -1144,6 +1165,21 @@ const StakingVault = ({ address, treats }) => {
           {activeSlots.length}/{maxStakes} slots
         </div>
       </div>
+
+      {(happyHourActive || goldenHourActive) && (
+        <div className="flex flex-wrap items-center gap-2 mb-3 -mt-1">
+          {happyHourActive && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-pink-500/15 border border-pink-500/30 text-pink-300 text-[11px] font-bold">
+              😊 Happy Hour live — +25% on every claim
+            </div>
+          )}
+          {goldenHourActive && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[11px] font-bold">
+              ✨ Golden Hour live — claims doubled
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {slots.map((stake, i) =>
