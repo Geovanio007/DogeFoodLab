@@ -1,4 +1,4 @@
-// DogeOS SDK configuration — updated for @dogeos/dogeos-sdk v3.3.0-beta.0
+// DogeOS SDK configuration — updated for @dogeos/dogeos-sdk v4.0.0
 // Docs: https://docs.dogeos.com/en/sdk
 
 // DogeOS Chikyū Testnet chain definition
@@ -55,22 +55,16 @@ export const dogeosConfig = {
     ],
   },
 
-  // v3.3.0: login config — controls what login methods appear in the modal.
-  // basicLogins: email passwordless + external wallets (MetaMask, WC, etc.)
-  // socialLogins: Google and/or X — add clientIds via env vars when ready.
+  // v4.0.0: login config — controls what login methods appear in the modal.
+  // Social logins (Google/X) are no longer configured with a custom
+  // clientId here — v4 manages authentication itself and uses its own
+  // production defaults for those providers.
   login: {
     basicLogins: ['email', 'externalWallets'],
-    socialLogins: [
-      ...(process.env.REACT_APP_DOGEOS_GOOGLE_CLIENT_ID
-        ? [{ type: 'google', clientId: process.env.REACT_APP_DOGEOS_GOOGLE_CLIENT_ID }]
-        : []),
-      ...(process.env.REACT_APP_DOGEOS_X_CLIENT_ID
-        ? [{ type: 'x', clientId: process.env.REACT_APP_DOGEOS_X_CLIENT_ID }]
-        : []),
-    ],
+    socialLogins: [{ type: 'google' }, { type: 'x' }],
   },
 
-  // v3.3.0: theme config — matches DogeFood Lab's gold + dark palette.
+  // v4.0.0: theme config — matches DogeFood Lab's gold + dark palette.
   // Uses heroui prefix (same as SDK's default, matches the modal CSS vars).
   theme: {
     prefix: 'heroui',
