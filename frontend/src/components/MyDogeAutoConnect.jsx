@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAccount, useConnect } from 'wagmi';
+import { useWalletConnect } from '@dogeos/dogeos-sdk';
 import { detectMyDogeWallet } from '../lib/detectMyDoge';
 
 /**
@@ -14,6 +15,16 @@ import { detectMyDogeWallet } from '../lib/detectMyDoge';
  * provider as soon as MyDoge is detected. The native sheet handles consent,
  * then we wire the approved address into wagmi via `connect({ injected })`.
  *
+ * v4 note: the DogeOS SDK's own WalletConnectProvider probes available
+ * wallet connectors (including the injected provider) as soon as it mounts
+ * — see "Connectors" in the SDK config docs ("the provider loads wallet
+ * choices automatically... handle a rejected request"). That probe and our
+ * own eager `eth_requestAccounts` call both reach for the SAME injected
+ * MyDoge provider, and most injected wallets reject a second concurrent
+ * request outright. We now also gate on the SDK's own `isConnecting` (from
+ * useWalletConnect()) and wait a short grace period on mount, so we only
+ * fire once the SDK's own mount-time probing has had a chance to settle.
+ *
  * Defensive wrapping notes:
  *   - We check `eth_accounts` first; if MyDoge already approved this
  *     dApp, that returns the address immediately and we skip the prompt.
@@ -26,13 +37,16 @@ import { detectMyDogeWallet } from '../lib/detectMyDoge';
  * If the user rejects the prompt, `MyDogeConnectBanner` will remain
  * visible as a fallback CTA they can tap to retry.
  */
+const SDK_SETTLE_GRACE_MS = 400;
+
 const MyDogeAutoConnect = () => {
   const { isConnected } = useAccount();
   const { connect, connectors } = useConnect();
+  const { isConnecting: sdkIsConnecting, isConnected: sdkIsConnected } = useWalletConnect();
   const attempted = useRef(false);
 
   useEffect(() => {
-    if (attempted.current || isConnected) return;
+    if (attempted.current || isConnected || sdkIsConnected || sdkIsConnecting) return;
 
     const { present, provider } = detectMyDogeWallet();
     if (!present || !provider) return;
@@ -41,6 +55,12 @@ const MyDogeAutoConnect = () => {
 
     (async () => {
       try {
+        // Give the SDK's own mount-time connector probing (see comment
+        // above) a short head start so we don't fire a second concurrent
+        // eth_requestAccounts at the same injected provider.
+        await new Promise((r) => setTimeout(r, SDK_SETTLE_GRACE_MS));
+        if (sdkIsConnecting || sdkIsConnected) return;
+
         // 1. Passive read first — if MyDoge already approved this origin,
         //    no prompt is shown and we just wire up wagmi.
         let accounts = [];
@@ -88,7 +108,7 @@ const MyDogeAutoConnect = () => {
         console.warn('[MyDogeAutoConnect] outer error swallowed:', outer?.message || outer);
       }
     })();
-  }, [isConnected, connect, connectors]);
+  }, [isConnected, connect, connectors, sdkIsConnecting, sdkIsConnected]);
 
   return null;
 };
