@@ -12,13 +12,13 @@ export const dogeOSChikyuTestnet = {
   },
   rpcUrls: {
     default: {
-      http: ['https://rpc.testnet.dogeos.com'],
+      http: ['https://rpc.testnet.dogeos.com/'],
     },
   },
   blockExplorers: {
     default: {
-      name: 'DogeOS Blockscout',
-      url: 'https://blockscout.testnet.dogeos.com',
+      name: 'DogeOS L2Scan',
+      url: 'https://dogeos-testnet.l2scan.co',
     },
   },
   testnet: true,
@@ -65,9 +65,10 @@ export const dogeosConfig = {
   },
 
   // v4.0.0: theme config — matches DogeFood Lab's gold + dark palette.
-  // Uses heroui prefix (same as SDK's default, matches the modal CSS vars).
+  // (No `prefix` field here — that's not part of the documented v4
+  // ThemeConfig shape, which is just `defaultTheme` + `themes.<mode>.colors`.
+  // A leftover `prefix: 'heroui'` was removed; it wasn't doing anything.)
   theme: {
-    prefix: 'heroui',
     themes: {
       light: {
         colors: {
