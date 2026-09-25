@@ -11,8 +11,25 @@ import { NotificationProvider, useNotifications } from './contexts/NotificationC
 import { Web3Provider } from './components/Web3Provider';
 import WalletErrorBoundary from './components/WalletErrorBoundary';
 import MyDogeMobileHelper from './components/MyDogeMobileHelper';
-import MyDogeAutoConnect from './components/MyDogeAutoConnect';
-import MyDogeConnectBanner from './components/MyDogeConnectBanner';
+// MyDogeAutoConnect / MyDogeConnectBanner: DISABLED as of the @dogeos/dogeos-sdk
+// v4.0.0 upgrade. Both fire their own raw `eth_requestAccounts` call directly
+// against MyDoge's injected provider, bypassing the SDK entirely - this was
+// the only reliable way to connect MyDoge on the old beta SDK, which didn't
+// support it natively. v4.0.0 now has working native MyDoge support (confirmed
+// working in other apps on the same SDK version), so these two components are
+// now racing the SDK's own connector for the same injected provider: the
+// auto-connect's silent request fires the instant the page loads (often
+// before the user is even looking for a prompt), and MyDoge's wallet then
+// rejects the SDK's own later connection attempt as a follow-up to that
+// unresolved/rejected request. Symptom was "User Rejected Request" in
+// [wallet-errors] specifically (and only) when picking MyDoge from inside
+// MyDoge's own in-app browser - OKX/others were unaffected since nothing
+// else was racing them. Left both component files in place (not deleted) in
+// case native MyDoge support ever regresses and this bridge needs restoring -
+// just don't reintroduce these two mounts below without re-checking that
+// against whatever the current SDK version does natively first.
+// import MyDogeAutoConnect from './components/MyDogeAutoConnect';
+// import MyDogeConnectBanner from './components/MyDogeConnectBanner';
 import MenuErrorBoundary from './components/MenuErrorBoundary';
 import DebugOverlay from './components/DebugOverlay';
 import { Button } from './components/ui/button';
@@ -403,8 +420,7 @@ function App() {
                   <NotificationProvider>
                     <InnerApp />
                     <UpdateNotification />
-                    <MyDogeAutoConnect />
-                    <MyDogeConnectBanner />
+                    {/* MyDogeAutoConnect / MyDogeConnectBanner disabled - see comment at their import site above */}
                     <MyDogeMobileHelper />
                   </NotificationProvider>
                 </Web3Provider>
