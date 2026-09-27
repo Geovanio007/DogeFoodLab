@@ -37,8 +37,17 @@ export const dogeosConfig = {
   // Optional WalletConnect Cloud project ID
   walletConnectProjectId: process.env.REACT_APP_WALLETCONNECT_PROJECT_ID,
 
-  // Default chain family presented in the connection modal
-  defaultConnectChain: 'evm',
+  // defaultConnectChain intentionally NOT set (the official SDK demo and every
+  // documented config example omit it too). Setting it forces the SDK's
+  // internal MyDoge connector down a branch that skips its own safety check
+  // and blindly connects using that chain type - fine for external wallets,
+  // but breaks specifically inside MyDoge's own in-app browser, where its
+  // embedded connector needs to negotiate its own chain type rather than
+  // have one forced on it. Leaving this unset makes the SDK auto-detect from
+  // the wallet's own supported connectors (still resolves to 'evm' for every
+  // wallet in practice, since `chains` below only declares 'evm') - see
+  // dogefood-lab.md memory notes for the full trace through the SDK's
+  // bundled source that found this.
 
   // Chains the SDK should support
   chains: {
