@@ -90,7 +90,12 @@ const MyDogeMobileHelper = () => {
       const btn = target.closest('button, [role="button"]');
       if (!btn) return;
       const label = (btn.textContent || '').trim();
-      if (!/^MyDoge$/i.test(label)) return;
+      // Contains-match, not exact - v4.0.0's wallet list (HeroUI-based) may
+      // render extra badge text ("Recommended"/"Installed"/etc.) inside the
+      // same button, which would silently break an exact `=== 'MyDoge'`
+      // match and let the click fall through uncaught to the SDK's broken
+      // mobile path. Safe to broaden - nothing else would contain "mydoge".
+      if (!/mydoge/i.test(label)) return;
 
       // Intercept — prevent the SDK from running its broken mobile path.
       event.preventDefault();
