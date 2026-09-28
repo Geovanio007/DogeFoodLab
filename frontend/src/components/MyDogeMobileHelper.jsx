@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useWalletConnect } from '@dogeos/dogeos-sdk';
 
 /**
  * MyDogeMobileHelper
@@ -53,28 +54,147 @@ function detectPlatform() {
   return 'other';
 }
 
+// ---------------------------------------------------------------------------
+// Login-control discovery for the SDK's connect modal.
+//
+// The interceptor below swallows the tap on "MyDoge", so the SDK modal stays
+// on its external-wallets sub-view (ModalView.WalletList). The Email / Google
+// / X controls live on the modal's home view (ModalView.WalletHome), which is
+// NOT in the DOM at that moment - so the helper has to get the modal back to
+// its home view before it can point the user at them. The SDK's public API
+// only exposes openModal()/closeModal() (no setView), so we try, in order:
+// what's already on screen -> the modal's own back control -> closing and
+// reopening the modal (which restarts it on its home view).
+// ---------------------------------------------------------------------------
+
+// Everything an element says to a user or to assistive tech. v4.0.0's
+// HeroUI-based modal can render social buttons icon-only, so textContent
+// alone may be empty - also read aria-label / title / img alt / svg title.
+function labelOf(el) {
+  if (!el) return '';
+  const parts = [el.textContent, el.getAttribute?.('aria-label'), el.getAttribute?.('title')];
+  el.querySelectorAll?.('img[alt], svg title').forEach((n) => {
+    parts.push(n.getAttribute?.('alt') || n.textContent);
+  });
+  return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function clickableIn(root) {
+  return Array.from(root.querySelectorAll('button, [role="button"]'));
+}
+
+function openDialogs() {
+  return Array.from(document.querySelectorAll('[role="dialog"]'));
+}
+
+// Email input first: it works in every webview, whereas Google commonly
+// refuses OAuth inside embedded in-app browsers (MyDoge's own browser is
+// exactly that). Then Google, then X.
+function findLoginControl() {
+  const dialogs = openDialogs();
+  for (const dlg of dialogs) {
+    const email = dlg.querySelector(
+      'input[type="email"], input[placeholder*="email" i], input[name*="email" i]'
+    );
+    if (email) return { kind: 'focus', el: email };
+  }
+  for (const dlg of dialogs) {
+    const buttons = clickableIn(dlg);
+    const google = buttons.find((b) => /google/i.test(labelOf(b)));
+    if (google) return { kind: 'click', el: google };
+    const x = buttons.find((b) => /twitter/i.test(labelOf(b)) || /^x$/i.test(labelOf(b)));
+    if (x) return { kind: 'click', el: x };
+  }
+  return null;
+}
+
+function findBackButton() {
+  for (const dlg of openDialogs()) {
+    const back = clickableIn(dlg).find((b) => /\bback\b/i.test(labelOf(b)));
+    if (back) return back;
+  }
+  return null;
+}
+
+// Plain string on purpose: the in-app debug console prints objects as
+// "[object Object]", which is what made earlier failures undiagnosable.
+function describeDialogs() {
+  const dialogs = openDialogs();
+  if (!dialogs.length) return 'no [role=dialog] element in the DOM';
+  return dialogs
+    .map((dlg, i) => {
+      const labels = clickableIn(dlg)
+        .map((b) => labelOf(b) || '(no label)')
+        .slice(0, 12)
+        .join(' | ');
+      return `dialog${i}: ${labels || 'no buttons'}${dlg.querySelector('input') ? ' [has input]' : ''}`;
+    })
+    .join(' // ');
+}
+
+function waitFor(fn, timeout = 2500, interval = 100) {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const tick = () => {
+      const found = fn();
+      if (found) return resolve(found);
+      if (Date.now() - start >= timeout) return resolve(null);
+      setTimeout(tick, interval);
+    };
+    tick();
+  });
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function actOn(control) {
+  if (control.kind === 'focus') {
+    control.el.focus();
+    control.el.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+  } else {
+    control.el.click();
+  }
+}
+
 const MyDogeMobileHelper = () => {
   const [open, setOpen] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
+  const { openModal, closeModal } = useWalletConnect();
   const platform = detectPlatform();
 
-  // Programmatically click the embedded-wallet Email button inside the
-  // SDK's modal so the user goes straight to the working login flow.
-  const openSocialLogin = useCallback(() => {
+  // Take the user to the SDK's working embedded-wallet login (Email / Google
+  // / X). See the discovery helpers above for why this isn't a one-liner.
+  const openSocialLogin = useCallback(async () => {
     setOpen(false);
-    // Defer so React commits before we touch the modal DOM.
-    setTimeout(() => {
-      const dlg = document.querySelector('[role="dialog"]');
-      if (!dlg) return;
-      // Prefer the Google button (one tap), fall back to email input, then X.
-      const buttons = Array.from(dlg.querySelectorAll('button'));
-      const google = buttons.find((b) => /^Google$/i.test((b.textContent || '').trim()));
-      if (google) { google.click(); return; }
-      const email = dlg.querySelector('input[type="email"], input[placeholder*="email" i]');
-      if (email) { email.focus(); email.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-      const x = buttons.find((b) => /^(Twitter|X)$/i.test((b.textContent || '').trim()));
-      if (x) x.click();
-    }, 60);
-  }, []);
+    await sleep(60); // let React unmount this sheet first
+
+    // 1) Maybe the controls are already on the screen the SDK is showing.
+    let control = findLoginControl();
+
+    // 2) Step the modal back to its home view via its own back control.
+    if (!control) {
+      const back = findBackButton();
+      if (back) {
+        back.click();
+        control = await waitFor(findLoginControl, 1500);
+      }
+    }
+
+    // 3) Last resort, public API only: closing + reopening restarts the
+    //    modal on its home view.
+    if (!control) {
+      closeModal();
+      await sleep(250);
+      openModal();
+      control = await waitFor(findLoginControl, 3000);
+    }
+
+    if (control) {
+      actOn(control);
+      return;
+    }
+    console.warn(`[mydoge-helper] Email/Google login control not found. ${describeDialogs()}`);
+  }, [openModal, closeModal]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return undefined;
@@ -142,11 +262,21 @@ const MyDogeMobileHelper = () => {
         </button>
 
         <div className="relative p-5 sm:p-6 text-center">
-          <img
-            src="https://web3-assets.tomo.inc/assets/wallets/mydoge/wallet.svg"
-            alt="MyDoge"
-            className="w-16 h-16 mx-auto rounded-2xl bg-white p-1.5 shadow-lg"
-          />
+          {imgFailed ? (
+            <div
+              aria-hidden
+              className="w-16 h-16 mx-auto rounded-2xl bg-white shadow-lg flex items-center justify-center text-3xl"
+            >
+              🐕
+            </div>
+          ) : (
+            <img
+              src="https://web3-assets.tomo.inc/assets/wallets/mydoge/wallet.svg"
+              alt="MyDoge"
+              onError={() => setImgFailed(true)}
+              className="w-16 h-16 mx-auto rounded-2xl bg-white p-1.5 shadow-lg"
+            />
+          )}
           <h3
             className="mt-3 text-white font-bold text-xl sm:text-2xl leading-tight"
             style={{ fontFamily: 'var(--font-heading)' }}
