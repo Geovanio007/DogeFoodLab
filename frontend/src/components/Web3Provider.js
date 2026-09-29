@@ -4,6 +4,19 @@ import { injected } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletConnectProvider } from '@dogeos/dogeos-sdk';
 import '@dogeos/dogeos-sdk/style.css';
+// Force @heroui/dom-animation (webpack chunk 501 in the last build) into the
+// MAIN bundle instead of letting the SDK's connect modal dynamically
+// import() it the moment it opens. That on-demand fetch was timing out
+// specifically inside MyDoge's in-app browser ("Loading chunk 501 failed:
+// timeout") - MyDoge's webview appears to restrict/delay additional
+// resource loads after the initial page load, so anything fetched only at
+// interaction-time is unreliable there. A static import here makes it part
+// of the bundle every visitor already has to load successfully just to see
+// the page at all, so there's no separate late fetch left to fail. Side
+// effect only - not otherwise used, so referenced with `void` to survive
+// tree-shaking/dead-code elimination.
+import heroUIDomAnimation from '@heroui/dom-animation';
+void heroUIDomAnimation;
 import { dogeosConfig, dogeOSChikyuTestnet } from '../config/dogeos';
 
 /**
