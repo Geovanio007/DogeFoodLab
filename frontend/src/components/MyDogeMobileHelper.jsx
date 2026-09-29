@@ -87,23 +87,47 @@ function openDialogs() {
   return Array.from(document.querySelectorAll('[role="dialog"]'));
 }
 
-// Email input first: it works in every webview, whereas Google commonly
-// refuses OAuth inside embedded in-app browsers (MyDoge's own browser is
-// exactly that). Then Google, then X.
+// Email first, always: it works in every webview, whereas Google/X OAuth
+// opens a popup window that embedded browsers like MyDoge's commonly block
+// outright (not just refuse to authenticate - the popup never opens at all,
+// landing on about:blank#blocked). Three shapes to handle:
+//   1. The email input is already visible - focus it directly.
+//   2. Email is behind its own reveal control ("Continue with Email" /
+//      "Use Email" / an email icon button) - click that, then look again.
+//   3. No email path exists at all - only then fall back to Google/X.
+function findEmailInput(dlg) {
+  return dlg.querySelector(
+    'input[type="email"], input[placeholder*="email" i], input[name*="email" i]'
+  );
+}
+
+function findEmailRevealButton(dlg) {
+  return clickableIn(dlg).find((b) => {
+    const label = labelOf(b);
+    if (!/email/i.test(label)) return false;
+    // Exclude anything that's actually a Google/X button that merely
+    // mentions email in passing (aria descriptions sometimes do).
+    if (/google|twitter/i.test(label)) return false;
+    return true;
+  });
+}
+
 function findLoginControl() {
   const dialogs = openDialogs();
   for (const dlg of dialogs) {
-    const email = dlg.querySelector(
-      'input[type="email"], input[placeholder*="email" i], input[name*="email" i]'
-    );
+    const email = findEmailInput(dlg);
     if (email) return { kind: 'focus', el: email };
+  }
+  for (const dlg of dialogs) {
+    const reveal = findEmailRevealButton(dlg);
+    if (reveal) return { kind: 'reveal-email', el: reveal };
   }
   for (const dlg of dialogs) {
     const buttons = clickableIn(dlg);
     const google = buttons.find((b) => /google/i.test(labelOf(b)));
-    if (google) return { kind: 'click', el: google };
+    if (google) return { kind: 'click', el: google, risky: true };
     const x = buttons.find((b) => /twitter/i.test(labelOf(b)) || /^x$/i.test(labelOf(b)));
-    if (x) return { kind: 'click', el: x };
+    if (x) return { kind: 'click', el: x, risky: true };
   }
   return null;
 }
@@ -168,31 +192,63 @@ const MyDogeMobileHelper = () => {
     setOpen(false);
     await sleep(60); // let React unmount this sheet first
 
-    // 1) Maybe the controls are already on the screen the SDK is showing.
-    let control = findLoginControl();
+    const locate = async () => {
+      // 1) Maybe the controls are already on the screen the SDK is showing.
+      let control = findLoginControl();
 
-    // 2) Step the modal back to its home view via its own back control.
-    if (!control) {
-      const back = findBackButton();
-      if (back) {
-        back.click();
-        control = await waitFor(findLoginControl, 1500);
+      // 2) Step the modal back to its home view via its own back control.
+      if (!control) {
+        const back = findBackButton();
+        if (back) {
+          back.click();
+          control = await waitFor(findLoginControl, 1500);
+        }
       }
+
+      // 3) Last resort, public API only: closing + reopening restarts the
+      //    modal on its home view.
+      if (!control) {
+        closeModal();
+        await sleep(250);
+        openModal();
+        control = await waitFor(findLoginControl, 3000);
+      }
+      return control;
+    };
+
+    let control = await locate();
+
+    // Email is behind its own reveal control on this screen - click it,
+    // then look again for the real input that should now be visible.
+    // Re-run the full locate() (not just a re-check) in case revealing email
+    // also changed which dialog/view is current.
+    if (control?.kind === 'reveal-email') {
+      control.el.click();
+      const revealed = await waitFor(() => {
+        for (const dlg of openDialogs()) {
+          const email = findEmailInput(dlg);
+          if (email) return { kind: 'focus', el: email };
+        }
+        return null;
+      }, 1500);
+      control = revealed || control;
     }
 
-    // 3) Last resort, public API only: closing + reopening restarts the
-    //    modal on its home view.
-    if (!control) {
-      closeModal();
-      await sleep(250);
-      openModal();
-      control = await waitFor(findLoginControl, 3000);
-    }
-
-    if (control) {
+    if (control && control.kind !== 'reveal-email') {
+      if (control.risky) {
+        // Google/X open a popup window - MyDoge's webview commonly blocks
+        // that outright (about:blank#blocked) rather than just failing to
+        // authenticate. Still try it (it's all that's on offer at this
+        // point), but say so up front instead of leaving a silent dead end.
+        console.warn(
+          `[mydoge-helper] No email option found, falling back to a social button that may be ` +
+          `blocked by this webview's popup blocker. ${describeDialogs()}`
+        );
+      }
       actOn(control);
       return;
     }
+
     console.warn(`[mydoge-helper] Email/Google login control not found. ${describeDialogs()}`);
   }, [openModal, closeModal]);
 
