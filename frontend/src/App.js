@@ -11,25 +11,30 @@ import { NotificationProvider, useNotifications } from './contexts/NotificationC
 import { Web3Provider } from './components/Web3Provider';
 import WalletErrorBoundary from './components/WalletErrorBoundary';
 import MyDogeMobileHelper from './components/MyDogeMobileHelper';
-// MyDogeAutoConnect / MyDogeConnectBanner: DISABLED as of the @dogeos/dogeos-sdk
-// v4.0.0 upgrade. Both fire their own raw `eth_requestAccounts` call directly
-// against MyDoge's injected provider, bypassing the SDK entirely - this was
-// the only reliable way to connect MyDoge on the old beta SDK, which didn't
-// support it natively. v4.0.0 now has working native MyDoge support (confirmed
-// working in other apps on the same SDK version), so these two components are
-// now racing the SDK's own connector for the same injected provider: the
-// auto-connect's silent request fires the instant the page loads (often
-// before the user is even looking for a prompt), and MyDoge's wallet then
-// rejects the SDK's own later connection attempt as a follow-up to that
-// unresolved/rejected request. Symptom was "User Rejected Request" in
-// [wallet-errors] specifically (and only) when picking MyDoge from inside
-// MyDoge's own in-app browser - OKX/others were unaffected since nothing
-// else was racing them. Left both component files in place (not deleted) in
-// case native MyDoge support ever regresses and this bridge needs restoring -
-// just don't reintroduce these two mounts below without re-checking that
-// against whatever the current SDK version does natively first.
-// import MyDogeAutoConnect from './components/MyDogeAutoConnect';
-// import MyDogeConnectBanner from './components/MyDogeConnectBanner';
+// MyDogeAutoConnect / MyDogeConnectBanner: RE-ENABLED. Previously disabled
+// during the @dogeos/dogeos-sdk v4.0.0 upgrade on the theory that they were
+// racing the SDK's own native MyDoge auto-connect (see git history on this
+// comment for that reasoning - the "User Rejected Request" symptom was real,
+// disabling this did stop it). But everything found afterward while chasing
+// MyDoge connect through the SDK's own modal - chunk 501 (@heroui/dom-
+// animation) timing out on-demand inside MyDoge's webview, the SDK
+// registering MyDoge as a desktop-only connector needing manual redirect,
+// the redirect landing on an OAuth popup MyDoge's webview blocks outright -
+// points at the SDK's modal-based connect flow having its own separate,
+// deeper problems specifically inside MyDoge's own browser, independent of
+// this bridge. Bruno confirmed other apps get MyDoge's native connect popup
+// reliably inside MyDoge's own browser, which is exactly what this bridge
+// does (a direct `eth_requestAccounts` against the injected provider,
+// bypassing the SDK's connect flow entirely) - so it's very likely how those
+// other apps are actually doing it too, rather than through the SDK modal at
+// all. Restoring this as the primary path for MyDoge's own webview; the SDK
+// modal path (MyDogeMobileHelper below) stays in place as a fallback for
+// wherever this doesn't fire (e.g. detection races, or MyDoge accessed some
+// other way). If "User Rejected Request" resurfaces, that confirms both
+// paths are firing at once and one needs to yield to the other explicitly
+// rather than just disabling this one again.
+import MyDogeAutoConnect from './components/MyDogeAutoConnect';
+import MyDogeConnectBanner from './components/MyDogeConnectBanner';
 import MenuErrorBoundary from './components/MenuErrorBoundary';
 import DebugOverlay from './components/DebugOverlay';
 import { Button } from './components/ui/button';
@@ -420,7 +425,8 @@ function App() {
                   <NotificationProvider>
                     <InnerApp />
                     <UpdateNotification />
-                    {/* MyDogeAutoConnect / MyDogeConnectBanner disabled - see comment at their import site above */}
+                    <MyDogeAutoConnect />
+                    <MyDogeConnectBanner />
                     <MyDogeMobileHelper />
                   </NotificationProvider>
                 </Web3Provider>
