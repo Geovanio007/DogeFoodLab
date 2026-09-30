@@ -38,6 +38,37 @@ import { detectMyDogeWallet } from '../lib/detectMyDoge';
  * visible as a fallback CTA they can tap to retry.
  */
 const SDK_SETTLE_GRACE_MS = 400;
+const RETRY_BACKOFF_MS = 1500; // give the SDK's own attempt time to fully
+                                // resolve (not just start) before we retry
+const MAX_ATTEMPTS = 2;
+
+// e?.message alone was logging as "Unknown" for every failure so far -
+// message itself may genuinely just say "Unknown" (a generic bridge/RPC
+// error from MyDoge's own webview layer), but there may be more useful
+// detail in .code / .data / other enumerable fields that .message alone
+// doesn't surface. Dump everything we can get.
+function describeProviderError(e) {
+  if (e == null) return 'null/undefined';
+  if (typeof e === 'string') return e;
+  const parts = [];
+  if (e.code !== undefined) parts.push(`code=${e.code}`);
+  if (e.message) parts.push(`message=${e.message}`);
+  if (e.name && e.name !== 'Error') parts.push(`name=${e.name}`);
+  if (e.data !== undefined) {
+    try { parts.push(`data=${JSON.stringify(e.data)}`); } catch { /* ignore */ }
+  }
+  if (!parts.length) {
+    try {
+      const own = Object.getOwnPropertyNames(e).filter((k) => k !== 'stack');
+      parts.push(`keys=${JSON.stringify(own)} raw=${JSON.stringify(e, own)}`);
+    } catch {
+      parts.push(String(e));
+    }
+  }
+  return parts.join(' ') || String(e);
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const MyDogeAutoConnect = () => {
   const { isConnected } = useAccount();
@@ -53,38 +84,49 @@ const MyDogeAutoConnect = () => {
 
     attempted.current = true;
 
+    // One attempt: passive read, then active request if nothing was
+    // already approved. Returns accounts[] on success, null on failure.
+    const tryOnce = async (label) => {
+      let accounts = [];
+      try {
+        accounts = await provider.request({ method: 'eth_accounts' });
+      } catch (e) {
+        console.warn(`[MyDogeAutoConnect] (${label}) eth_accounts threw:`, describeProviderError(e));
+        accounts = [];
+      }
+      if (Array.isArray(accounts) && accounts.length > 0) return accounts;
+
+      try {
+        accounts = await provider.request({ method: 'eth_requestAccounts' });
+      } catch (e) {
+        console.warn(`[MyDogeAutoConnect] (${label}) eth_requestAccounts rejected:`, describeProviderError(e));
+        return null;
+      }
+      return Array.isArray(accounts) && accounts.length > 0 ? accounts : null;
+    };
+
     (async () => {
       try {
         // Give the SDK's own mount-time connector probing (see comment
         // above) a short head start so we don't fire a second concurrent
         // eth_requestAccounts at the same injected provider.
-        await new Promise((r) => setTimeout(r, SDK_SETTLE_GRACE_MS));
-        if (sdkIsConnecting || sdkIsConnected) return;
+        await sleep(SDK_SETTLE_GRACE_MS);
 
-        // 1. Passive read first — if MyDoge already approved this origin,
-        //    no prompt is shown and we just wire up wagmi.
-        let accounts = [];
-        try {
-          accounts = await provider.request({ method: 'eth_accounts' });
-        } catch (e) {
-          console.warn('[MyDogeAutoConnect] eth_accounts threw:', e?.message || e);
-          accounts = [];
-        }
-
-        // 2. If nothing approved yet, eagerly request — this is what
-        //    triggers MyDoge's native "wants to connect" sheet.
-        if (!Array.isArray(accounts) || accounts.length === 0) {
-          try {
-            accounts = await provider.request({ method: 'eth_requestAccounts' });
-          } catch (e) {
-            // User rejected, or MyDoge isn't ready yet — non-fatal.
-            console.warn('[MyDogeAutoConnect] eth_requestAccounts rejected:', e?.message || e);
-            return;
+        let accounts = null;
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          if (sdkIsConnected) return; // SDK's own attempt won the race - done
+          accounts = await tryOnce(`attempt ${attempt}`);
+          if (accounts) break;
+          if (attempt < MAX_ATTEMPTS) {
+            // Failed - if the SDK's own concurrent attempt caused this,
+            // give it a real chance to fully finish (not just start)
+            // before trying again on a now-uncontested provider.
+            await sleep(RETRY_BACKOFF_MS);
           }
         }
 
-        if (!Array.isArray(accounts) || accounts.length === 0) {
-          console.warn('[MyDogeAutoConnect] no accounts after prompt');
+        if (!accounts) {
+          console.warn(`[MyDogeAutoConnect] no accounts after ${MAX_ATTEMPTS} attempts`);
           return;
         }
 
