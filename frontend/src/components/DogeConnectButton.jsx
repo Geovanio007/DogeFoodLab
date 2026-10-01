@@ -1,7 +1,8 @@
 import React from 'react';
 import { useWalletConnect, useAccount as useDogeAccount } from '@dogeos/dogeos-sdk';
-import { useAccount as useWagmiAccount, useChainId } from 'wagmi';
+import { useAccount as useWagmiAccount, useChainId, useConnect } from 'wagmi';
 import { dogeOSChikyuTestnet } from '../config/dogeos';
+import { detectMyDogeWallet } from '../lib/detectMyDoge';
 
 /**
  * DogeConnectButton — drop-in replacement for RainbowKit's
@@ -23,6 +24,7 @@ const DogeConnectButton = ({ children }) => {
   // so these still work for any code already relying on wagmi.
   const { address: wagmiAddress, isConnected: wagmiConnected } = useWagmiAccount();
   const wagmiChainId = useChainId();
+  const { connect, connectors } = useConnect();
 
   const address = dogeAddress || wagmiAddress;
   const connected = Boolean(address) || isConnected || wagmiConnected;
@@ -59,7 +61,32 @@ const DogeConnectButton = ({ children }) => {
       }
     : null;
 
-  const openConnectModal = () => {
+  // Inside MyDoge's own in-app browser, the SDK's modal routes "MyDoge" to
+  // a social-login redirect instead of a real connection (its MyDoge entry
+  // is registered as a desktop-extension-only connector - see
+  // MyDogeMobileHelper.jsx for the full story). The actual fix for that
+  // dead end lives here instead: when MyDoge is the detected provider, skip
+  // the SDK's modal entirely and call eth_requestAccounts directly as the
+  // very first thing this handler does - no awaits before it - so it stays
+  // the direct, synchronous result of this tap. MyDoge's webview appears to
+  // require exactly that (a page-load-triggered useEffect calling the same
+  // method consistently got "User Rejected Request" even after a real
+  // multi-second retry backoff, which only makes sense as a gesture
+  // requirement, not a timing race - see MyDogeAutoConnect.jsx).
+  const openConnectModal = async () => {
+    const { present, provider } = detectMyDogeWallet();
+    if (present && provider) {
+      try {
+        const accounts = await provider.request({ method: 'eth_requestAccounts' });
+        if (Array.isArray(accounts) && accounts.length > 0) {
+          const injectedConn = connectors.find((c) => c.id === 'injected') || connectors[0];
+          if (injectedConn) connect({ connector: injectedConn });
+        }
+      } catch (e) {
+        console.error('MyDoge eth_requestAccounts failed:', e);
+      }
+      return;
+    }
     try {
       openModal?.();
     } catch (e) {
