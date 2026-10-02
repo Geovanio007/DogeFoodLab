@@ -85,3 +85,29 @@ export function detectMyDogeWallet() {
   // don't auto-trigger for these; the SDK's modal handles them.
   return { present: false, source: null, provider: null, inMyDoge: false };
 }
+
+// Shared by every MyDoge connect path (DogeConnectButton, MyDogeAutoConnect,
+// MyDogeConnectBanner). Provider errors from this webview have repeatedly
+// turned out to log as "[object Object]" or just "Unknown" with naive
+// `e?.message` handling - this pulls every useful field so failures are
+// actually diagnosable from a screenshot of the in-app debug console.
+export function describeProviderError(e) {
+  if (e == null) return 'null/undefined';
+  if (typeof e === 'string') return e;
+  const parts = [];
+  if (e.code !== undefined) parts.push(`code=${e.code}`);
+  if (e.message) parts.push(`message=${e.message}`);
+  if (e.name && e.name !== 'Error') parts.push(`name=${e.name}`);
+  if (e.data !== undefined) {
+    try { parts.push(`data=${JSON.stringify(e.data)}`); } catch { /* ignore */ }
+  }
+  if (!parts.length) {
+    try {
+      const own = Object.getOwnPropertyNames(e).filter((k) => k !== 'stack');
+      parts.push(`keys=${JSON.stringify(own)} raw=${JSON.stringify(e, own)}`);
+    } catch {
+      parts.push(String(e));
+    }
+  }
+  return parts.join(' ') || String(e);
+}
