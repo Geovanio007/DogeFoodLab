@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useWalletConnect, useAccount as useDogeAccount } from '@dogeos/dogeos-sdk';
 import { useAccount as useWagmiAccount, useChainId, useConnect } from 'wagmi';
 import { dogeOSChikyuTestnet } from '../config/dogeos';
-import { detectMyDogeWallet } from '../lib/detectMyDoge';
+import { detectMyDogeWallet, describeProviderError } from '../lib/detectMyDoge';
 
 /**
  * DogeConnectButton — drop-in replacement for RainbowKit's
@@ -25,6 +25,12 @@ const DogeConnectButton = ({ children }) => {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useWagmiAccount();
   const wagmiChainId = useChainId();
   const { connect, connectors } = useConnect();
+  // Nothing visibly happens on screen while eth_requestAccounts is
+  // in-flight (MyDoge's own native sheet takes a moment to appear), which
+  // reads as "didn't register" and invites a second tap mid-request - the
+  // two identical failures Bruno saw were very likely one real tap plus one
+  // impatient retap. This blocks that without needing any new UI.
+  const myDogeRequestInFlight = useRef(false);
 
   const address = dogeAddress || wagmiAddress;
   const connected = Boolean(address) || isConnected || wagmiConnected;
@@ -76,6 +82,8 @@ const DogeConnectButton = ({ children }) => {
   const openConnectModal = async () => {
     const { present, provider } = detectMyDogeWallet();
     if (present && provider) {
+      if (myDogeRequestInFlight.current) return; // already waiting on a prior tap
+      myDogeRequestInFlight.current = true;
       try {
         const accounts = await provider.request({ method: 'eth_requestAccounts' });
         if (Array.isArray(accounts) && accounts.length > 0) {
@@ -83,7 +91,9 @@ const DogeConnectButton = ({ children }) => {
           if (injectedConn) connect({ connector: injectedConn });
         }
       } catch (e) {
-        console.error('MyDoge eth_requestAccounts failed:', e);
+        console.error('MyDoge eth_requestAccounts failed:', describeProviderError(e));
+      } finally {
+        myDogeRequestInFlight.current = false;
       }
       return;
     }
