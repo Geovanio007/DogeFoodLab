@@ -1,8 +1,7 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { useWalletConnect, useAccount as useDogeAccount } from '@dogeos/dogeos-sdk';
-import { useAccount as useWagmiAccount, useChainId, useConnect } from 'wagmi';
+import { useAccount as useWagmiAccount, useChainId } from 'wagmi';
 import { dogeOSChikyuTestnet } from '../config/dogeos';
-import { detectMyDogeWallet, describeProviderError } from '../lib/detectMyDoge';
 
 /**
  * DogeConnectButton — drop-in replacement for RainbowKit's
@@ -14,23 +13,28 @@ import { detectMyDogeWallet, describeProviderError } from '../lib/detectMyDoge';
  *     account: { address, displayName },
  *     chain:   { id, name, unsupported },
  *     openConnectModal, openAccountModal, openChainModal,
- *     mounted, authenticationStatus
+ *     mounted, authenticationStatus, isConnecting, error
  *   }
+ *
+ * openConnectModal is deliberately just openModal() with no custom MyDoge
+ * handling - per DogeOS's own audit of the exact 4001-inside-MyDoge issue
+ * this app was hitting, the 4001 was an embedded-wallet-iframe-vs-native-
+ * provider conflict inside the SDK itself (fixed in SDK 4.0.1's "native
+ * first" startup), not something fixable by racing it with app-side code.
+ * Their explicit guidance: "Custom auto-connect code should not compete
+ * with the SDK connection request." An earlier version of this file added
+ * exactly that kind of custom handling (direct eth_requestAccounts calls,
+ * manual retries) while chasing this before that audit came back - all of
+ * that is reverted here. See MyDogeAutoConnect.jsx's own history for the
+ * matching revert on the auto-connect side.
  */
 const DogeConnectButton = ({ children }) => {
-  const { openModal, isConnected, isConnecting, disconnect } = useWalletConnect();
+  const { openModal, isConnected, isConnecting, disconnect, error } = useWalletConnect();
   const { address: dogeAddress, chainId: dogeChainId } = useDogeAccount();
   // Wagmi context is provided internally by DogeOS's WalletConnectProvider,
   // so these still work for any code already relying on wagmi.
   const { address: wagmiAddress, isConnected: wagmiConnected } = useWagmiAccount();
   const wagmiChainId = useChainId();
-  const { connect, connectors } = useConnect();
-  // Nothing visibly happens on screen while eth_requestAccounts is
-  // in-flight (MyDoge's own native sheet takes a moment to appear), which
-  // reads as "didn't register" and invites a second tap mid-request - the
-  // two identical failures Bruno saw were very likely one real tap plus one
-  // impatient retap. This blocks that without needing any new UI.
-  const myDogeRequestInFlight = useRef(false);
 
   const address = dogeAddress || wagmiAddress;
   const connected = Boolean(address) || isConnected || wagmiConnected;
@@ -67,36 +71,7 @@ const DogeConnectButton = ({ children }) => {
       }
     : null;
 
-  // Inside MyDoge's own in-app browser, the SDK's modal routes "MyDoge" to
-  // a social-login redirect instead of a real connection (its MyDoge entry
-  // is registered as a desktop-extension-only connector - see
-  // MyDogeMobileHelper.jsx for the full story). The actual fix for that
-  // dead end lives here instead: when MyDoge is the detected provider, skip
-  // the SDK's modal entirely and call eth_requestAccounts directly as the
-  // very first thing this handler does - no awaits before it - so it stays
-  // the direct, synchronous result of this tap. MyDoge's webview appears to
-  // require exactly that (a page-load-triggered useEffect calling the same
-  // method consistently got "User Rejected Request" even after a real
-  // multi-second retry backoff, which only makes sense as a gesture
-  // requirement, not a timing race - see MyDogeAutoConnect.jsx).
-  const openConnectModal = async () => {
-    const { present, provider } = detectMyDogeWallet();
-    if (present && provider) {
-      if (myDogeRequestInFlight.current) return; // already waiting on a prior tap
-      myDogeRequestInFlight.current = true;
-      try {
-        const accounts = await provider.request({ method: 'eth_requestAccounts' });
-        if (Array.isArray(accounts) && accounts.length > 0) {
-          const injectedConn = connectors.find((c) => c.id === 'injected') || connectors[0];
-          if (injectedConn) connect({ connector: injectedConn });
-        }
-      } catch (e) {
-        console.error('MyDoge eth_requestAccounts failed:', describeProviderError(e));
-      } finally {
-        myDogeRequestInFlight.current = false;
-      }
-      return;
-    }
+  const openConnectModal = () => {
     try {
       openModal?.();
     } catch (e) {
@@ -121,6 +96,7 @@ const DogeConnectButton = ({ children }) => {
     mounted: true,
     authenticationStatus: connected ? 'authenticated' : 'unauthenticated',
     isConnecting,
+    error,
   });
 };
 
