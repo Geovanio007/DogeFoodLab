@@ -11,7 +11,7 @@ import MusicPlayer from './MusicPlayer';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-const SEASON_2_END = new Date('2026-10-25T00:00:00Z').getTime(); // Season 2: Jun 17 – Oct 25 2026
+const SEASON_2_END = new Date('2026-11-24T00:00:00Z').getTime(); // Season 2: Jun 17 – Nov 24 2026 (extended +30 days from Oct 25)
 
 const SeasonCountdown = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
