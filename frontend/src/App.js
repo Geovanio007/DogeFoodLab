@@ -30,7 +30,6 @@ import WalletErrorBoundary from './components/WalletErrorBoundary';
 // import MyDogeAutoConnect from './components/MyDogeAutoConnect';
 // import MyDogeConnectBanner from './components/MyDogeConnectBanner';
 import MenuErrorBoundary from './components/MenuErrorBoundary';
-import DebugOverlay from './components/DebugOverlay';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -408,7 +407,6 @@ const isMyDogeBrowser = typeof navigator !== 'undefined' && /MyDoge/i.test(navig
 function App() {
   return (
     <>
-      <DebugOverlay />
       <ThemeProvider>
       <VersionProvider>
         <AudioProvider>
@@ -428,47 +426,7 @@ function App() {
         </AudioProvider>
       </VersionProvider>
       </ThemeProvider>
-      <DebugToggleZone />
     </>
-  );
-}
-
-/**
- * Tiny invisible 24x24 box pinned to the bottom-right corner of the
- * viewport. Tapping it 5 times within 3 seconds force-enables the
- * DebugOverlay — this is the only way to reach debug mode inside the
- * MyDoge in-app browser, which has no URL bar.
- */
-function DebugToggleZone() {
-  const counter = React.useRef({ count: 0, firstTap: 0 });
-  const onTap = () => {
-    const now = Date.now();
-    if (now - counter.current.firstTap > 3000) {
-      counter.current = { count: 1, firstTap: now };
-      return;
-    }
-    counter.current.count += 1;
-    if (counter.current.count >= 5) {
-      try { window.localStorage?.setItem('dogefood_debug', '1'); } catch (_) { /* ignore */ }
-      window.location.reload();
-    }
-  };
-  return (
-    <div
-      data-testid="debug-toggle-zone"
-      onClick={onTap}
-      aria-hidden
-      style={{
-        position: 'fixed',
-        right: 0,
-        bottom: 0,
-        width: 28,
-        height: 28,
-        zIndex: 100001,
-        opacity: 0,
-        cursor: 'default',
-      }}
-    />
   );
 }
 
