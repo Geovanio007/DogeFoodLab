@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAccount } from 'wagmi';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Switch } from './ui/switch';
@@ -12,6 +11,7 @@ import { useAudio } from '../contexts/AudioContext';
 import { useMusic } from '../contexts/MusicContext';
 import { useTelegram } from '../contexts/TelegramContext';
 import { useNFTVerification } from '../hooks/useNFTVerification';
+import { useEffectiveAccount } from '../hooks/useEffectiveAccount';
 import { NotificationSettings } from './NotificationPrompt';
 import AutoMixerSubscription from './AutoMixerSubscription';
 import ReferralPanel from './ReferralPanel';
@@ -43,7 +43,10 @@ import {
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const Settings = () => {
-  const { address, isConnected } = useAccount();
+  // Same hook MainMenu uses: unifies wagmi + the DogeOS SDK. Raw wagmi useAccount()
+  // returns no address for SDK-only wallets, which made this page fall back to a
+  // leftover guest record (or null) and save the username to the wrong account.
+  const { address, isConnected } = useEffectiveAccount();
   const { isTelegram, telegramUser } = useTelegram();
   const { isNFTHolder: gameNFTHolder, dispatch } = useGame();
   const { isNFTHolder: nftVerifiedHolder, nftBalance, vipBonusCredited } = useNFTVerification();
