@@ -1488,6 +1488,13 @@ const BoosterPackageCTA = ({ playerAddress }) => {
     return () => clearInterval(poll);
   }, [fetchStatus]);
 
+  // The Neon Booster pop-up asks this widget to open the purchase modal.
+  useEffect(() => {
+    const openFromPopup = () => { setDismissed(false); setShowModal(true); };
+    window.addEventListener('dogefood:open-booster', openFromPopup);
+    return () => window.removeEventListener('dogefood:open-booster', openFromPopup);
+  }, []);
+
   // Live countdown between polls — 30s granularity is plenty for a 48h cap.
   useEffect(() => {
     if (!cooldown?.on_cooldown) return undefined;
@@ -1700,6 +1707,269 @@ const BoosterPurchaseModal = ({ playerAddress, onClose, onCooldown = false, seco
           {!onCooldown && BOOSTER_PACKAGE_UI.autoMixerDays > 0 && (
             <p className="text-[10px] text-center text-slate-500">Already have an active Auto-Mixer? The {BOOSTER_PACKAGE_UI.autoMixerDays} days stack on top of your remaining time.</p>
           )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEON BOOSTER LAB POP-UP
+   Appears once, 5 seconds after the player lands on the main menu, then stays
+   away for 48 hours (remembered per device in localStorage). It waits politely
+   while the walkthrough / sign-in / disclaimer is open, and is skipped when the
+   player's Booster Pack is already on cooldown. The banner image lives in the
+   public folder: /Doge's Neon Booster Lab.png
+   ═══════════════════════════════════════════════════════════════════════════ */
+const NEON_POPUP_SEEN_KEY = 'dogefood_neon_booster_popup_seen_at';
+const NEON_POPUP_DELAY_MS = 5000;
+const NEON_POPUP_COOLDOWN_MS = 48 * 60 * 60 * 1000;
+const NEON_BANNER_SRC = `${process.env.PUBLIC_URL || ''}/${encodeURIComponent("Doge's Neon Booster Lab.png")}`;
+let neonPopupShownThisPageLoad = false; // fallback when localStorage is unavailable
+
+const neonPopupRecentlySeen = () => {
+  if (neonPopupShownThisPageLoad) return true;
+  try {
+    const raw = Number(localStorage.getItem(NEON_POPUP_SEEN_KEY) || 0);
+    const age = Date.now() - raw;
+    return raw > 0 && age >= 0 && age < NEON_POPUP_COOLDOWN_MS;
+  } catch { return false; }
+};
+
+const NeonBoosterPopup = ({ playerAddress, blocked = false }) => {
+  const [open, setOpen] = useState(false);
+  const [imgState, setImgState] = useState('loading'); // loading | ok | failed
+  const blockedRef = useRef(blocked);
+  const addressRef = useRef(playerAddress);
+  const primaryRef = useRef(null);
+  blockedRef.current = blocked;
+  addressRef.current = playerAddress;
+
+  // Schedule once per landing: 5s, then show if nothing else is in the way.
+  useEffect(() => {
+    if (neonPopupRecentlySeen()) return undefined;
+    let cancelled = false;
+    let timer = null;
+
+    const tryShow = async () => {
+      if (cancelled) return;
+      if (neonPopupRecentlySeen()) return;
+      // Something else is on screen — look again shortly instead of stacking dialogs.
+      if (blockedRef.current || document.hidden) { timer = setTimeout(tryShow, 3000); return; }
+      // No point advertising a pack the player can't buy right now.
+      const addr = addressRef.current;
+      if (addr && addr !== 'GUEST_USER') {
+        try {
+          const res = await fetch(`${BACKEND_URL}/api/booster/status/${addr}`);
+          if (res.ok) {
+            const status = await res.json();
+            if (status && status.on_cooldown) return;
+          }
+        } catch { /* fail open — show it */ }
+      }
+      if (cancelled) return;
+      neonPopupShownThisPageLoad = true;
+      try { localStorage.setItem(NEON_POPUP_SEEN_KEY, String(Date.now())); } catch { /* ignore */ }
+      setOpen(true);
+    };
+
+    timer = setTimeout(tryShow, NEON_POPUP_DELAY_MS);
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
+  }, []);
+
+  const close = useCallback(() => setOpen(false), []);
+
+  // While open: Esc closes, page behind does not scroll, focus lands on the main button.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusTimer = setTimeout(() => { if (primaryRef.current) primaryRef.current.focus({ preventScroll: true }); }, 250);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+      clearTimeout(focusTimer);
+    };
+  }, [open, close]);
+
+  if (!open) return null;
+
+  const canBuy = !!playerAddress && playerAddress !== 'GUEST_USER';
+  const openBooster = () => {
+    close();
+    window.dispatchEvent(new CustomEvent('dogefood:open-booster'));
+  };
+
+  const perks = [
+    { label: `${BOOSTER_PACKAGE_UI.autoMixerDays}-Day Auto-Mixer`, icon: '⚗️' },
+    { label: `${BOOSTER_PACKAGE_UI.extraLives} Extra Lives`, icon: '💚' },
+    { label: `${BOOSTER_PACKAGE_UI.points.toLocaleString()} Points`, icon: '⚡' },
+  ];
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Neon Booster Lab"
+      onClick={close}
+      data-testid="neon-booster-popup"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1100,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+        background: 'radial-gradient(circle at 50% 40%, rgba(22,101,52,0.35), rgba(2,8,4,0.88) 70%)',
+        backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+        animation: 'neonFade 0.35s ease-out both',
+      }}
+    >
+      <style>{`
+        @keyframes neonFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes neonPop { 0% { opacity: 0; transform: translateY(18px) scale(0.94); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes neonGlow {
+          0%, 100% { box-shadow: 0 0 22px rgba(74,222,128,0.32), 0 0 64px rgba(74,222,128,0.16), inset 0 0 0 1px rgba(190,242,100,0.10); }
+          50%      { box-shadow: 0 0 34px rgba(74,222,128,0.55), 0 0 96px rgba(74,222,128,0.26), inset 0 0 0 1px rgba(190,242,100,0.22); }
+        }
+        @keyframes neonBtnShine { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(120%); } }
+        @keyframes neonBubble { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15% { opacity: 0.7; } 100% { transform: translateY(-260px) scale(1.1); opacity: 0; } }
+        @keyframes neonShimmer { 0% { background-position: -300px 0; } 100% { background-position: 300px 0; } }
+        @media (prefers-reduced-motion: reduce) {
+          [data-testid="neon-booster-popup"], [data-testid="neon-booster-popup"] * { animation: none !important; }
+        }
+      `}</style>
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'relative', width: '100%', maxWidth: 420, maxHeight: '92vh', overflowY: 'auto',
+          borderRadius: 24,
+          background: 'linear-gradient(165deg, #0c1f14 0%, #07130b 55%, #050d08 100%)',
+          border: '1.5px solid rgba(74,222,128,0.6)',
+          animation: 'neonPop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both, neonGlow 3.2s ease-in-out 0.5s infinite',
+        }}
+      >
+        {/* Rising lab bubbles */}
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: 24, pointerEvents: 'none' }}>
+          {[{ l: '8%', d: '0s', s: 10 }, { l: '24%', d: '1.2s', s: 6 }, { l: '70%', d: '0.6s', s: 8 }, { l: '88%', d: '1.9s', s: 12 }, { l: '52%', d: '2.4s', s: 5 }].map((b, i) => (
+            <span key={i} style={{
+              position: 'absolute', bottom: -14, left: b.l, width: b.s, height: b.s, borderRadius: '50%',
+              background: 'radial-gradient(circle at 30% 30%, rgba(236,252,203,0.9), rgba(74,222,128,0.35))',
+              animation: `neonBubble 4.6s ease-in ${b.d} infinite`,
+            }} />
+          ))}
+        </div>
+
+        {/* Close */}
+        <button
+          type="button"
+          onClick={close}
+          aria-label="Close"
+          style={{
+            position: 'absolute', top: 10, right: 10, zIndex: 3,
+            width: 32, height: 32, borderRadius: '50%',
+            background: 'rgba(5,13,8,0.72)', border: '1px solid rgba(190,242,100,0.35)',
+            color: '#d9f99d', fontSize: 15, lineHeight: 1, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >{'\u2715'}</button>
+
+        {/* Banner */}
+        <div style={{ position: 'relative', borderRadius: '22px 22px 0 0', overflow: 'hidden', background: '#07130b' }}>
+          {imgState !== 'failed' ? (
+            <img
+              src={NEON_BANNER_SRC}
+              alt="Doge's Neon Booster Lab"
+              onLoad={() => setImgState('ok')}
+              onError={() => setImgState('failed')}
+              style={{
+                display: 'block', width: '100%', height: 'auto',
+                opacity: imgState === 'ok' ? 1 : 0, transition: 'opacity 0.4s ease',
+                minHeight: imgState === 'ok' ? 0 : 180,
+              }}
+            />
+          ) : (
+            <div style={{ height: 170, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 60%, rgba(74,222,128,0.28), rgba(7,19,11,0) 70%)' }}>
+              <BoosterFlaskIcon size={96} />
+            </div>
+          )}
+          {imgState === 'loading' && (
+            <div aria-hidden="true" style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(90deg, rgba(74,222,128,0.04) 0%, rgba(74,222,128,0.16) 50%, rgba(74,222,128,0.04) 100%)',
+              backgroundSize: '600px 100%', animation: 'neonShimmer 1.4s linear infinite',
+            }} />
+          )}
+          {/* fade the banner into the card */}
+          <div aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 56, background: 'linear-gradient(to bottom, rgba(7,19,11,0), #0a1a10)' }} />
+        </div>
+
+        {/* Content */}
+        <div style={{ position: 'relative', padding: '4px 20px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#86efac' }}>
+            Lab Booster
+          </div>
+          <h2 style={{ margin: '4px 0 12px', fontSize: 22, fontWeight: 800, color: '#ecfccb', textShadow: '0 0 18px rgba(74,222,128,0.55)' }}>
+            Neon Booster Pack
+          </h2>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
+            {perks.map((p) => (
+              <span key={p.label} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 11px', borderRadius: 999,
+                background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,0.35)',
+                fontSize: 12, fontWeight: 700, color: '#d9f99d',
+              }}>
+                <span aria-hidden="true">{p.icon}</span>{p.label}
+              </span>
+            ))}
+          </div>
+
+          {canBuy ? (
+            <button
+              ref={primaryRef}
+              type="button"
+              onClick={openBooster}
+              data-testid="neon-booster-popup-cta"
+              style={{
+                position: 'relative', overflow: 'hidden', width: '100%',
+                padding: '13px 16px', borderRadius: 14, border: '1px solid rgba(190,242,100,0.7)', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #22c55e 0%, #4ade80 55%, #a3e635 100%)',
+                color: '#052e16', fontSize: 15, fontWeight: 800, letterSpacing: '0.02em',
+                boxShadow: '0 0 22px rgba(74,222,128,0.55), 0 6px 18px rgba(0,0,0,0.35)',
+              }}
+            >
+              <span aria-hidden="true" style={{
+                position: 'absolute', top: 0, bottom: 0, width: '40%',
+                background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.55), transparent)',
+                animation: 'neonBtnShine 2.8s ease-in-out infinite',
+              }} />
+              <span style={{ position: 'relative' }}>Get the Booster Pack · {BOOSTER_PACKAGE_UI.costDoge} DOGE</span>
+            </button>
+          ) : (
+            <button
+              ref={primaryRef}
+              type="button"
+              onClick={close}
+              style={{
+                width: '100%', padding: '13px 16px', borderRadius: 14, cursor: 'pointer',
+                border: '1px solid rgba(190,242,100,0.5)', background: 'rgba(74,222,128,0.14)',
+                color: '#d9f99d', fontSize: 14, fontWeight: 700,
+              }}
+            >
+              Connect to unlock the Booster Pack
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={close}
+            style={{ marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(187,247,208,0.55)', padding: 6 }}
+          >
+            Maybe later
+          </button>
         </div>
       </div>
     </div>
@@ -3397,6 +3667,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
       <SpinWheelCTA />
       <BoosterPackageCTA playerAddress={effectiveAddress} />
+      <NeonBoosterPopup playerAddress={effectiveAddress} blocked={showWalkthrough || showAuthModal || showDisclaimer || showGuestSignup} />
 
       {/* Mega Lab Crate — recurring bonus for max-tier (Mythic Lab) Shiba owners */}
       <MegaCrateSystem
