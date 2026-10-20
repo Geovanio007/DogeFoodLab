@@ -20,8 +20,14 @@ import {
 } from 'lucide-react';
 import PointsSwapWidget from './PointsSwapWidget';
 import MegaCrateSystem from './MegaCrateSystem';
+import CommunityChat, { useChatUnread } from './CommunityChat';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Guest accounts are switched off: only Telegram and wallet players can play.
+// To bring guests back later, set REACT_APP_ALLOW_GUEST_ACCOUNTS=true in the
+// Cloudflare Pages build environment (and ALLOW_GUEST_ACCOUNTS=true on the backend).
+const GUEST_ACCOUNTS_ENABLED = process.env.REACT_APP_ALLOW_GUEST_ACCOUNTS === 'true';
 const SEASON_2_END = new Date('2026-11-24T00:00:00Z').getTime(); // Season 2: Jun 17 – Nov 24 2026 (extended +30 days from Oct 25)
 
 // ─── Season Countdown ────────────────────────────────────────
@@ -2555,6 +2561,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
   const [activityTab, setActivityTab] = useState('live');
 
   const [guestUser, setGuestUser] = useState(() => {
+    if (!GUEST_ACCOUNTS_ENABLED) return null;
     try { return JSON.parse(localStorage.getItem('dogefood_player')); } catch { return null; }
   });
   const [playerLevel, setPlayerLevel] = useState(1);
@@ -2573,6 +2580,23 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
   // — even if it's 0. Only fall back to GameContext points before the first fetch.
   const effectivePoints = profileLoaded ? playerPoints : (points || 0);
   const isAuthenticated = isConnected || isTelegram || guestUser;
+
+  // Community chat: unread replies drive the message icon + Community tab badge.
+  const chat = useChatUnread(effectiveAddress, !!isLoggedIn);
+  const activityCardRef = useRef(null);
+  const openCommunityChat = () => {
+    setActivityTab('community');
+    chat.markRead();
+    setTimeout(() => {
+      if (activityCardRef.current) activityCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+  const promptForUsername = () => {
+    setUsernameInput(username);
+    setIsEditingUsername(true);
+    setUsernameError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleReferralClick = () => {
     navigate('/settings', { state: { tab: 'referral' } });
@@ -2606,6 +2630,8 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
 
   useEffect(() => {
     const load = () => {
+      // Guest accounts are switched off — ignore any leftover guest record.
+      if (!GUEST_ACCOUNTS_ENABLED) return;
       // A wallet connection fully supersedes a guest identity. Without
       // this guard, this effect — which used to run once on mount with
       // no awareness of wallet state — would read the leftover guest
@@ -3010,6 +3036,27 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
                     </>
                   )}
                 </div>
+
+                {/* Community inbox: lights up when someone replies to you */}
+                <button
+                  type="button"
+                  onClick={openCommunityChat}
+                  className={`relative shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${
+                    chat.unread > 0
+                      ? 'bg-amber-400/10 border-amber-400/40 hover:bg-amber-400/20'
+                      : 'bg-[#0d1117] border-white/[0.06] hover:border-sky-400/30'
+                  }`}
+                  aria-label={chat.unread > 0 ? `${chat.unread} new ${chat.unread === 1 ? 'reply' : 'replies'} in Community chat` : 'Open Community chat'}
+                  title={chat.unread > 0 ? `${chat.unread} new ${chat.unread === 1 ? 'reply' : 'replies'}` : 'Community chat'}
+                  data-testid="chat-inbox-button"
+                >
+                  <MessageCircle className={`w-5 h-5 ${chat.unread > 0 ? 'text-amber-300' : 'text-sky-300/80'}`} />
+                  {chat.unread > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#151b28] animate-pulse">
+                      {chat.unread > 9 ? '9+' : chat.unread}
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
           )}
@@ -3150,13 +3197,14 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
           />
 
           {/* ── Live Activity Table ── */}
-          <div className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden">
+          <div ref={activityCardRef} className="bg-[#151b28] rounded-xl border border-white/[0.06] overflow-hidden scroll-mt-4">
             <div className="flex items-center gap-0 border-b border-white/[0.06]">
               {[
                 { key: 'live', label: 'Live Activity', color: 'text-emerald-400' },
                 { key: 'stats', label: 'Game Stats', color: 'text-sky-400' },
+                { key: 'community', label: 'Community', color: 'text-violet-400' },
               ].map((tab) => (
-                <button key={tab.key} onClick={() => setActivityTab(tab.key)}
+                <button key={tab.key} onClick={() => { setActivityTab(tab.key); if (tab.key === 'community') chat.markRead(); }}
                   className={`px-4 py-3 text-xs font-semibold transition-colors relative ${activityTab === tab.key ? `${tab.color}` : 'text-slate-500 hover:text-slate-300'}`}
                   data-testid={`activity-tab-${tab.key}`}>
                   <div className="flex items-center gap-1.5">
@@ -3167,15 +3215,29 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
                       </span>
                     )}
                     {tab.label}
+                    {tab.key === 'community' && chat.unread > 0 && (
+                      <span className="min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                        {chat.unread > 9 ? '9+' : chat.unread}
+                      </span>
+                    )}
                   </div>
                   {activityTab === tab.key && (
-                    <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${tab.key === 'live' ? 'bg-emerald-400' : 'bg-sky-400'}`} />
+                    <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${tab.key === 'live' ? 'bg-emerald-400' : tab.key === 'community' ? 'bg-violet-400' : 'bg-sky-400'}`} />
                   )}
                 </button>
               ))}
             </div>
             {activityTab === 'live' ? (
               <LiveActivityTable />
+            ) : activityTab === 'community' ? (
+              <CommunityChat
+                address={effectiveAddress}
+                isLoggedIn={!!isLoggedIn}
+                username={username}
+                onNeedUsername={promptForUsername}
+                chat={chat}
+                active={activityTab === 'community'}
+              />
             ) : (
               <div className="p-4">
                 {gameStats ? (
@@ -3380,7 +3442,7 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
               <>
                 <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"><Beaker className="w-7 h-7 text-white" /></div>
                 <h3 className="text-lg font-bold text-white text-center mb-1">Join the Lab!</h3>
-                <p className="text-slate-400 text-xs text-center mb-5">Connect wallet or sign up to start mixing</p>
+                <p className="text-slate-400 text-xs text-center mb-5">{GUEST_ACCOUNTS_ENABLED ? 'Connect wallet or sign up to start mixing' : 'Connect your wallet to start mixing'}</p>
                 <div className="space-y-3">
                   <DogeConnectButton>
                     {({ openConnectModal }) => (
@@ -3389,10 +3451,14 @@ const MainMenu = ({ playerAddress: playerAddressProp } = {}) => {
                       </button>
                     )}
                   </DogeConnectButton>
+                  {GUEST_ACCOUNTS_ENABLED && (
+                    <>
                   <div className="flex items-center gap-3"><div className="flex-1 h-px bg-white/10" /><span className="text-slate-500 text-xs">or</span><div className="flex-1 h-px bg-white/10" /></div>
                   <button onClick={() => setShowGuestSignup(true)} className="w-full py-2.5 px-4 rounded-xl bg-[#0d1117] text-white font-semibold hover:bg-white/[0.06] transition-colors flex items-center justify-center gap-2 text-sm border border-white/[0.06]" data-testid="auth-guest-signup">
                     <UserPlus className="w-4 h-4" /> Sign Up as Guest
                   </button>
+                    </>
+                  )}
                 </div>
               </>
             ) : (
